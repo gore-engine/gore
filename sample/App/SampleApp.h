@@ -10,8 +10,8 @@ public:
 
 protected:
     void Initialize() final;
-    void Update(float deltaTime, float totalTime) final;
-    void Render(float deltaTime, float totalTime) final;
+    void Update() final;
+    void Render() final;
     void Shutdown() final;
 
     void OnWindowResize(int width, int height) final;

@@ -2,7 +2,6 @@
 
 #include <cstdint>
 
-#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
@@ -13,6 +12,8 @@ typedef struct GLFWwindow GLFWwindow;
 
 namespace gore
 {
+
+class Time;
 
 ENGINE_CLASS(App)
 {
@@ -34,10 +35,10 @@ public:
     void GetWindowSize(int* width, int* height) const;
 
 protected:
-    virtual void Initialize()                             = 0;
-    virtual void Update(float deltaTime, float totalTime) = 0;
-    virtual void Render(float deltaTime, float totalTime) = 0;
-    virtual void Shutdown()                               = 0;
+    virtual void Initialize() = 0;
+    virtual void Update()     = 0;
+    virtual void Render()     = 0;
+    virtual void Shutdown()   = 0;
 
     virtual void OnWindowResize(int width, int height) = 0;
 
@@ -46,9 +47,6 @@ protected:
 
 private:
     std::vector<std::string> m_Args;
-
-    std::chrono::time_point<std::chrono::steady_clock> m_LastTime;
-    std::chrono::time_point<std::chrono::steady_clock> m_StartTime;
 
     GLFWwindow* m_Window;
     void* m_NativeWindowHandle;
@@ -60,6 +58,8 @@ private:
 
     static void OnWindowResizeCallback(GLFWwindow * window, int width, int height);
 
+private:
+    Time* m_TimeSystem;
 };
 
 } // namespace gore

@@ -2,12 +2,15 @@
 
 #include "System.h"
 
+#include "Core/App.h"
+
 namespace gore
 {
 
 std::map<std::string, System*> System::s_RegisteredSystems;
 
-System::System()
+System::System(App* app) :
+    m_App(app)
 {
 }
 

@@ -6,15 +6,16 @@
 
 #include <algorithm>
 
+#include "Core/Time.h"
+
 namespace gore
 {
 
 App::App(int argc, char** argv) :
     m_Args(argv + 1, argv + argc),
-    m_Window(nullptr)
+    m_Window(nullptr),
+    m_TimeSystem(nullptr)
 {
-    m_LastTime  = std::chrono::steady_clock::now();
-    m_StartTime = m_LastTime;
 }
 
 App::~App()
@@ -23,15 +24,9 @@ App::~App()
 
 void App::MainLoop()
 {
-    auto currentTime = std::chrono::steady_clock::now();
-    // deltaTime in seconds
-    float deltaTime = std::chrono::duration<float>(currentTime - m_LastTime).count();
-    float totalTime = std::chrono::duration<float>(currentTime - m_StartTime).count();
-    m_LastTime      = currentTime;
+    Update();
 
-    Update(deltaTime, totalTime);
-
-    Render(deltaTime, totalTime);
+    Render();
 }
 
 bool App::HasArg(const std::string& arg) const
@@ -60,14 +55,20 @@ int App::Run(uint32_t width, uint32_t height, const char* title)
     InitNativeWindowHandle();
 
     Initialize();
-    m_LastTime  = std::chrono::steady_clock::now();
-    m_StartTime = m_LastTime;
+
+    m_TimeSystem = new Time(this);
+    m_TimeSystem->Initialize();
 
     while (!glfwWindowShouldClose(m_Window))
     {
         glfwPollEvents();
+
+        m_TimeSystem->Update();
+
         MainLoop();
     }
+
+    m_TimeSystem->Shutdown();
 
     Shutdown();
 
