@@ -1,6 +1,6 @@
 #include "Prefix.h"
 
-#include "Core/App.h"
+#include "Windowing/Window.h"
 #include "X11Window.h"
 
 #define GLFW_EXPOSE_NATIVE_X11
@@ -10,17 +10,17 @@
 namespace gore
 {
 
-void App::InitNativeWindowHandle()
+void Window::CreateNativeHandle()
 {
-    auto* w              = new X11Window();
-    w->display           = glfwGetX11Display();
-    w->window            = glfwGetX11Window(m_Window);
-    m_NativeWindowHandle = w;
+    auto* w        = new X11Window();
+    w->display     = glfwGetX11Display();
+    w->window      = glfwGetX11Window(m_Window);
+    m_NativeHandle = w;
 }
 
-void App::DestroyNativeWindowHandle()
+void Window::DestroyNativeHandle()
 {
-    delete static_cast<X11Window*>(m_NativeWindowHandle);
+    delete static_cast<X11Window*>(m_NativeHandle);
 }
 
 } // namespace gore

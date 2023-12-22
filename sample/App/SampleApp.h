@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/App.h"
+#include "Windowing/Window.h"
 
 class SampleApp final : public gore::App
 {
@@ -13,8 +14,6 @@ protected:
     void Update() final;
     void Render() final;
     void Shutdown() final;
-
-    void OnWindowResize(int width, int height) final;
 
 private:
     void UpdateFPSText(float deltaTime);

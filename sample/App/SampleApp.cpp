@@ -34,10 +34,6 @@ void SampleApp::Shutdown()
 {
 }
 
-void SampleApp::OnWindowResize(int width, int height)
-{
-}
-
 void SampleApp::UpdateFPSText(float deltaTime)
 {
     static float timer    = 0.0f;
@@ -49,7 +45,7 @@ void SampleApp::UpdateFPSText(float deltaTime)
     {
         std::stringstream ss;
         ss << "SampleApp FPS: " << std::fixed << std::setprecision(2) << (float)frameCount / timer << std::endl;
-        SetWindowTitle(ss.str());
+        GetWindow()->SetTitle(ss.str());
         timer      = 0.0f;
         frameCount = 0;
     }

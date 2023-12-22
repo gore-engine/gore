@@ -15,8 +15,8 @@ namespace gore
 class Time final : System
 {
 public:
-    Time(App* app);
-    virtual ~Time();
+    explicit Time(App* app);
+    ~Time() override;
 
     Time(const Time&)            = delete;
     Time& operator=(const Time&) = delete;

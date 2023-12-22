@@ -8,12 +8,11 @@
 
 #include "Export.h"
 
-typedef struct GLFWwindow GLFWwindow;
-
 namespace gore
 {
 
 class Time;
+class Window;
 
 ENGINE_CLASS(App)
 {
@@ -26,13 +25,7 @@ public:
     App(App&&)                 = delete;
     App& operator=(App&&)      = delete;
 
-    int Run(uint32_t width, uint32_t height, const char* title);
-
-    [[nodiscard]] void* GetNativeWindowHandle() const
-    {
-        return m_NativeWindowHandle;
-    }
-    void GetWindowSize(int* width, int* height) const;
+    int Run(int width, int height, const char* title);
 
 protected:
     virtual void Initialize() = 0;
@@ -40,26 +33,23 @@ protected:
     virtual void Render()     = 0;
     virtual void Shutdown()   = 0;
 
-    virtual void OnWindowResize(int width, int height) = 0;
+    [[nodiscard]] bool HasArg(const std::string& arg) const;
 
-    bool HasArg(const std::string& arg) const;
-    void SetWindowTitle(const std::string& title);
+    virtual void OnWindowResize(Window* window, int width, int height);
 
+    [[nodiscard]] Window* GetWindow() const
+    {
+        return m_Window;
+    }
+
+    friend class Window;
 private:
     std::vector<std::string> m_Args;
 
-    GLFWwindow* m_Window;
-    void* m_NativeWindowHandle;
-
-    void MainLoop();
-
-    void InitNativeWindowHandle();
-    void DestroyNativeWindowHandle();
-
-    static void OnWindowResizeCallback(GLFWwindow * window, int width, int height);
-
 private:
     Time* m_TimeSystem;
+
+    Window* m_Window;
 };
 
 } // namespace gore

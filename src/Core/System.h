@@ -14,7 +14,7 @@ class App;
 ENGINE_CLASS(System)
 {
 public:
-    System(App* app);
+    explicit System(App* app);
     virtual ~System();
 
     System(const System&)            = delete;

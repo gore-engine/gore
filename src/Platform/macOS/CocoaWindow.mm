@@ -1,6 +1,6 @@
 #include "Prefix.h"
 
-#include "Core/App.h"
+#include "Windowing/Window.h"
 #import "CocoaWindow.h"
 
 #define GLFW_EXPOSE_NATIVE_COCOA
@@ -14,22 +14,22 @@
 namespace gore
 {
 
-void App::InitNativeWindowHandle()
+void Window::CreateNativeHandle()
 {
-    auto* w              = new CocoaWindow();
-    w->layer             = [CAMetalLayer layer];
-    m_NativeWindowHandle = w;
+    auto* w        = new CocoaWindow();
+    w->layer       = [CAMetalLayer layer];
+    m_NativeHandle = w;
 
     NSWindow* window = glfwGetCocoaWindow(m_Window);
     [window.contentView setWantsLayer:YES];
     [window.contentView setLayer:w->layer];
 }
 
-void App::DestroyNativeWindowHandle()
+void Window::DestroyNativeHandle()
 {
-    auto* w  = static_cast<CocoaWindow*>(m_NativeWindowHandle);
+    auto* w  = static_cast<CocoaWindow*>(m_NativeHandle);
     w->layer = nil;
-    delete static_cast<CocoaWindow*>(m_NativeWindowHandle);
+    delete w;
 }
 
 } // namespace gore
