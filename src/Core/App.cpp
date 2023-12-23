@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "Core/Time.h"
+#include "Rendering/RenderSystem.h"
 #include "Windowing/Window.h"
 
 namespace gore
@@ -15,6 +16,7 @@ namespace gore
 App::App(int argc, char** argv) :
     m_Args(argv + 1, argv + argc),
     m_TimeSystem(nullptr),
+    m_RenderSystem(nullptr),
     m_Window(nullptr)
 {
 }
@@ -31,6 +33,7 @@ bool App::HasArg(const std::string& arg) const
 
 void App::OnWindowResize(Window* window, int width, int height)
 {
+    m_RenderSystem->OnResize(window, width, height);
 }
 
 int App::Run(int width, int height, const char* title)
@@ -39,6 +42,9 @@ int App::Run(int width, int height, const char* title)
 
     m_Window = new Window(this, width, height);
     m_Window->SetTitle(title);
+
+    m_RenderSystem = new RenderSystem(this);
+    m_RenderSystem->Initialize();
 
     Initialize();
 
@@ -51,6 +57,8 @@ int App::Run(int width, int height, const char* title)
 
         Update();
 
+        m_RenderSystem->Update();
+
         Render();
     }
 
@@ -58,7 +66,11 @@ int App::Run(int width, int height, const char* title)
 
     Shutdown();
 
+    m_RenderSystem->Shutdown();
+
+
     delete m_TimeSystem;
+    delete m_RenderSystem;
 
     delete m_Window;
 

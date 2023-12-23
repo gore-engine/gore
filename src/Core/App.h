@@ -11,8 +11,10 @@
 namespace gore
 {
 
-class Time;
 class Window;
+
+class Time;
+class RenderSystem;
 
 ENGINE_CLASS(App)
 {
@@ -48,6 +50,7 @@ private:
 
 private:
     Time* m_TimeSystem;
+    RenderSystem* m_RenderSystem;
 
     Window* m_Window;
 };
