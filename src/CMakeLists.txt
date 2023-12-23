@@ -7,33 +7,19 @@ option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Target Platform Detection
 if(WIN32)
-    set(TARGET_PLATFORM "Windows")
+   set(TARGET_PLATFORM "Windows")
 elseif(UNIX AND NOT APPLE)
-    set(TARGET_PLATFORM "Linux")
+   set(TARGET_PLATFORM "Linux")
 elseif(APPLE)
-    set(TARGET_PLATFORM "macOS")
+   set(TARGET_PLATFORM "Darwin")
 endif()
-
-# Libraries
-
-# GLFW
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
-set(GLFW_LIBRARY_TYPE SHARED CACHE STRING "" FORCE)
-add_subdirectory(External/glfw glfw)
-
-# Vulkan
-set(VULKAN_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/External/Vulkan/include")
 
 # Configurations
 
 set(COMMON_SOURCE_FOLDERS "Core" "Windowing" "Rendering")
-set(COMMON_INCLUDE_FOLDERS "${CMAKE_CURRENT_SOURCE_DIR}" "${VULKAN_INCLUDE_DIR}")
-set(COMMON_LIBRARIES glfw)
-set(COMMON_DEFINITIONS "GLFW_INCLUDE_NONE")
+set(COMMON_INCLUDE_FOLDERS "${CMAKE_CURRENT_SOURCE_DIR}")
 
 if(${BUILD_SHARED_LIBS})
     list(APPEND COMMON_DEFINITIONS "ENGINE_DLL" "ENGINE_EXPORTS")
@@ -53,7 +39,7 @@ elseif(${TARGET_PLATFORM} STREQUAL "Linux")
     set(PLATFORM_INCLUDE_DIRECTORIES ${X11_INCLUDE_DIR})
     set(PLATFORM_LIBRARIES ${X11_LIBRARIES})
     set(PLATFORM_DEFINITIONS)
-elseif(${TARGET_PLATFORM} STREQUAL "macOS")
+elseif(${TARGET_PLATFORM} STREQUAL "Darwin")
     find_library(COCOA Cocoa)
     find_library(METAL Metal)
     find_library(METALKIT MetalKit)
@@ -84,6 +70,37 @@ foreach(folder ${PLATFORM_SOURCE_FOLDERS})
     list(APPEND PLATFORM_SOURCES ${SOURCES})
 endforeach()
 
+# Libraries
+
+# glfw
+find_package(glfw3 CONFIG REQUIRED)
+list(APPEND COMMON_LIBRARIES glfw)
+list(APPEND COMMON_DEFINITIONS "GLFW_INCLUDE_NONE")
+
+# vulkan
+find_package(Vulkan REQUIRED)
+list(APPEND COMMON_LIBRARIES Vulkan::Headers)
+
+# vulkan memory allocator
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
+list(APPEND COMMON_LIBRARIES GPUOpen::VulkanMemoryAllocator)
+
+# imgui
+find_package(imgui CONFIG REQUIRED)
+list(APPEND COMMON_LIBRARIES imgui::imgui)
+
+# stb
+find_package(Stb REQUIRED)
+list(APPEND COMMON_INCLUDE_FOLDERS ${Stb_INCLUDE_DIR})
+
+# assimp
+find_package(assimp CONFIG REQUIRED)
+list(APPEND COMMON_LIBRARIES assimp::assimp)
+
+# cgltf
+find_path(CGLTF_INCLUDE_DIRS "cgltf.h")
+list(APPEND COMMON_INCLUDE_FOLDERS ${CGLTF_INCLUDE_DIRS})
+
 # Targets
 
 add_library(${PROJECT_NAME} ${COMMON_SOURCES} ${PLATFORM_SOURCES})
@@ -93,33 +110,33 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE ${COMMON_DEFINITIONS})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${COMMON_LIBRARIES} ${PLATFORM_LIBRARIES})
 
 # Vulkan Post Build copy
-if(${TARGET_PLATFORM} STREQUAL "macOS")
-    set(MOLTENVK_MACOS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/External/Vulkan/macOS")
-
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy
-            "${MOLTENVK_MACOS_PATH}/lib/libMoltenVK.dylib"
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/../lib/libMoltenVK.dylib)
-
-    file(GLOB VK_LAYER_LIBS "${MOLTENVK_MACOS_PATH}/lib/libVkLayer*.dylib")
-    foreach(VK_LAYER_LIB ${VK_LAYER_LIBS})
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
-                "${VK_LAYER_LIB}"
-                $<TARGET_FILE_DIR:${PROJECT_NAME}>/../lib)
-    endforeach()
-
-    file(GLOB VULKAN_LIBS "${MOLTENVK_MACOS_PATH}/lib/libvulkan*.dylib")
-    foreach(VULKAN_LIB ${VULKAN_LIBS})
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
-                "${VULKAN_LIB}"
-                $<TARGET_FILE_DIR:${PROJECT_NAME}>/../Frameworks)
-    endforeach()
-
-    # copy the folder containing icd and explicit layers
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${MOLTENVK_MACOS_PATH}/share/vulkan"
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/vulkan)
-endif()
+#if(${TARGET_PLATFORM} STREQUAL "Darwin")
+#    set(MOLTENVK_MACOS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/External/Vulkan/macOS")
+#
+#    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+#            COMMAND ${CMAKE_COMMAND} -E copy
+#            "${MOLTENVK_MACOS_PATH}/lib/libMoltenVK.dylib"
+#            $<TARGET_FILE_DIR:${PROJECT_NAME}>/../lib/libMoltenVK.dylib)
+#
+#    file(GLOB VK_LAYER_LIBS "${MOLTENVK_MACOS_PATH}/lib/libVkLayer*.dylib")
+#    foreach(VK_LAYER_LIB ${VK_LAYER_LIBS})
+#        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+#                COMMAND ${CMAKE_COMMAND} -E copy
+#                "${VK_LAYER_LIB}"
+#                $<TARGET_FILE_DIR:${PROJECT_NAME}>/../lib)
+#    endforeach()
+#
+#    file(GLOB VULKAN_LIBS "${MOLTENVK_MACOS_PATH}/lib/libvulkan*.dylib")
+#    foreach(VULKAN_LIB ${VULKAN_LIBS})
+#        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+#                COMMAND ${CMAKE_COMMAND} -E copy
+#                "${VULKAN_LIB}"
+#                $<TARGET_FILE_DIR:${PROJECT_NAME}>/../Frameworks)
+#    endforeach()
+#
+#    # copy the folder containing icd and explicit layers
+#    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+#            COMMAND ${CMAKE_COMMAND} -E copy_directory
+#            "${MOLTENVK_MACOS_PATH}/share/vulkan"
+#            $<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/vulkan)
+#endif()
