@@ -110,33 +110,39 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE ${COMMON_DEFINITIONS})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${COMMON_LIBRARIES} ${PLATFORM_LIBRARIES})
 
 # Vulkan Post Build copy
-#if(${TARGET_PLATFORM} STREQUAL "Darwin")
-#    set(MOLTENVK_MACOS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/External/Vulkan/macOS")
-#
-#    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-#            COMMAND ${CMAKE_COMMAND} -E copy
-#            "${MOLTENVK_MACOS_PATH}/lib/libMoltenVK.dylib"
-#            $<TARGET_FILE_DIR:${PROJECT_NAME}>/../lib/libMoltenVK.dylib)
-#
-#    file(GLOB VK_LAYER_LIBS "${MOLTENVK_MACOS_PATH}/lib/libVkLayer*.dylib")
-#    foreach(VK_LAYER_LIB ${VK_LAYER_LIBS})
-#        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-#                COMMAND ${CMAKE_COMMAND} -E copy
-#                "${VK_LAYER_LIB}"
-#                $<TARGET_FILE_DIR:${PROJECT_NAME}>/../lib)
-#    endforeach()
-#
-#    file(GLOB VULKAN_LIBS "${MOLTENVK_MACOS_PATH}/lib/libvulkan*.dylib")
-#    foreach(VULKAN_LIB ${VULKAN_LIBS})
-#        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-#                COMMAND ${CMAKE_COMMAND} -E copy
-#                "${VULKAN_LIB}"
-#                $<TARGET_FILE_DIR:${PROJECT_NAME}>/../Frameworks)
-#    endforeach()
-#
-#    # copy the folder containing icd and explicit layers
-#    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-#            COMMAND ${CMAKE_COMMAND} -E copy_directory
-#            "${MOLTENVK_MACOS_PATH}/share/vulkan"
-#            $<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/vulkan)
-#endif()
+if(${TARGET_PLATFORM} STREQUAL "Darwin")
+    # get directory of libvulkan.dylib from Vulkan_LIBRARIES
+    get_filename_component(VULKAN_LIB_DIR ${Vulkan_LIBRARIES} DIRECTORY)
+
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${VULKAN_LIB_DIR}/libMoltenVK.dylib"
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/../lib/libMoltenVK.dylib)
+
+    file(GLOB VK_LAYER_LIBS "${VULKAN_LIB_DIR}/libVkLayer*.dylib")
+    foreach(VK_LAYER_LIB ${VK_LAYER_LIBS})
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                "${VK_LAYER_LIB}"
+                $<TARGET_FILE_DIR:${PROJECT_NAME}>/../lib)
+    endforeach()
+
+    file(GLOB VULKAN_LIBS "${VULKAN_LIB_DIR}/libvulkan*.dylib")
+    foreach(VULKAN_LIB ${VULKAN_LIBS})
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                "${VULKAN_LIB}"
+                $<TARGET_FILE_DIR:${PROJECT_NAME}>/../Frameworks)
+    endforeach()
+
+    # copy the folder containing icd and explicit layers
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${VULKAN_LIB_DIR}/../share/vulkan/icd.d"
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/vulkan/icd.d)
+
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${VULKAN_LIB_DIR}/../share/vulkan/explicit_layer.d"
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/vulkan/explicit_layer.d)
+endif()

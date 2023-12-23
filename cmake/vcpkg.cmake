@@ -46,11 +46,6 @@ find_package(Git REQUIRED)
 function(vcpkg_init)
     # set environment (not cached)
 
-    # mask musl-libc if masked prior
-    if(VCPKG_MASK_MUSL_LIBC)
-        vcpkg_mask_if_musl_libc()
-    endif()
-
     # use system binaries
     if(VCPKG_FORCE_SYSTEM_BINARIES)
         set(ENV{VCPKG_FORCE_SYSTEM_BINARIES} "1")
@@ -77,21 +72,6 @@ function(vcpkg_init)
     # test for vcpkg availability
     # executable path set ? assume all ok : configure
     if(VCPKG_EXECUTABLE EQUAL "" OR NOT DEFINED VCPKG_EXECUTABLE)
-        # configure vcpkg
-
-        # use system binaries?
-        # IMPORTANT: we have to use system binaries on musl-libc systems, as vcpkg fetches binaries linked against glibc!
-        vcpkg_set_use_system_binaries_flag()
-
-        # mask musl-libc if no triplet is provided
-        if(
-        ( ENV{VCPKG_DEFAULT_TRIPLET} EQUAL "" OR NOT DEFINED ENV{VCPKG_DEFAULT_TRIPLET}) AND
-        ( ENV{VCPKG_DEFAULT_HOST_TRIPLET} EQUAL "" OR NOT DEFINED ENV{VCPKG_DEFAULT_HOST_TRIPLET}) AND
-        ( VCPKG_TARGET_TRIPLET EQUAL "" OR NOT DEFINED VCPKG_TARGET_TRIPLET)
-        )
-            # mask musl-libc from vcpkg
-            vcpkg_mask_if_musl_libc()
-        endif()
 
 
         # test options
@@ -182,7 +162,7 @@ function(vcpkg_init)
             # endif()
 
             # build vcpkg
-            execute_process(COMMAND ${VCPKG_BUILD_CMD} ${VCPKG_USE_SYSTEM_BINARIES_FLAG} ${VCPKG_METRICS_FLAG} WORKING_DIRECTORY "${VCPKG_DIRECTORY}" RESULT_VARIABLE VCPKG_BUILD_OK)
+            execute_process(COMMAND ${VCPKG_BUILD_CMD} ${VCPKG_METRICS_FLAG} WORKING_DIRECTORY "${VCPKG_DIRECTORY}" RESULT_VARIABLE VCPKG_BUILD_OK)
             if(NOT VCPKG_BUILD_OK EQUAL "0")
                 message(FATAL_ERROR "Bootstrapping VCPKG failed!")
             endif()
@@ -320,99 +300,6 @@ function(vcpkg_set_version_checkout)
 
     set(VCPKG_VERSION_CHECKOUT ${VCPKG_VERSION_CHECKOUT} PARENT_SCOPE)
 endfunction()
-
-# sets VCPKG_PLATFORM_MUSL_LIBC(ON|OFF)
-function(vcpkg_get_set_musl_libc)
-    if(WIN32)
-        # is windows
-        set(VCPKG_PLATFORM_MUSL_LIBC OFF)
-    else()
-        execute_process(COMMAND getconf GNU_LIBC_VERSION RESULT_VARIABLE VCPKG_PLATFORM_GLIBC)
-        if(VCPKG_PLATFORM_GLIBC EQUAL "0")
-            # has glibc
-            set(VCPKG_PLATFORM_MUSL_LIBC OFF)
-        else()
-            execute_process(COMMAND ldd --version RESULT_VARIABLE VCPKG_PLATFORM_LDD_OK OUTPUT_VARIABLE VCPKG_PLATFORM_LDD_VERSION_STDOUT ERROR_VARIABLE VCPKG_PLATFORM_LDD_VERSION_STDERR)
-            string(TOLOWER "${VCPKG_PLATFORM_LDD_VERSION_STDOUT}" VCPKG_PLATFORM_LDD_VERSION_STDOUT)
-            string(TOLOWER "${VCPKG_PLATFORM_LDD_VERSION_STDERR}" VCPKG_PLATFORM_LDD_VERSION_STDERR)
-            string(FIND "${VCPKG_PLATFORM_LDD_VERSION_STDOUT}" "musl" VCPKG_PLATFORM_LDD_FIND_MUSL_STDOUT)
-            string(FIND "${VCPKG_PLATFORM_LDD_VERSION_STDERR}" "musl" VCPKG_PLATFORM_LDD_FIND_MUSL_STDERR)
-            if(
-            (VCPKG_PLATFORM_LDD_OK EQUAL "0" AND NOT VCPKG_PLATFORM_LDD_FIND_MUSL_STDOUT EQUAL "-1") OR
-            (NOT VCPKG_PLATFORM_LDD_OK EQUAL "0" AND NOT VCPKG_PLATFORM_LDD_FIND_MUSL_STDERR EQUAL "-1")
-            )
-                # has musl-libc
-                # use system binaries
-                set(VCPKG_PLATFORM_MUSL_LIBC ON)
-                message(STATUS "VCPKG: System is using musl-libc; using system binaries! (e.g. cmake, curl, zip, tar, etc.)")
-            else()
-                # has error...
-                message(FATAL_ERROR "VCPKG: could detect neither glibc nor musl-libc!")
-            endif()
-        endif()
-    endif()
-
-    # propagate back
-    set(VCPKG_PLATFORM_MUSL_LIBC ${VCPKG_PLATFORM_MUSL_LIBC} PARENT_SCOPE)
-endfunction()
-
-
-# configure environment and CMake variables to mask musl-libc from vcpkg triplet checks
-function(vcpkg_mask_musl_libc)
-    # set target triplet without '-musl'
-    execute_process(COMMAND ldd --version RESULT_VARIABLE VCPKG_PLATFORM_LDD_OK OUTPUT_VARIABLE VCPKG_PLATFORM_LDD_VERSION_STDOUT ERROR_VARIABLE VCPKG_PLATFORM_LDD_VERSION_STDERR)
-    string(TOLOWER "${VCPKG_PLATFORM_LDD_VERSION_STDOUT}" VCPKG_PLATFORM_LDD_VERSION_STDOUT)
-    string(TOLOWER "${VCPKG_PLATFORM_LDD_VERSION_STDERR}" VCPKG_PLATFORM_LDD_VERSION_STDERR)
-    string(FIND "${VCPKG_PLATFORM_LDD_VERSION_STDOUT}" "x86_64" VCPKG_PLATFORM_LDD_FIND_MUSL_BITS_STDOUT)
-    string(FIND "${VCPKG_PLATFORM_LDD_VERSION_STDERR}" "x86_64" VCPKG_PLATFORM_LDD_FIND_MUSL_BITS_STDERR)
-    if(
-            NOT VCPKG_PLATFORM_LDD_FIND_MUSL_BITS_STDOUT EQUAL "-1" OR
-            NOT VCPKG_PLATFORM_LDD_FIND_MUSL_BITS_STDERR EQUAL "-1"
-    )
-        set(VCPKG_TARGET_TRIPLET "x64-linux")
-    else()
-        set(VCPKG_TARGET_TRIPLET "x86-linux")
-    endif()
-
-    set(ENV{VCPKG_DEFAULT_TRIPLET} "${VCPKG_TARGET_TRIPLET}")
-    set(ENV{VCPKG_DEFAULT_HOST_TRIPLET} "${VCPKG_TARGET_TRIPLET}")
-    set(VCPKG_TARGET_TRIPLET "${VCPKG_TARGET_TRIPLET}" CACHE STRING "vcpkg default target triplet (possibly dont change)")
-    message(STATUS "VCPKG: System is using musl-libc; fixing default target triplet as: ${VCPKG_TARGET_TRIPLET}")
-
-    set(VCPKG_MASK_MUSL_LIBC ON CACHE INTERNAL "masked musl-libc")
-endfunction()
-
-# automate musl-libc masking
-function(vcpkg_mask_if_musl_libc)
-    vcpkg_get_set_musl_libc()
-    if(VCPKG_PLATFORM_MUSL_LIBC)
-        vcpkg_mask_musl_libc()
-    endif()
-endfunction()
-
-# sets VCPKG_USE_SYSTEM_BINARIES_FLAG from VCPKG_PLATFORM_MUSL_LIBC and/or VCPKG_FORCE_SYSTEM_BINARIES
-# vcpkg_set_use_system_binaries_flag([VCPKG_FORCE_SYSTEM_BINARIES_EXPLICIT])
-function(vcpkg_set_use_system_binaries_flag)
-    if(ARGV0 EQUAL "" OR NOT DEFINED ARGV0)
-        set(VCPKG_FORCE_SYSTEM_BINARIES_EXPLICIT ${VCPKG_FORCE_SYSTEM_BINARIES})
-    else()
-        set(VCPKG_FORCE_SYSTEM_BINARIES_EXPLICIT ${ARGV0})
-    endif()
-
-    vcpkg_get_set_musl_libc()
-
-    if(NOT WIN32 AND (VCPKG_FORCE_SYSTEM_BINARIES_EXPLICIT OR VCPKG_PLATFORM_MUSL_LIBC) )
-        set(VCPKG_USE_SYSTEM_BINARIES_FLAG "--useSystemBinaries" PARENT_SCOPE)
-        # has to be propagated to all install calls
-        set(ENV{VCPKG_FORCE_SYSTEM_BINARIES} "1")
-        set(VCPKG_FORCE_SYSTEM_BINARIES ON CACHE BOOL "force vcpkg to use system binaries (possibly dont change)")
-
-        message(STATUS "VCPKG: Requested use of system binaries! (e.g. cmake, curl, zip, tar, etc.)")
-    else()
-        set(VCPKG_USE_SYSTEM_BINARIES_FLAG "" PARENT_SCOPE)
-    endif()
-endfunction()
-
 
 # install package
 function(vcpkg_add_package PKG_NAME)
