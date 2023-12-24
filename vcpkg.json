@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "gore",
+  "version": "0.0.1",
+  "dependencies": [
+    "assimp",
+    "cgltf",
+    "glfw3",
+    "imgui",
+    "stb",
+    "vulkan",
+    "vulkan-memory-allocator"
+  ]
+}
