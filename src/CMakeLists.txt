@@ -77,6 +77,10 @@ find_package(glfw3 CONFIG REQUIRED)
 list(APPEND COMMON_LIBRARIES glfw)
 list(APPEND COMMON_DEFINITIONS "GLFW_INCLUDE_NONE")
 
+# glm
+find_package(glm CONFIG REQUIRED)
+list(APPEND COMMON_LIBRARIES glm::glm)
+
 # vulkan
 find_package(Vulkan REQUIRED)
 list(APPEND COMMON_LIBRARIES Vulkan::Headers)
