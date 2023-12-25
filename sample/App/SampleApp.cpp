@@ -6,6 +6,8 @@
 #include <iomanip>
 
 #include "Core/Time.h"
+#include "Windowing/Window.h"
+#include "Scene/Scene.h"
 
 SampleApp::SampleApp(int argc, char** argv) :
     App(argc, argv)
@@ -18,6 +20,9 @@ SampleApp::~SampleApp()
 
 void SampleApp::Initialize()
 {
+    scene = new gore::Scene("MainScene");
+
+    gore::GameObject* gameObject = scene->NewObject();
 }
 
 void SampleApp::Update()
@@ -32,6 +37,7 @@ void SampleApp::Render()
 
 void SampleApp::Shutdown()
 {
+    delete scene;
 }
 
 void SampleApp::UpdateFPSText(float deltaTime)

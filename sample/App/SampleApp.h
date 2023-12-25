@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/App.h"
-#include "Windowing/Window.h"
+#include "Scene/Scene.h"
 
 class SampleApp final : public gore::App
 {
@@ -17,4 +17,7 @@ protected:
 
 private:
     void UpdateFPSText(float deltaTime);
+
+private:
+    gore::Scene* scene;
 };
