@@ -17,10 +17,7 @@ public:
     explicit Window(App* app, int width, int height);
     ~Window();
 
-    Window(const Window&)            = delete;
-    Window& operator=(const Window&) = delete;
-    Window(Window&&)                 = delete;
-    Window& operator=(Window&&)      = delete;
+    NON_COPYABLE(Window);
 
     void GetSize(int* width, int* height) const;
 

@@ -41,3 +41,8 @@
 #else
     #error "Unknown architecture"
 #endif
+
+// common includes
+#include <cstdint>
+
+#include "Utilities/Defines.h"

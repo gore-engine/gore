@@ -30,10 +30,7 @@ public:
     explicit RenderSystem(App* app);
     ~RenderSystem() override;
 
-    RenderSystem(const RenderSystem&)            = delete;
-    RenderSystem& operator=(const RenderSystem&) = delete;
-    RenderSystem(RenderSystem&&)                 = delete;
-    RenderSystem& operator=(RenderSystem&&)      = delete;
+    NON_COPYABLE(RenderSystem);
 
     void Initialize() override;
     void Update() override;

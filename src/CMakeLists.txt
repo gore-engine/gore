@@ -8,38 +8,45 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Target Platform Detection
-if(WIN32)
-   set(TARGET_PLATFORM "Windows")
-elseif(UNIX AND NOT APPLE)
-   set(TARGET_PLATFORM "Linux")
-elseif(APPLE)
-   set(TARGET_PLATFORM "Darwin")
-endif()
+if (WIN32)
+    set(TARGET_PLATFORM "Windows")
+elseif (UNIX AND NOT APPLE)
+    set(TARGET_PLATFORM "Linux")
+elseif (APPLE)
+    set(TARGET_PLATFORM "Darwin")
+endif ()
 
 # Configurations
 
-set(COMMON_SOURCE_FOLDERS "Core" "Windowing" "Rendering")
+set(COMMON_SOURCE_FOLDERS
+        "Core"
+        "Windowing"
+        "Rendering"
+        "Scene"
+        "Object"
+        "Utilities"
+)
 set(COMMON_INCLUDE_FOLDERS "${CMAKE_CURRENT_SOURCE_DIR}")
 
-if(${BUILD_SHARED_LIBS})
+if (${BUILD_SHARED_LIBS})
     list(APPEND COMMON_DEFINITIONS "ENGINE_DLL" "ENGINE_EXPORTS")
-endif()
+endif ()
 
 # Platform Specific Configurations
 
-if(${TARGET_PLATFORM} STREQUAL "Windows")
+if (${TARGET_PLATFORM} STREQUAL "Windows")
     set(PLATFORM_SOURCE_FOLDERS "Platform/Windows")
     set(PLATFORM_INCLUDE_DIRECTORIES)
     set(PLATFORM_LIBRARIES)
     set(PLATFORM_DEFINITIONS "WIN32_LEAN_AND_MEAN" "NOMINMAX")
-elseif(${TARGET_PLATFORM} STREQUAL "Linux")
+elseif (${TARGET_PLATFORM} STREQUAL "Linux")
     find_package(X11 REQUIRED)
 
     set(PLATFORM_SOURCE_FOLDERS "Platform/Linux")
     set(PLATFORM_INCLUDE_DIRECTORIES ${X11_INCLUDE_DIR})
     set(PLATFORM_LIBRARIES ${X11_LIBRARIES})
     set(PLATFORM_DEFINITIONS)
-elseif(${TARGET_PLATFORM} STREQUAL "Darwin")
+elseif (${TARGET_PLATFORM} STREQUAL "Darwin")
     find_library(COCOA Cocoa)
     find_library(METAL Metal)
     find_library(METALKIT MetalKit)
@@ -54,21 +61,21 @@ elseif(${TARGET_PLATFORM} STREQUAL "Darwin")
     set(PLATFORM_INCLUDE_DIRECTORIES)
     set(PLATFORM_LIBRARIES ${COCOA} ${METAL} ${METALKIT} ${APPKIT} ${QUARTZCORE} ${FOUNDATION} ${IOKIT})
     set(PLATFORM_DEFINITIONS)
-endif()
+endif ()
 
 # Sources
 
 set(COMMON_SOURCES "Prefix.h" "Export.h")
-foreach(folder ${COMMON_SOURCE_FOLDERS})
+foreach (folder ${COMMON_SOURCE_FOLDERS})
     file(GLOB_RECURSE SOURCES "${folder}/*.cpp" "${folder}/*.h")
     list(APPEND COMMON_SOURCES ${SOURCES})
-endforeach()
+endforeach ()
 
 set(PLATFORM_SOURCES)
-foreach(folder ${PLATFORM_SOURCE_FOLDERS})
+foreach (folder ${PLATFORM_SOURCE_FOLDERS})
     file(GLOB_RECURSE SOURCES "${folder}/*.cpp" "${folder}/*.mm" "${folder}/*.h")
     list(APPEND PLATFORM_SOURCES ${SOURCES})
-endforeach()
+endforeach ()
 
 # Libraries
 
@@ -114,7 +121,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE ${COMMON_DEFINITIONS})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${COMMON_LIBRARIES} ${PLATFORM_LIBRARIES})
 
 # Vulkan Post Build copy
-if(${TARGET_PLATFORM} STREQUAL "Darwin")
+if (${TARGET_PLATFORM} STREQUAL "Darwin")
     # get directory of libvulkan.dylib from Vulkan_LIBRARIES
     get_filename_component(VULKAN_LIB_DIR ${Vulkan_LIBRARIES} DIRECTORY)
 
@@ -124,20 +131,20 @@ if(${TARGET_PLATFORM} STREQUAL "Darwin")
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/../lib/libMoltenVK.dylib)
 
     file(GLOB VK_LAYER_LIBS "${VULKAN_LIB_DIR}/libVkLayer*.dylib")
-    foreach(VK_LAYER_LIB ${VK_LAYER_LIBS})
+    foreach (VK_LAYER_LIB ${VK_LAYER_LIBS})
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy
                 "${VK_LAYER_LIB}"
                 $<TARGET_FILE_DIR:${PROJECT_NAME}>/../lib)
-    endforeach()
+    endforeach ()
 
     file(GLOB VULKAN_LIBS "${VULKAN_LIB_DIR}/libvulkan*.dylib")
-    foreach(VULKAN_LIB ${VULKAN_LIBS})
+    foreach (VULKAN_LIB ${VULKAN_LIBS})
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy
                 "${VULKAN_LIB}"
                 $<TARGET_FILE_DIR:${PROJECT_NAME}>/../Frameworks)
-    endforeach()
+    endforeach ()
 
     # copy the folder containing icd and explicit layers
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -149,4 +156,4 @@ if(${TARGET_PLATFORM} STREQUAL "Darwin")
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${VULKAN_LIB_DIR}/../share/vulkan/explicit_layer.d"
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/vulkan/explicit_layer.d)
-endif()
+endif ()

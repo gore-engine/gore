@@ -18,10 +18,7 @@ public:
     explicit Time(App* app);
     ~Time() override;
 
-    Time(const Time&)            = delete;
-    Time& operator=(const Time&) = delete;
-    Time(Time&&)                 = delete;
-    Time& operator=(Time&&)      = delete;
+    NON_COPYABLE(Time);
 
     void Initialize() override;
     void Update() override;
