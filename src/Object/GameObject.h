@@ -16,10 +16,7 @@ class Component;
 ENGINE_CLASS(GameObject) final : public Object
 {
 public:
-    GameObject(const GameObject&)            = delete;
-    GameObject& operator=(const GameObject&) = delete;
-    GameObject(GameObject&&)                 = delete;
-    GameObject& operator=(GameObject&&)      = delete;
+    NON_COPYABLE(GameObject);
 
     void Update();
 

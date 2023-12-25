@@ -22,10 +22,7 @@ public:
     App(int argc, char** argv);
     virtual ~App();
 
-    App(const App&)            = delete;
-    App& operator=(const App&) = delete;
-    App(App&&)                 = delete;
-    App& operator=(App&&)      = delete;
+    NON_COPYABLE(App);
 
     int Run(int width, int height, const char* title);
 

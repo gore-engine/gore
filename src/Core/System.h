@@ -17,10 +17,7 @@ public:
     explicit System(App* app);
     virtual ~System();
 
-    System(const System&)            = delete;
-    System& operator=(const System&) = delete;
-    System(System&&)                 = delete;
-    System& operator=(System&&)      = delete;
+    NON_COPYABLE(System);
 
     virtual void Initialize() = 0;
     virtual void Update()     = 0;

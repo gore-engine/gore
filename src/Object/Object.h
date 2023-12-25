@@ -13,10 +13,7 @@ public:
     explicit Object(std::string name);
     virtual ~Object();
 
-    Object(const Object&)            = delete;
-    Object& operator=(const Object&) = delete;
-    Object(Object&&)                 = delete;
-    Object& operator=(Object&&)      = delete;
+    NON_COPYABLE(Object);
 
     [[nodiscard]] const std::string& GetName() const
     {

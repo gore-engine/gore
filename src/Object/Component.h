@@ -10,10 +10,7 @@ class GameObject;
 ENGINE_CLASS(Component)
 {
 public:
-    Component(const Component&)            = delete;
-    Component& operator=(const Component&) = delete;
-    Component(Component&&)                 = delete;
-    Component& operator=(Component&&)      = delete;
+    NON_COPYABLE(Component);
 
     virtual void Start()  = 0;
     virtual void Update() = 0;

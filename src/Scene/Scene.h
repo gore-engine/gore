@@ -16,10 +16,7 @@ public:
     explicit Scene(std::string name);
     ~Scene();
 
-    Scene(const Scene&)            = delete;
-    Scene& operator=(const Scene&) = delete;
-    Scene(Scene&&)                 = delete;
-    Scene& operator=(Scene&&)      = delete;
+    NON_COPYABLE(Scene);
 
     [[nodiscard]] const std::string& GetName() const
     {
