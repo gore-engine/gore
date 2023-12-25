@@ -62,6 +62,17 @@ void Scene::DestroyObject(GameObject* gameObject)
     }
 }
 
+GameObject* Scene::FindObject(const std::string& name)
+{
+    for (auto& gameObject : m_GameObjects)
+    {
+        if (gameObject->GetName() == name)
+            return gameObject;
+    }
+
+    return nullptr;
+}
+
 void Scene::SetAsActive()
 {
     s_ActiveScene = this;

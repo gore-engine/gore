@@ -8,6 +8,9 @@
 #include "Core/Time.h"
 #include "Windowing/Window.h"
 #include "Scene/Scene.h"
+#include "Object/GameObject.h"
+
+#include "Scripts/TestComponent.h"
 
 SampleApp::SampleApp(int argc, char** argv) :
     App(argc, argv)
@@ -23,6 +26,9 @@ void SampleApp::Initialize()
     scene = new gore::Scene("MainScene");
 
     gore::GameObject* gameObject = scene->NewObject();
+    gameObject->SetName("TestObject");
+
+    TestComponent* testComponent = gameObject->AddComponent<TestComponent>();
 }
 
 void SampleApp::Update()

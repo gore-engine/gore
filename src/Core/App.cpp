@@ -9,6 +9,7 @@
 #include "Core/Time.h"
 #include "Rendering/RenderSystem.h"
 #include "Windowing/Window.h"
+#include "Scene/Scene.h"
 
 namespace gore
 {
@@ -56,6 +57,10 @@ int App::Run(int width, int height, const char* title)
         m_TimeSystem->Update();
 
         Update();
+
+        std::vector<Scene*> scenes = Scene::GetScenes();
+        for (Scene* scene : scenes)
+            scene->Update();
 
         m_RenderSystem->Update();
 

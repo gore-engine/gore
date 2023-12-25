@@ -25,11 +25,17 @@ public:
     {
         return m_Name;
     }
+    void SetName(std::string name)
+    {
+        m_Name = std::move(name);
+    }
 
     void Update();
 
     GameObject* NewObject(std::string name = "New GameObject");
     void DestroyObject(GameObject* gameObject);
+
+    GameObject* FindObject(const std::string& name);
 
     void SetAsActive();
     static Scene* GetActiveScene();

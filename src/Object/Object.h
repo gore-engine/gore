@@ -22,6 +22,10 @@ public:
     {
         return m_Name;
     }
+    void SetName(std::string name)
+    {
+        m_Name = std::move(name);
+    }
 
 private:
     std::string m_Name;
