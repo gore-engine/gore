@@ -32,6 +32,10 @@ if (${BUILD_SHARED_LIBS})
     list(APPEND COMMON_DEFINITIONS "ENGINE_DLL" "ENGINE_EXPORTS")
 endif ()
 
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    list(APPEND COMMON_DEFINITIONS "ENGINE_DEBUG")
+endif ()
+
 # Platform Specific Configurations
 
 if (${TARGET_PLATFORM} STREQUAL "Windows")
