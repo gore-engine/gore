@@ -82,6 +82,9 @@ void Logger::Log(LogLevel level, const char* file, int line, const char* format,
         va_list args1;
         va_start(args1, format);
 
+        va_list args2;
+        va_copy(args2, args1);
+
         int sz = std::vsnprintf(nullptr, 0, format, args1);
 
         if (sz <= 0)
@@ -90,10 +93,7 @@ void Logger::Log(LogLevel level, const char* file, int line, const char* format,
         {
             buf.resize(sz);
 
-            va_list args2;
-            va_copy(args2, args1);
             std::vsnprintf(&buf[0], sz + 1, format, args2);
-            va_end(args2);
         }
 
         va_end(args1);
