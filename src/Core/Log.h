@@ -80,8 +80,6 @@ private:
 
     LogLevel m_LogLevel;
     std::mutex m_Mutex;
-
-    static std::string GetPrefix(LogLevel level);
 };
 
 } // namespace gore

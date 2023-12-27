@@ -1,15 +1,19 @@
 #include "Prefix.h"
+#define _CRT_SECURE_NO_WARNINGS
 
 #include "Log.h"
 
 #include <cstdarg>
 #include <cstdio>
+#include <ctime>
 
 #include <iostream>
+#include <iomanip>
 #include <streambuf>
 #include <ostream>
 #include <string>
 #include <mutex>
+#include <chrono>
 
 namespace gore
 {
@@ -20,6 +24,25 @@ static LogLevel kDefaultLogLevel = LogLevel::DEBUG;
 #else
 static LogLevel kDefaultLogLevel = LogLevel::INFO;
 #endif
+
+std::string GetLogLevelStr(LogLevel level)
+{
+    switch (level)
+    {
+        case LogLevel::DEBUG:
+            return "  DEBUG";
+        case LogLevel::INFO:
+            return "   INFO";
+        case LogLevel::WARNING:
+            return "WARNING";
+        case LogLevel::ERROR:
+            return "  ERROR";
+        case LogLevel::FATAL:
+            return "  FATAL";
+        default:
+            return "UNKNOWN";
+    }
+}
 
 Logger::Logger() :
     m_LogLevel(kDefaultLogLevel),
@@ -48,6 +71,12 @@ void Logger::Log(LogLevel level, const char* format, ...)
 {
     if (level >= m_LogLevel)
     {
+        auto now       = std::chrono::system_clock::now();
+        auto nowTime   = std::chrono::system_clock::to_time_t(now);
+        auto nowTimeTm = std::localtime(&nowTime);
+        auto nowMs     = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+        auto nowMsTime = nowMs.time_since_epoch().count() % 1000;
+
         std::string buf;
 
         va_list args1;
@@ -55,7 +84,8 @@ void Logger::Log(LogLevel level, const char* format, ...)
 
         int sz = std::vsnprintf(nullptr, 0, format, args1);
 
-        if (sz <= 0) buf = format;
+        if (sz <= 0)
+            buf = format;
         else
         {
             buf.resize(sz);
@@ -70,26 +100,9 @@ void Logger::Log(LogLevel level, const char* format, ...)
 
 
         std::lock_guard<std::mutex> lock(m_Mutex);
-        *m_OutputStream << GetPrefix(level) << buf << std::flush;
-    }
-}
-
-std::string Logger::GetPrefix(LogLevel level)
-{
-    switch (level)
-    {
-        case LogLevel::DEBUG:
-            return "  DEBUG: ";
-        case LogLevel::INFO:
-            return "   INFO: ";
-        case LogLevel::WARNING:
-            return "WARNING: ";
-        case LogLevel::ERROR:
-            return "  ERROR: ";
-        case LogLevel::FATAL:
-            return "  FATAL: ";
-        default:
-            return "UNKNOWN: ";
+        *m_OutputStream << std::put_time(nowTimeTm, "%Y-%m-%d %H:%M:%S")
+                        << "." << std::setfill('0') << std::setw(3) << nowMsTime
+                        << " " << GetLogLevelStr(level) << ": " << buf << std::flush;
     }
 }
 
