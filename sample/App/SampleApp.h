@@ -12,7 +12,6 @@ public:
 protected:
     void Initialize() final;
     void Update() final;
-    void Render() final;
     void Shutdown() final;
 
 private:

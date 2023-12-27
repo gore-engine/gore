@@ -40,10 +40,6 @@ void SampleApp::Update()
     UpdateFPSText(deltaTime);
 }
 
-void SampleApp::Render()
-{
-}
-
 void SampleApp::Shutdown()
 {
     delete scene;

@@ -63,8 +63,6 @@ int App::Run(int width, int height, const char* title)
             scene->Update();
 
         m_RenderSystem->Update();
-
-        Render();
     }
 
     m_TimeSystem->Shutdown();
