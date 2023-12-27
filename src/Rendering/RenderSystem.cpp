@@ -15,9 +15,7 @@ static RenderSystem* g_RenderSystem = nullptr;
 
 RenderSystem::RenderSystem(gore::App* app) :
     System(app),
-    m_Instance(VK_NULL_HANDLE),
-    m_PhysicalDevice(VK_NULL_HANDLE),
-    m_Device(VK_NULL_HANDLE)
+    m_VulkanInstance()
 {
     g_RenderSystem = this;
 }
@@ -29,7 +27,7 @@ RenderSystem::~RenderSystem()
 
 void RenderSystem::Initialize()
 {
-    bool result = InitializeVulkanInstance(&m_Instance);
+    bool result = m_VulkanInstance.Initialize();
 
 
 }
@@ -42,7 +40,7 @@ void RenderSystem::Shutdown()
 {
 
 
-    bool result = ShutdownVulkanInstance(m_Instance);
+    bool result = m_VulkanInstance.Shutdown();
 }
 
 void RenderSystem::OnResize(Window* window, int width, int height)

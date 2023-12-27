@@ -2,6 +2,8 @@
 
 #include "Prefix.h"
 
+#include "Core/Log.h"
+
 #define VK_NO_PROTOTYPES
 #define VK_ENABLE_BETA_EXTENSIONS
 
@@ -18,3 +20,25 @@
 #endif
 
 #include <volk.h>
+
+#if !ENGINE_DEBUG
+
+    #define VK_CHECK_RESULT(x) \
+        do {                   \
+        } while (0)
+
+#else
+namespace gore
+{
+const char* VkResultToString(VkResult result);
+}
+
+    #define VK_CHECK_RESULT(x)                                                             \
+        do {                                                                               \
+            if (x < 0)                                                                     \
+            {                                                                              \
+                LOG(ERROR, "Vulkan error %s (%d)\n", ::gore::VkResultToString(x), (int)x); \
+            }                                                                              \
+        } while (0)
+
+#endif
