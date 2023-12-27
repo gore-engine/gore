@@ -10,10 +10,10 @@
 // usage: LOG_STREAM(LEVEL) << "Hello" << std::endl << "World!" << std::endl;
 //    or: LOG(LEVEL, "Hello %s\n", "World!");
 
-#define LOG_STREAM(LEVEL) (::gore::Logger::Default().Start(::gore::LogLevel::LEVEL))
+#define LOG_STREAM(LEVEL) (::gore::Logger::Default().StartStream(::gore::LogLevel::LEVEL, __FILE__, __LINE__))
 #define LOG(LEVEL, ...)                                                      \
     do {                                                                     \
-        ::gore::Logger::Default().Log(::gore::LogLevel::LEVEL, __VA_ARGS__); \
+        ::gore::Logger::Default().Log(::gore::LogLevel::LEVEL, __FILE__, __LINE__, __VA_ARGS__); \
     } while (false)
 
 // windows.h, sigh...
@@ -38,7 +38,7 @@ class Logger;
 ENGINE_CLASS(LogStream) final : public std::ostream
 {
 public:
-    LogStream(LogLevel level, Logger * logger);
+    LogStream(LogLevel level, const char* file, int line, Logger* logger);
     ~LogStream() override;
 
     NON_COPYABLE(LogStream);
@@ -47,6 +47,9 @@ private:
     friend class LogBuffer;
     Logger* m_Logger;
     LogLevel m_LogLevel;
+
+    const char* m_File;
+    int m_Line;
 
     [[nodiscard]] bool ShouldLog() const;
 };
@@ -61,9 +64,9 @@ public:
 
     static Logger& Default();
 
-    LogStream Start(LogLevel level);
+    LogStream StartStream(LogLevel level, const char* file, int line);
 
-    void Log(LogLevel level, const char* format, ...);
+    void Log(LogLevel level, const char* file, int line, const char* format, ...);
 
     [[nodiscard]] LogLevel GetLevel() const
     {

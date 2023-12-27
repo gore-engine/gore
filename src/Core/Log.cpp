@@ -62,12 +62,12 @@ Logger& Logger::Default()
     return s_DefaultLogger;
 }
 
-LogStream Logger::Start(LogLevel level)
+LogStream Logger::StartStream(LogLevel level, const char* file, int line)
 {
-    return LogStream(level, this);
+    return LogStream(level, file, line, this);
 }
 
-void Logger::Log(LogLevel level, const char* format, ...)
+void Logger::Log(LogLevel level, const char* file, int line, const char* format, ...)
 {
     if (level >= m_LogLevel)
     {
@@ -102,7 +102,8 @@ void Logger::Log(LogLevel level, const char* format, ...)
         std::lock_guard<std::mutex> lock(m_Mutex);
         *m_OutputStream << std::put_time(nowTimeTm, "%Y-%m-%d %H:%M:%S")
                         << "." << std::setfill('0') << std::setw(3) << nowMsTime
-                        << " " << GetLogLevelStr(level) << ": " << buf << std::flush;
+                        << " " << GetLogLevelStr(level) << ": " << buf
+                        << "    " << file << ":" << line << std::endl;
     }
 }
 
@@ -139,7 +140,7 @@ protected:
             return 0;
 
         m_BufferStream.flush();
-        m_Stream->m_Logger->Log(m_Stream->m_LogLevel, m_BufferStream.str().c_str());
+        m_Stream->m_Logger->Log(m_Stream->m_LogLevel, m_Stream->m_File, m_Stream->m_Line, m_BufferStream.str().c_str());
         m_BufferStream.str("");
         m_BufferStream.clear();
         return 0;
@@ -151,10 +152,12 @@ private:
     std::stringstream m_BufferStream; // Internal buffer to store log messages
 };
 
-LogStream::LogStream(LogLevel level, Logger* logger) :
+LogStream::LogStream(LogLevel level, const char* file, int line, Logger* logger) :
     std::ostream(new LogBuffer(this)),
     m_Logger(logger),
-    m_LogLevel(level)
+    m_LogLevel(level),
+    m_File(file),
+    m_Line(line)
 {
 }
 

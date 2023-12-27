@@ -20,5 +20,5 @@ void TestComponent::Start()
 
 void TestComponent::Update()
 {
-    LOG_STREAM(DEBUG) << "Update TestComponent in GameObject " << GetGameObject()->GetName() << std::endl;
+    // LOG_STREAM(DEBUG) << "Update TestComponent in GameObject " << GetGameObject()->GetName() << std::endl;
 }
