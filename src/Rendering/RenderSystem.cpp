@@ -1,7 +1,7 @@
 #include "Prefix.h"
 
-#include "Core/Log.h"
 #include "RenderSystem.h"
+#include "Core/Log.h"
 
 #include <iostream>
 #include <vector>
