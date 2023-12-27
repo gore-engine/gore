@@ -46,7 +46,7 @@ if (${TARGET_PLATFORM} STREQUAL "Windows")
 elseif (${TARGET_PLATFORM} STREQUAL "Linux")
     find_package(X11 REQUIRED)
 
-    set(PLATFORM_SOURCE_FOLDERS "Platform/Linux")
+    set(PLATFORM_SOURCE_FOLDERS "Platform/Linux" "Platform/CommonUnix")
     set(PLATFORM_INCLUDE_DIRECTORIES ${X11_INCLUDE_DIR})
     set(PLATFORM_LIBRARIES ${X11_LIBRARIES})
     set(PLATFORM_DEFINITIONS)
@@ -61,7 +61,7 @@ elseif (${TARGET_PLATFORM} STREQUAL "Darwin")
 
     set(CMAKE_MACOSX_BUNDLE TRUE)
 
-    set(PLATFORM_SOURCE_FOLDERS "Platform/macOS")
+    set(PLATFORM_SOURCE_FOLDERS "Platform/macOS" "Platform/CommonUnix")
     set(PLATFORM_INCLUDE_DIRECTORIES)
     set(PLATFORM_LIBRARIES ${COCOA} ${METAL} ${METALKIT} ${APPKIT} ${QUARTZCORE} ${FOUNDATION} ${IOKIT})
     set(PLATFORM_DEFINITIONS)
@@ -74,6 +74,9 @@ foreach (folder ${COMMON_SOURCE_FOLDERS})
     file(GLOB_RECURSE SOURCES "${folder}/*.cpp" "${folder}/*.h")
     list(APPEND COMMON_SOURCES ${SOURCES})
 endforeach ()
+
+file(GLOB COMMON_PLATFORM_SOURCES "Platform/*.cpp" "Platform/*.h")
+list(APPEND COMMON_SOURCES ${COMMON_PLATFORM_SOURCES})
 
 set(PLATFORM_SOURCES)
 foreach (folder ${PLATFORM_SOURCE_FOLDERS})
@@ -99,6 +102,10 @@ list(APPEND COMMON_LIBRARIES Vulkan::Headers)
 # vulkan memory allocator
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 list(APPEND COMMON_LIBRARIES GPUOpen::VulkanMemoryAllocator)
+
+# volk
+find_package(volk CONFIG REQUIRED)
+list(APPEND COMMON_LIBRARIES volk::volk volk::volk_headers)
 
 # imgui
 find_package(imgui CONFIG REQUIRED)

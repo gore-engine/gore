@@ -10,6 +10,7 @@
     "imgui",
     "stb",
     "vulkan",
-    "vulkan-memory-allocator"
+    "vulkan-memory-allocator",
+    "volk"
   ]
 }
