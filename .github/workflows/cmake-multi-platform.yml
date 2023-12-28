@@ -38,8 +38,8 @@ jobs:
             c_compiler: gcc
             cpp_compiler: g++
           - os: ubuntu-latest
-            c_compiler: clang
-            cpp_compiler: clang++
+            c_compiler: clang-17
+            cpp_compiler: clang-17
           - os: macos-latest
             c_compiler: clang
             cpp_compiler: clang++
@@ -73,7 +73,7 @@ jobs:
         quiet: true
     
     - name: Install Clang-17 for C++20 support
-      if: matrix.os == 'ubuntu-latest' && matrix.cpp_compiler == 'clang++'
+      if: matrix.os == 'ubuntu-latest' && matrix.c_compiler == 'clang'
       run: |
         wget https://apt.llvm.org/llvm.sh
         chmod +x ./llvm.sh
