@@ -30,7 +30,7 @@ RenderSystem::~RenderSystem()
 
 void RenderSystem::Initialize()
 {
-    m_VulkanInstance = new VulkanInstance();
+    m_VulkanInstance = new VulkanInstance(m_App);
     bool result      = m_VulkanInstance->Initialize();
 
     std::vector<VulkanPhysicalDevice> physicalDevices = m_VulkanInstance->GetPhysicalDevices();

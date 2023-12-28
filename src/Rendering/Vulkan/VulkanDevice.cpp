@@ -2,8 +2,13 @@
 
 #include "VulkanDevice.h"
 
+#include "Core/App.h"
 #include "Core/Log.h"
 #include "Rendering/RenderUtils.h"
+#include "Windowing/Window.h"
+#if PLATFORM_LINUX
+    #include "Platform/Linux/X11Window.h"
+#endif
 
 #include <utility>
 #include <iomanip>
@@ -15,6 +20,51 @@ static std::string DeviceTypeToString(VkPhysicalDeviceType deviceType);
 static std::string QueueFlagsToString(VkQueueFlags queueFlags);
 static std::string GetHumanReadableDeviceSize(VkDeviceSize size);
 static std::string MemoryPropertyTypeToString(VkMemoryPropertyFlags memoryPropertyFlags);
+
+VulkanPhysicalDevice::VulkanPhysicalDevice(VulkanInstance* instance, int index, VkPhysicalDevice vkPhysicalDevice) :
+    instance(instance),
+    index(index),
+    physicalDevice(vkPhysicalDevice),
+    properties(),
+    features(),
+    memoryProperties(),
+    queueFamilyProperties(),
+    queueFamilySupportsPresent(),
+    extensionProperties()
+{
+    // Device properties
+    vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+    // Device features
+    vkGetPhysicalDeviceFeatures(physicalDevice, &features);
+    // Memory properties
+    vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice, &memoryProperties);
+
+    // Queue family properties
+    uint32_t queueFamilyPropertyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyPropertyCount, VK_NULL_HANDLE);
+
+    queueFamilyProperties.resize(queueFamilyPropertyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice,
+                                             &queueFamilyPropertyCount,
+                                             queueFamilyProperties.data());
+
+    // Queue presentable
+    queueFamilySupportsPresent.resize(queueFamilyPropertyCount);
+    for (uint32_t i = 0; i < queueFamilyPropertyCount; ++i)
+    {
+        queueFamilySupportsPresent[i] = QueueFamilyIsPresentable(i, instance->GetApp()->GetWindow()->GetNativeHandle());
+    }
+
+    // Device extension properties
+    uint32_t extensionPropertyCount = 0;
+    vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, VK_NULL_HANDLE, &extensionPropertyCount, VK_NULL_HANDLE);
+
+    extensionProperties.resize(extensionPropertyCount);
+    vkEnumerateDeviceExtensionProperties(vkPhysicalDevice,
+                                         VK_NULL_HANDLE,
+                                         &extensionPropertyCount,
+                                         extensionProperties.data());
+}
 
 void VulkanPhysicalDevice::LogInfo() const
 {
@@ -28,7 +78,7 @@ void VulkanPhysicalDevice::LogInfo() const
     }
     logStream << "    Device ID: 0x" << std::hex << std::setw(4) << std::setfill('0') << properties.deviceID << std::endl;
     logStream << "    Device Type: " << DeviceTypeToString(properties.deviceType) << std::endl;
-    logStream << "    Device driver API Version: "
+    logStream << "    Device driver API Version: " << std::resetiosflags(std::ios_base::basefield)
               << VK_API_VERSION_MAJOR(properties.apiVersion) << "."
               << VK_API_VERSION_MINOR(properties.apiVersion) << "."
               << VK_API_VERSION_PATCH(properties.apiVersion) << std::endl;
@@ -40,6 +90,7 @@ void VulkanPhysicalDevice::LogInfo() const
         const VkQueueFamilyProperties& queueFamilyProperty = queueFamilyProperties[i];
         logStream << "        #" << i << ": Queue Count: " << queueFamilyProperty.queueCount << std::endl;
         logStream << "            Queue Flags: " << QueueFlagsToString(queueFamilyProperty.queueFlags) << std::endl;
+        logStream << "            Presentable: " << (queueFamilySupportsPresent[i] ? "Yes" : "No") << std::endl;
         logStream << "            Timestamp Valid Bits: " << queueFamilyProperty.timestampValidBits << std::endl;
         logStream << "            Min Image Transfer Granularity: ("
                   << queueFamilyProperty.minImageTransferGranularity.width << ", "
@@ -96,11 +147,39 @@ int VulkanPhysicalDevice::Score() const
     return score;
 }
 
+bool VulkanPhysicalDevice::QueueFamilyIsPresentable(uint32_t queueFamilyIndex, void* nativeWindowHandle) const
+{
+#ifdef VK_KHR_win32_surface
+    if (instance->HasExtension(VulkanInstanceExtension::kVK_KHR_win32_surface))
+    {
+        VkBool32 presentSupport = vkGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex);
+        return presentSupport == VK_TRUE;
+    }
+#endif
+
+#ifdef VK_KHR_xlib_surface
+    if (instance->HasExtension(VulkanInstanceExtension::kVK_KHR_xlib_surface))
+    {
+        auto* x11Window = static_cast<X11Window*>(nativeWindowHandle);
+        VkBool32 presentSupport = vkGetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, x11Window->display, x11Window->visualID);
+        return presentSupport == VK_TRUE;
+    }
+#endif
+
+#ifdef VK_EXT_metal_surface
+    return instance->HasExtension(VulkanInstanceExtension::kVK_EXT_metal_surface);
+#endif
+
+    return false;
+}
+
 VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice physicalDevice) :
+    API(),
     m_Instance(instance),
     m_Device(VK_NULL_HANDLE),
     m_PhysicalDevice(std::move(physicalDevice)),
-    m_EnabledExtensions()
+    m_EnabledExtensions(),
+    m_Queues()
 {
     // Create device
     VkDeviceCreateInfo deviceCreateInfo = {};
@@ -110,6 +189,7 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice physic
 
     // Queue create info
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    queueCreateInfos.reserve(m_PhysicalDevice.queueFamilyProperties.size());
     for (uint32_t i = 0; i < m_PhysicalDevice.queueFamilyProperties.size(); ++i)
     {
         VkDeviceQueueCreateInfo queueCreateInfo = {};
@@ -118,7 +198,7 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice physic
         queueCreateInfo.flags                   = 0;
         queueCreateInfo.queueFamilyIndex        = i;
         queueCreateInfo.queueCount              = m_PhysicalDevice.queueFamilyProperties[i].queueCount;
-        queueCreateInfo.pQueuePriorities        = nullptr;
+        queueCreateInfo.pQueuePriorities        = nullptr; // TODO: we might want to set this for things like distinguishing between upload/download queues, high/low priority compute jobs, etc.
 
         queueCreateInfos.push_back(queueCreateInfo);
     }
@@ -148,17 +228,25 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice physic
     LOG_STREAM(INFO) << "Created Vulkan device with \"" << m_PhysicalDevice.properties.deviceName << "\"" << std::endl;
 
     // Load device functions
-    volkLoadDeviceTable(&m_API, m_Device);
+    volkLoadDeviceTable(&API, m_Device);
 
     // Get queues
-    // TODO
+    m_Queues.resize(m_PhysicalDevice.queueFamilyProperties.size());
+    for (uint32_t i = 0; i < m_PhysicalDevice.queueFamilyProperties.size(); ++i)
+    {
+        m_Queues[i].resize(m_PhysicalDevice.queueFamilyProperties[i].queueCount);
+        for (uint32_t j = 0; j < m_PhysicalDevice.queueFamilyProperties[i].queueCount; ++j)
+        {
+            API.vkGetDeviceQueue(m_Device, i, j, &m_Queues[i][j]);
+        }
+    }
 }
 
 VulkanDevice::~VulkanDevice()
 {
     if (m_Device != VK_NULL_HANDLE)
     {
-        m_API.vkDestroyDevice(m_Device, nullptr);
+        API.vkDestroyDevice(m_Device, nullptr);
         m_Device = VK_NULL_HANDLE;
         LOG_STREAM(INFO) << "Destroyed Vulkan device" << std::endl;
     }

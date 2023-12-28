@@ -8,7 +8,8 @@ namespace gore
 struct X11Window
 {
     Display* display;
-    Window window;
+    ::Window window;
+    VisualID visualID;
 };
 
 } // namespace gore

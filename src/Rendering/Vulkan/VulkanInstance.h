@@ -6,23 +6,27 @@
 namespace gore
 {
 
+class App;
 struct VulkanPhysicalDevice;
 
 class VulkanInstance
 {
 public:
-    VulkanInstance();
+    VulkanInstance(App* app);
     ~VulkanInstance();
 
     bool Initialize();
     bool Shutdown();
 
     [[nodiscard]] VkInstance GetInstance() const { return m_Instance; }
+    [[nodiscard]] App* GetApp() const { return m_App; }
     [[nodiscard]] bool HasExtension(VulkanInstanceExtension extension) const;
 
     std::vector<VulkanPhysicalDevice> GetPhysicalDevices();
 
 private:
+    App* m_App;
+
     VkInstance m_Instance;
     VulkanInstanceExtensionBitset m_EnabledExtensions;
 

@@ -105,7 +105,7 @@ list(APPEND COMMON_LIBRARIES GPUOpen::VulkanMemoryAllocator)
 
 # volk
 find_package(volk CONFIG REQUIRED)
-list(APPEND COMMON_LIBRARIES volk::volk volk::volk_headers)
+list(APPEND COMMON_LIBRARIES volk::volk_headers)
 
 # imgui
 find_package(imgui CONFIG REQUIRED)
