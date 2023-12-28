@@ -29,7 +29,12 @@ jobs:
           macos-latest
         ]
         build_type: [Debug, Release]
-        c_compiler: [gcc, clang, cl]
+        c_compiler: [
+          gcc, 
+          clang, 
+          clang-17, // This is a workaround on Ubuntu on GitHub Actions to get C++20 support with Clang
+          cl
+        ]
         include:
           - os: windows-latest
             c_compiler: cl
@@ -39,7 +44,7 @@ jobs:
             cpp_compiler: g++
           - os: ubuntu-latest
             c_compiler: clang-17
-            cpp_compiler: clang-17
+            cpp_compiler: clang++-17
           - os: macos-latest
             c_compiler: clang
             cpp_compiler: clang++
@@ -48,6 +53,8 @@ jobs:
             c_compiler: gcc
           - os: windows-latest
             c_compiler: clang
+          - os: windows-latest
+            c_compiler: clang-17
           - os: ubuntu-latest
             c_compiler: cl
           - os: ubuntu-latest
@@ -56,6 +63,8 @@ jobs:
             c_compiler: gcc
           - os: macos-latest
             c_compiler: cl
+          - os: macos-latest
+            c_compiler: clang-17
 
     steps:
     - uses: actions/checkout@v3
@@ -75,7 +84,7 @@ jobs:
         quiet: true
     
     - name: Install Clang-17 for C++20 support
-      if: matrix.os == 'ubuntu-latest' && matrix.cpp_compiler == 'clang-17'
+      if: matrix.os == 'ubuntu-latest' && matrix.c_compiler == 'clang-17'
       run: |
         wget https://apt.llvm.org/llvm.sh
         chmod +x ./llvm.sh
