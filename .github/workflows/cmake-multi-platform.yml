@@ -32,7 +32,7 @@ jobs:
         c_compiler: [
           gcc, 
           clang, 
-          clang-17, // This is a workaround on Ubuntu on GitHub Actions to get C++20 support with Clang
+          clang-17, # This is a workaround on Ubuntu on GitHub Actions to get C++20 support with Clang
           cl
         ]
         include:
