@@ -2,6 +2,7 @@
 
 #include "VulkanInstance.h"
 #include "VulkanExtensions.h"
+#include "VulkanDevice.h"
 
 #include "Core/Log.h"
 #include "Platform/LoadLibrary.h"
@@ -59,9 +60,9 @@ bool VulkanInstance::Initialize()
         .sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pNext              = VK_NULL_HANDLE,
         .pApplicationName   = "GORE",
-        .applicationVersion = 1, // TODO
+        .applicationVersion = 1,
         .pEngineName        = "GORE",
-        .engineVersion      = 1, // TODO
+        .engineVersion      = 1,
         .apiVersion         = volkGetInstanceVersion(),
     };
 
@@ -132,7 +133,7 @@ bool VulkanInstance::Shutdown()
     if (m_Instance)
     {
         vkDestroyInstance(m_Instance, VK_NULL_HANDLE);
-        LOG(INFO, "Destroyed Vulkan instance.\n");
+        LOG(INFO, "Destroyed Vulkan instance\n");
     }
 
     return true;
@@ -191,14 +192,90 @@ bool VulkanInstance::GetEnabledInstanceLayers(bool enableValidation,
 
     if (!enabledLayers.empty())
     {
-        LOG(INFO, "Enabled instance layers:\n");
+        LOG(DEBUG, "Enabled instance layers:\n");
         for (const auto& layer : enabledLayers)
         {
-            LOG(INFO, "  %s\n", layer);
+            LOG(DEBUG, "  %s\n", layer);
         }
     }
 
     return validation;
+}
+
+std::vector<VulkanPhysicalDevice> VulkanInstance::GetPhysicalDevices()
+{
+    std::vector<VulkanPhysicalDevice> physicalDevices;
+
+    uint32_t count = 0;
+    VkResult res   = vkEnumeratePhysicalDevices(m_Instance, &count, VK_NULL_HANDLE);
+
+    VK_CHECK_RESULT(res);
+    if (res != VK_SUCCESS)
+    {
+        LOG(ERROR, "Failed to enumerate physical devices.\n");
+        return physicalDevices;
+    }
+
+    if (count == 0)
+    {
+        LOG(ERROR, "No physical devices found.\n");
+        return physicalDevices;
+    }
+
+    std::vector<VkPhysicalDevice> vkPhysicalDevices(count);
+    res = vkEnumeratePhysicalDevices(m_Instance, &count, vkPhysicalDevices.data());
+
+    VK_CHECK_RESULT(res);
+    if (res != VK_SUCCESS)
+    {
+        LOG(ERROR, "Failed to enumerate physical devices.\n");
+        return physicalDevices;
+    }
+
+    physicalDevices.reserve(count);
+
+    for (int i = 0; i < count; ++i)
+    {
+        const auto& vkPhysicalDevice = vkPhysicalDevices[i];
+
+        VulkanPhysicalDevice physicalDevice;
+
+        physicalDevice.index          = i;
+        physicalDevice.physicalDevice = vkPhysicalDevice;
+
+        // Device properties
+        vkGetPhysicalDeviceProperties(vkPhysicalDevice, &physicalDevice.properties);
+        // Device features
+        vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &physicalDevice.features);
+        // Memory properties
+        vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice, &physicalDevice.memoryProperties);
+
+        // Queue family properties
+        uint32_t queueFamilyPropertyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyPropertyCount, VK_NULL_HANDLE);
+
+        physicalDevice.queueFamilyProperties.resize(queueFamilyPropertyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice,
+                                                 &queueFamilyPropertyCount,
+                                                 physicalDevice.queueFamilyProperties.data());
+
+        // Device extension properties
+        uint32_t extensionPropertyCount = 0;
+        vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, VK_NULL_HANDLE, &extensionPropertyCount, VK_NULL_HANDLE);
+
+        physicalDevice.extensionProperties.resize(extensionPropertyCount);
+        vkEnumerateDeviceExtensionProperties(vkPhysicalDevice,
+                                             VK_NULL_HANDLE,
+                                             &extensionPropertyCount,
+                                             physicalDevice.extensionProperties.data());
+
+
+        physicalDevices.push_back(physicalDevice);
+
+        physicalDevice.LogInfo();
+    }
+
+    return physicalDevices;
 }
 
 const char* VkResultToString(VkResult result)

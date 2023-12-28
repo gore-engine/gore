@@ -73,10 +73,10 @@ static std::vector<const char*> BuildEnabledExtensions(const std::vector<VkExten
         }
     }
 
-    LOG(INFO, "extensions: count=%d\n", static_cast<int>(extensionProperties.size()));
+    LOG(DEBUG, "extensions: count=%d\n", static_cast<int>(extensionProperties.size()));
     for (const auto& ext : supportedExtensions)
     {
-        LOG(INFO, "extensions:   [ %s ] %s\n", ext.second == -1 ? " " : "O", ext.first.data());
+        LOG(DEBUG, "extensions:   [ %s ] %s\n", ext.second == -1 ? " " : "O", ext.first.data());
     }
 
     requestedKnownExtensions = enabledKnownExtensions;

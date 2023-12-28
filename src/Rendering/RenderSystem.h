@@ -3,6 +3,7 @@
 #include "Core/System.h"
 
 #include "Rendering/Vulkan/VulkanInstance.h"
+#include "Rendering/Vulkan/VulkanDevice.h"
 
 namespace gore
 {
@@ -24,7 +25,8 @@ public:
     void OnResize(Window* window, int width, int height);
 
 private:
-    VulkanInstance m_VulkanInstance;
+    VulkanInstance* m_VulkanInstance;
+    VulkanDevice* m_VulkanDevice;
 };
 
 } // namespace gore

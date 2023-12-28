@@ -6,6 +6,8 @@
 namespace gore
 {
 
+struct VulkanPhysicalDevice;
+
 class VulkanInstance
 {
 public:
@@ -18,12 +20,14 @@ public:
     [[nodiscard]] VkInstance GetInstance() const { return m_Instance; }
     [[nodiscard]] bool HasExtension(VulkanInstanceExtension extension) const;
 
+    std::vector<VulkanPhysicalDevice> GetPhysicalDevices();
+
 private:
     VkInstance m_Instance;
     VulkanInstanceExtensionBitset m_EnabledExtensions;
 
     // Instance Layers
-    std::vector<VkLayerProperties> GetAvailableInstanceLayers();
+    static std::vector<VkLayerProperties> GetAvailableInstanceLayers();
     // Returns: if validation layer is enabled
     bool GetEnabledInstanceLayers(bool enableValidation,
                                   const std::vector<VkLayerProperties>& availableLayers,
