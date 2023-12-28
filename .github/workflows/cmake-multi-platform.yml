@@ -72,6 +72,13 @@ jobs:
         cache: true
         quiet: true
     
+    - name: Install Clang-17 for C++20 support
+      if: matrix.os == 'ubuntu-latest' && matrix.cpp_compiler == 'clang++'
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x ./llvm.sh
+        sudo ./llvm.sh 17
+
     - name: Install Package Dependencies on Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
