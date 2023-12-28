@@ -160,7 +160,7 @@ bool VulkanPhysicalDevice::QueueFamilyIsPresentable(uint32_t queueFamilyIndex, v
 #ifdef VK_KHR_xlib_surface
     if (instance->HasExtension(VulkanInstanceExtension::kVK_KHR_xlib_surface))
     {
-        auto* x11Window = static_cast<X11Window*>(nativeWindowHandle);
+        auto* x11Window         = static_cast<X11Window*>(nativeWindowHandle);
         VkBool32 presentSupport = vkGetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, x11Window->display, x11Window->visualID);
         return presentSupport == VK_TRUE;
     }
@@ -179,7 +179,8 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice physic
     m_Device(VK_NULL_HANDLE),
     m_PhysicalDevice(std::move(physicalDevice)),
     m_EnabledExtensions(),
-    m_Queues()
+    m_Queues(),
+    m_QueueRoundRobinIndex()
 {
     // Create device
     VkDeviceCreateInfo deviceCreateInfo = {};
@@ -198,7 +199,9 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice physic
         queueCreateInfo.flags                   = 0;
         queueCreateInfo.queueFamilyIndex        = i;
         queueCreateInfo.queueCount              = m_PhysicalDevice.queueFamilyProperties[i].queueCount;
-        queueCreateInfo.pQueuePriorities        = nullptr; // TODO: we might want to set this for things like distinguishing between upload/download queues, high/low priority compute jobs, etc.
+        // TODO: we might want to set this for things like distinguishing between upload/download queues, high/low priority compute jobs, etc.
+        // TODO: as we are currently using round-robin queue selection, we set this to nullptr
+        queueCreateInfo.pQueuePriorities = nullptr;
 
         queueCreateInfos.push_back(queueCreateInfo);
     }
@@ -232,6 +235,7 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice physic
 
     // Get queues
     m_Queues.resize(m_PhysicalDevice.queueFamilyProperties.size());
+    m_QueueRoundRobinIndex.resize(m_PhysicalDevice.queueFamilyProperties.size());
     for (uint32_t i = 0; i < m_PhysicalDevice.queueFamilyProperties.size(); ++i)
     {
         m_Queues[i].resize(m_PhysicalDevice.queueFamilyProperties[i].queueCount);
@@ -239,6 +243,7 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice physic
         {
             API.vkGetDeviceQueue(m_Device, i, j, &m_Queues[i][j]);
         }
+        m_QueueRoundRobinIndex[i] = 0;
     }
 }
 
@@ -255,6 +260,79 @@ VulkanDevice::~VulkanDevice()
 bool VulkanDevice::HasExtension(VulkanDeviceExtension extension) const
 {
     return m_EnabledExtensions.test(static_cast<size_t>(extension));
+}
+
+VulkanQueue VulkanDevice::GetQueue(VulkanQueueType type)
+{
+    int queueFamilyIndex = FindQueueFamilyIndex(type);
+    if (queueFamilyIndex == -1)
+    {
+        LOG(ERROR, "Failed to find queue family index for queue type %d\n", static_cast<int>(type));
+        return VulkanQueue(this, -1, -1, VK_NULL_HANDLE, 0, false);
+    }
+
+    int queueIndex = m_QueueRoundRobinIndex[queueFamilyIndex];
+    m_QueueRoundRobinIndex[queueFamilyIndex] = (m_QueueRoundRobinIndex[queueFamilyIndex] + 1) % static_cast<int>(m_Queues[queueFamilyIndex].size());
+
+    return VulkanQueue(this,
+                       queueFamilyIndex,
+                       queueIndex,
+                       m_Queues[queueFamilyIndex][queueIndex],
+                       m_PhysicalDevice.queueFamilyProperties[queueFamilyIndex].queueFlags,
+                       m_PhysicalDevice.queueFamilySupportsPresent[queueFamilyIndex]);
+}
+
+int VulkanDevice::FindQueueFamilyIndex(VulkanQueueType type)
+{
+    std::vector<bool> suitableFamilyIndices(m_PhysicalDevice.queueFamilyProperties.size(), false);
+
+    for (int i = 0; i < m_PhysicalDevice.queueFamilyProperties.size(); ++i)
+    {
+        suitableFamilyIndices[i] = VulkanQueue::IsCapableOf(m_PhysicalDevice.queueFamilyProperties[i].queueFlags,
+                                                            m_PhysicalDevice.queueFamilySupportsPresent[i],
+                                                            type);
+    }
+
+    if (type == VulkanQueueType::Graphics)
+    {
+        // use the queue family with most bits
+        int maxBitCount = 0;
+        int maxBitIndex = -1;
+        for (int i = 0; i < suitableFamilyIndices.size(); ++i)
+        {
+            if (suitableFamilyIndices[i])
+            {
+                int bitCount = VulkanQueue::QueueFlagBitCount(m_PhysicalDevice.queueFamilyProperties[i].queueFlags,
+                                                              m_PhysicalDevice.queueFamilySupportsPresent[i]);
+                if (bitCount > maxBitCount)
+                {
+                    maxBitCount = bitCount;
+                    maxBitIndex = i;
+                }
+            }
+        }
+
+        return maxBitIndex;
+    }
+
+    // use the queue family with the least bits
+    int minBitCount = 32;
+    int minBitIndex = -1;
+    for (int i = 0; i < suitableFamilyIndices.size(); ++i)
+    {
+        if (suitableFamilyIndices[i])
+        {
+            int bitCount = VulkanQueue::QueueFlagBitCount(m_PhysicalDevice.queueFamilyProperties[i].queueFlags,
+                                                          m_PhysicalDevice.queueFamilySupportsPresent[i]);
+            if (bitCount < minBitCount)
+            {
+                minBitCount = bitCount;
+                minBitIndex = i;
+            }
+        }
+    }
+
+    return minBitIndex;
 }
 
 std::string DeviceTypeToString(VkPhysicalDeviceType deviceType)

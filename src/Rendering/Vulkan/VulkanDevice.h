@@ -3,6 +3,7 @@
 #include "VulkanIncludes.h"
 #include "VulkanInstance.h"
 #include "VulkanExtensions.h"
+#include "VulkanQueue.h"
 
 #include <vector>
 #include <string>
@@ -43,6 +44,10 @@ public:
     [[nodiscard]] const VulkanPhysicalDevice& GetPhysicalDeviceProperties() const { return m_PhysicalDevice; }
     [[nodiscard]] bool HasExtension(VulkanDeviceExtension extension) const;
 
+    // The result queue may or may not be the same one as the previous call since we are using round-robin.
+    // So you need to make sure you properly synchronize both queue access operations and commands submitted to them.
+    VulkanQueue GetQueue(VulkanQueueType type);
+
     VolkDeviceTable API;
 
 private:
@@ -53,6 +58,9 @@ private:
     VulkanDeviceExtensionBitset m_EnabledExtensions;
 
     std::vector<std::vector<VkQueue>> m_Queues;
+    std::vector<int> m_QueueRoundRobinIndex; // TODO: lock this?
+
+    int FindQueueFamilyIndex(VulkanQueueType type);
 };
 
 } // namespace gore
