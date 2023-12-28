@@ -9,6 +9,7 @@
 #include "Windowing/Window.h"
 #include "Scene/Scene.h"
 #include "Object/GameObject.h"
+#include "Core/Log.h"
 
 #include "Scripts/TestComponent.h"
 
@@ -23,6 +24,8 @@ SampleApp::~SampleApp()
 
 void SampleApp::Initialize()
 {
+    // gore::Logger::Default().SetLevel(gore::LogLevel::DEBUG);
+
     scene = new gore::Scene("MainScene");
 
     gore::GameObject* gameObject = scene->NewObject();

@@ -1,25 +1,24 @@
 #include "TestComponent.h"
 #include "Object/GameObject.h"
-
-#include <iostream>
+#include "Core/Log.h"
 
 TestComponent::TestComponent(gore::GameObject* gameObject) :
     Component(gameObject)
 {
-    std::cout << "Created TestComponent in GameObject " << gameObject->GetName() << std::endl;
+    LOG_STREAM(DEBUG) << "Created TestComponent in GameObject " << gameObject->GetName() << std::endl;
 }
 
 TestComponent::~TestComponent()
 {
-    std::cout << "Destroyed TestComponent in GameObject " << GetGameObject()->GetName() << std::endl;
+    LOG_STREAM(DEBUG) << "Destroyed TestComponent in GameObject " << GetGameObject()->GetName() << std::endl;
 }
 
 void TestComponent::Start()
 {
-    std::cout << "Start TestComponent in GameObject " << GetGameObject()->GetName() << std::endl;
+    LOG_STREAM(DEBUG) << "Start TestComponent in GameObject " << GetGameObject()->GetName() << std::endl;
 }
 
 void TestComponent::Update()
 {
-    std::cout << "Update TestComponent in GameObject " << GetGameObject()->GetName() << std::endl;
+    // LOG_STREAM(DEBUG) << "Update TestComponent in GameObject " << GetGameObject()->GetName() << std::endl;
 }

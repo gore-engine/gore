@@ -1,6 +1,7 @@
 #include "Prefix.h"
 
 #include "RenderSystem.h"
+#include "Core/Log.h"
 
 #include <iostream>
 #include <vector>
@@ -59,10 +60,10 @@ void RenderSystem::Initialize()
     s_VulkanLibraryHandle = LoadDynamicLibrary(kVulkanLibraryName);
     if (!s_VulkanLibraryHandle)
     {
-        std::cerr << "Failed to load Vulkan Library" << std::endl;
+        LOG(FATAL, "Failed to load Vulkan Library\n");
         return;
     }
-    std::cout << "Loaded Vulkan Library <" << kVulkanLibraryName << ">" << std::endl;
+    LOG(INFO, "Loaded Vulkan Library <%s>\n", kVulkanLibraryName);
 
 
 }
@@ -73,6 +74,7 @@ void RenderSystem::Update()
 
 void RenderSystem::Shutdown()
 {
+
 
     if (s_VulkanLibraryHandle)
     {
