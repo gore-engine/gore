@@ -67,7 +67,7 @@ endif ()
 
 set(COMMON_SOURCES "Prefix.h" "Export.h")
 foreach (folder ${COMMON_SOURCE_FOLDERS})
-    file(GLOB_RECURSE SOURCES "${folder}/*.cpp" "${folder}/*.h")
+    file(GLOB_RECURSE SOURCES "${folder}/*.cpp" "${folder}/*.inl" "${folder}/*.h")
     list(APPEND COMMON_SOURCES ${SOURCES})
 endforeach ()
 
