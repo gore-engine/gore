@@ -65,23 +65,18 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-    - name: Install Vulkan on Windows
-      if: matrix.os == 'windows-latest'
-      run: |
-        choco install -y vulkan-sdk
-        choco install -y vulkan-runtime
-        choco install -y vulkan-validationlayers
-        choco install -y vulkan-tools
-        choco install -y vulkan-headers
-        choco install -y vulkan-loader
-        choco install -y vulkan-icd
+    - name: Install Vulkan SDK
+      uses: humbletim/install-vulkan-sdk@v1.1.1
+      with:
+        version: latest
+        cache: true
+        quiet: true
     
     - name: Install Package Dependencies on Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y curl zip unzip tar
-        sudo apt-get install -y vulkan-sdk
         # sudo apt-get install -y libglfw3-dev # This seems to be unnecessary
         sudo apt-get install -y libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config
     
@@ -91,7 +86,6 @@ jobs:
         brew update
         brew install -y pkg-config
         brew install -y glfw3
-        brew install -y vulkan-sdk
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
