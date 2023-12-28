@@ -7,7 +7,6 @@
     "cgltf",
     "glfw3",
     "directxmath",
-    "directxtk12",
     "imgui",
     "stb",
     "vulkan",

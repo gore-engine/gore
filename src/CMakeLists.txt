@@ -85,15 +85,9 @@ list(APPEND COMMON_LIBRARIES glfw)
 list(APPEND COMMON_DEFINITIONS "GLFW_INCLUDE_NONE")
 
 # DirectXMath
-# Actually this will be included by DirectXTK12, but is specified for clarity
+# We are using a modified version of SimpleMath.h from DirectXTK12 for convenience
 find_package(DirectXMath CONFIG REQUIRED)
 list(APPEND COMMON_LIBRARIES Microsoft::DirectXMath)
-
-# DirectXTK12 (I want to use SimpleMath.h)
-# SimpleMath.h assumes right-handed coordinates by default, but we can use Left-Handed by passing false to `bool rhcoords` which by default is true.
-# Or we can use `-LH` functions directly in DirectXMath.h
-find_package(directxtk12 CONFIG REQUIRED)
-list(APPEND COMMON_LIBRARIES Microsoft::DirectXTK12)
 
 # vulkan
 find_package(Vulkan REQUIRED)
