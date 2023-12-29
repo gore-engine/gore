@@ -26,6 +26,8 @@ struct VulkanPhysicalDevice
 public:
     VulkanPhysicalDevice(VulkanInstance* instance, int index, VkPhysicalDevice vkPhysicalDevice);
 
+    [[nodiscard]] VkPhysicalDevice Get() const { return physicalDevice; }
+
     void LogInfo() const;
     [[nodiscard]] int Score() const;
 
@@ -40,8 +42,8 @@ public:
     VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice physicalDevice);
     ~VulkanDevice();
 
-    [[nodiscard]] VkDevice GetDevice() const { return m_Device; }
-    [[nodiscard]] VkPhysicalDevice GetPhysicalDevice() const { return m_PhysicalDevice.physicalDevice; }
+    [[nodiscard]] VkDevice Get() const { return m_Device; }
+    [[nodiscard]] VulkanInstance* GetInstance() const { return m_Instance; }
     [[nodiscard]] const VulkanPhysicalDevice& GetPhysicalDeviceProperties() const { return m_PhysicalDevice; }
     [[nodiscard]] bool HasExtension(VulkanDeviceExtension extension) const;
 

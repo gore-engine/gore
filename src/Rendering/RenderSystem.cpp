@@ -3,6 +3,8 @@
 #include "RenderSystem.h"
 
 #include "Core/Log.h"
+#include "Core/App.h"
+#include "Windowing/Window.h"
 #include "Rendering/Vulkan/VulkanInstance.h"
 #include "Rendering/Vulkan/VulkanDevice.h"
 
@@ -18,7 +20,8 @@ static RenderSystem* g_RenderSystem = nullptr;
 RenderSystem::RenderSystem(gore::App* app) :
     System(app),
     m_VulkanInstance(nullptr),
-    m_VulkanDevice(nullptr)
+    m_VulkanDevice(nullptr),
+    m_VulkanSurface(nullptr)
 {
     g_RenderSystem = this;
 }
@@ -38,6 +41,8 @@ void RenderSystem::Initialize()
               { return a.Score() > b.Score(); });
 
     m_VulkanDevice = new VulkanDevice(m_VulkanInstance, physicalDevices[0]);
+
+    m_VulkanSurface = new VulkanSurface(m_VulkanDevice, m_App->GetWindow()->GetNativeHandle());
 }
 
 void RenderSystem::Update()
@@ -46,6 +51,8 @@ void RenderSystem::Update()
 
 void RenderSystem::Shutdown()
 {
+    delete m_VulkanSurface;
+
     delete m_VulkanDevice;
 
     bool result = m_VulkanInstance->Shutdown();

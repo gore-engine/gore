@@ -18,7 +18,7 @@ public:
     bool Initialize();
     bool Shutdown();
 
-    [[nodiscard]] VkInstance GetInstance() const { return m_Instance; }
+    [[nodiscard]] VkInstance Get() const { return m_Instance; }
     [[nodiscard]] App* GetApp() const { return m_App; }
     [[nodiscard]] bool HasExtension(VulkanInstanceExtension extension) const;
 

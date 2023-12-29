@@ -13,8 +13,8 @@ namespace gore
 void Window::CreateNativeHandle()
 {
     auto* w        = new Win32Window();
-    w->m_hWnd      = glfwGetWin32Window(m_Window);
-    w->m_hInstance = GetModuleHandle(NULL);
+    w->hWnd      = glfwGetWin32Window(m_Window);
+    w->hInstance = GetModuleHandle(NULL);
     m_NativeHandle = w;
 }
 
