@@ -44,7 +44,7 @@ namespace DirectX
     {
         struct Vector2;
         struct Vector4;
-        struct Matrix;
+        struct Matrix4x4;
         struct Quaternion;
         struct Plane;
 
@@ -209,16 +209,16 @@ namespace DirectX
             static void Transform(const Vector2& v, const Quaternion& quat, Vector2& result) noexcept;
             static Vector2 Transform(const Vector2& v, const Quaternion& quat) noexcept;
 
-            static void Transform(const Vector2& v, const Matrix& m, Vector2& result) noexcept;
-            static Vector2 Transform(const Vector2& v, const Matrix& m) noexcept;
-            static void Transform(_In_reads_(count) const Vector2* varray, size_t count, const Matrix& m, _Out_writes_(count) Vector2* resultArray) noexcept;
+            static void Transform(const Vector2& v, const Matrix4x4& m, Vector2& result) noexcept;
+            static Vector2 Transform(const Vector2& v, const Matrix4x4& m) noexcept;
+            static void Transform(_In_reads_(count) const Vector2* varray, size_t count, const Matrix4x4& m, _Out_writes_(count) Vector2* resultArray) noexcept;
 
-            static void Transform(const Vector2& v, const Matrix& m, Vector4& result) noexcept;
-            static void Transform(_In_reads_(count) const Vector2* varray, size_t count, const Matrix& m, _Out_writes_(count) Vector4* resultArray) noexcept;
+            static void Transform(const Vector2& v, const Matrix4x4& m, Vector4& result) noexcept;
+            static void Transform(_In_reads_(count) const Vector2* varray, size_t count, const Matrix4x4& m, _Out_writes_(count) Vector4* resultArray) noexcept;
 
-            static void TransformNormal(const Vector2& v, const Matrix& m, Vector2& result) noexcept;
-            static Vector2 TransformNormal(const Vector2& v, const Matrix& m) noexcept;
-            static void TransformNormal(_In_reads_(count) const Vector2* varray, size_t count, const Matrix& m, _Out_writes_(count) Vector2* resultArray) noexcept;
+            static void TransformNormal(const Vector2& v, const Matrix4x4& m, Vector2& result) noexcept;
+            static Vector2 TransformNormal(const Vector2& v, const Matrix4x4& m) noexcept;
+            static void TransformNormal(_In_reads_(count) const Vector2* varray, size_t count, const Matrix4x4& m, _Out_writes_(count) Vector2* resultArray) noexcept;
 
             // Constants
             static const Vector2 Zero;
@@ -322,16 +322,16 @@ namespace DirectX
             static void Transform(const Vector3& v, const Quaternion& quat, Vector3& result) noexcept;
             static Vector3 Transform(const Vector3& v, const Quaternion& quat) noexcept;
 
-            static void Transform(const Vector3& v, const Matrix& m, Vector3& result) noexcept;
-            static Vector3 Transform(const Vector3& v, const Matrix& m) noexcept;
-            static void Transform(_In_reads_(count) const Vector3* varray, size_t count, const Matrix& m, _Out_writes_(count) Vector3* resultArray) noexcept;
+            static void Transform(const Vector3& v, const Matrix4x4& m, Vector3& result) noexcept;
+            static Vector3 Transform(const Vector3& v, const Matrix4x4& m) noexcept;
+            static void Transform(_In_reads_(count) const Vector3* varray, size_t count, const Matrix4x4& m, _Out_writes_(count) Vector3* resultArray) noexcept;
 
-            static void Transform(const Vector3& v, const Matrix& m, Vector4& result) noexcept;
-            static void Transform(_In_reads_(count) const Vector3* varray, size_t count, const Matrix& m, _Out_writes_(count) Vector4* resultArray) noexcept;
+            static void Transform(const Vector3& v, const Matrix4x4& m, Vector4& result) noexcept;
+            static void Transform(_In_reads_(count) const Vector3* varray, size_t count, const Matrix4x4& m, _Out_writes_(count) Vector4* resultArray) noexcept;
 
-            static void TransformNormal(const Vector3& v, const Matrix& m, Vector3& result) noexcept;
-            static Vector3 TransformNormal(const Vector3& v, const Matrix& m) noexcept;
-            static void TransformNormal(_In_reads_(count) const Vector3* varray, size_t count, const Matrix& m, _Out_writes_(count) Vector3* resultArray) noexcept;
+            static void TransformNormal(const Vector3& v, const Matrix4x4& m, Vector3& result) noexcept;
+            static Vector3 TransformNormal(const Vector3& v, const Matrix4x4& m) noexcept;
+            static void TransformNormal(_In_reads_(count) const Vector3* varray, size_t count, const Matrix4x4& m, _Out_writes_(count) Vector3* resultArray) noexcept;
 
             // Constants
             static const Vector3 Zero;
@@ -448,9 +448,9 @@ namespace DirectX
             static void Transform(const Vector4& v, const Quaternion& quat, Vector4& result) noexcept;
             static Vector4 Transform(const Vector4& v, const Quaternion& quat) noexcept;
 
-            static void Transform(const Vector4& v, const Matrix& m, Vector4& result) noexcept;
-            static Vector4 Transform(const Vector4& v, const Matrix& m) noexcept;
-            static void Transform(_In_reads_(count) const Vector4* varray, size_t count, const Matrix& m, _Out_writes_(count) Vector4* resultArray) noexcept;
+            static void Transform(const Vector4& v, const Matrix4x4& m, Vector4& result) noexcept;
+            static Vector4 Transform(const Vector4& v, const Matrix4x4& m) noexcept;
+            static void Transform(_In_reads_(count) const Vector4* varray, size_t count, const Matrix4x4& m, _Out_writes_(count) Vector4* resultArray) noexcept;
 
             // Constants
             static const Vector4 Zero;
@@ -472,16 +472,16 @@ namespace DirectX
 
         //------------------------------------------------------------------------------
         // 4x4 Matrix (assumes right-handed cooordinates)
-        struct Matrix : public XMFLOAT4X4
+        struct Matrix4x4 : public XMFLOAT4X4
         {
-            Matrix() noexcept
+            Matrix4x4() noexcept
                 : XMFLOAT4X4(1.f, 0, 0, 0,
                     0, 1.f, 0, 0,
                     0, 0, 1.f, 0,
                     0, 0, 0, 1.f)
             {
             }
-            constexpr Matrix(float m00, float m01, float m02, float m03,
+            constexpr Matrix4x4(float m00, float m01, float m02, float m03,
                 float m10, float m11, float m12, float m13,
                 float m20, float m21, float m22, float m23,
                 float m30, float m31, float m32, float m33) noexcept
@@ -491,54 +491,54 @@ namespace DirectX
                     m30, m31, m32, m33)
             {
             }
-            explicit Matrix(const Vector3& r0, const Vector3& r1, const Vector3& r2) noexcept
+            explicit Matrix4x4(const Vector3& r0, const Vector3& r1, const Vector3& r2) noexcept
                 : XMFLOAT4X4(r0.x, r0.y, r0.z, 0,
                     r1.x, r1.y, r1.z, 0,
                     r2.x, r2.y, r2.z, 0,
                     0, 0, 0, 1.f)
             {
             }
-            explicit Matrix(const Vector4& r0, const Vector4& r1, const Vector4& r2, const Vector4& r3) noexcept
+            explicit Matrix4x4(const Vector4& r0, const Vector4& r1, const Vector4& r2, const Vector4& r3) noexcept
                 : XMFLOAT4X4(r0.x, r0.y, r0.z, r0.w,
                     r1.x, r1.y, r1.z, r1.w,
                     r2.x, r2.y, r2.z, r2.w,
                     r3.x, r3.y, r3.z, r3.w)
             {
             }
-            Matrix(const XMFLOAT4X4& M) noexcept { memcpy(this, &M, sizeof(XMFLOAT4X4)); }
-            Matrix(const XMFLOAT3X3& M) noexcept;
-            Matrix(const XMFLOAT4X3& M) noexcept;
+            Matrix4x4(const XMFLOAT4X4& M) noexcept { memcpy(this, &M, sizeof(XMFLOAT4X4)); }
+            Matrix4x4(const XMFLOAT3X3& M) noexcept;
+            Matrix4x4(const XMFLOAT4X3& M) noexcept;
 
-            explicit Matrix(_In_reads_(16) const float *pArray) noexcept : XMFLOAT4X4(pArray) {}
-            Matrix(CXMMATRIX M) noexcept { XMStoreFloat4x4(this, M); }
+            explicit Matrix4x4(_In_reads_(16) const float *pArray) noexcept : XMFLOAT4X4(pArray) {}
+            Matrix4x4(CXMMATRIX M) noexcept { XMStoreFloat4x4(this, M); }
 
-            Matrix(const Matrix&) = default;
-            Matrix& operator=(const Matrix&) = default;
+            Matrix4x4(const Matrix4x4&) = default;
+            Matrix4x4& operator=(const Matrix4x4&) = default;
 
-            Matrix(Matrix&&) = default;
-            Matrix& operator=(Matrix&&) = default;
+            Matrix4x4(Matrix4x4&&) = default;
+            Matrix4x4& operator=(Matrix4x4&&) = default;
 
             operator XMMATRIX() const noexcept { return XMLoadFloat4x4(this); }
 
             // Comparison operators
-            bool operator == (const Matrix& M) const noexcept;
-            bool operator != (const Matrix& M) const noexcept;
+            bool operator == (const Matrix4x4& M) const noexcept;
+            bool operator != (const Matrix4x4& M) const noexcept;
 
             // Assignment operators
-            Matrix& operator= (const XMFLOAT3X3& M) noexcept;
-            Matrix& operator= (const XMFLOAT4X3& M) noexcept;
-            Matrix& operator+= (const Matrix& M) noexcept;
-            Matrix& operator-= (const Matrix& M) noexcept;
-            Matrix& operator*= (const Matrix& M) noexcept;
-            Matrix& operator*= (float S) noexcept;
-            Matrix& operator/= (float S) noexcept;
+            Matrix4x4& operator= (const XMFLOAT3X3& M) noexcept;
+            Matrix4x4& operator= (const XMFLOAT4X3& M) noexcept;
+            Matrix4x4& operator+= (const Matrix4x4& M) noexcept;
+            Matrix4x4& operator-= (const Matrix4x4& M) noexcept;
+            Matrix4x4& operator*= (const Matrix4x4& M) noexcept;
+            Matrix4x4& operator*= (float S) noexcept;
+            Matrix4x4& operator/= (float S) noexcept;
 
-            Matrix& operator/= (const Matrix& M) noexcept;
+            Matrix4x4& operator/= (const Matrix4x4& M) noexcept;
                 // Element-wise divide
 
             // Unary operators
-            Matrix operator+ () const noexcept { return *this; }
-            Matrix operator- () const noexcept;
+            Matrix4x4 operator+ () const noexcept { return *this; }
+            Matrix4x4 operator- () const noexcept;
 
             // Properties
             Vector3 Up() const noexcept { return Vector3(_21, _22, _23); }
@@ -565,11 +565,11 @@ namespace DirectX
             // Matrix operations
             bool Decompose(Vector3& scale, Quaternion& rotation, Vector3& translation) noexcept;
 
-            Matrix Transpose() const noexcept;
-            void Transpose(Matrix& result) const noexcept;
+            Matrix4x4 Transpose() const noexcept;
+            void Transpose(Matrix4x4& result) const noexcept;
 
-            Matrix Invert() const noexcept;
-            void Invert(Matrix& result) const noexcept;
+            Matrix4x4 Invert() const noexcept;
+            void Invert(Matrix4x4& result) const noexcept;
 
             float Determinant() const noexcept;
 
@@ -577,66 +577,66 @@ namespace DirectX
             Vector3 ToEuler() const noexcept;
 
             // Static functions
-            static Matrix CreateBillboard(
+            static Matrix4x4 CreateBillboard(
                 const Vector3& object, const Vector3& cameraPosition, const Vector3& cameraUp, _In_opt_ const Vector3* cameraForward = nullptr) noexcept;
 
-            static Matrix CreateConstrainedBillboard(
+            static Matrix4x4 CreateConstrainedBillboard(
                 const Vector3& object, const Vector3& cameraPosition, const Vector3& rotateAxis,
                 _In_opt_ const Vector3* cameraForward = nullptr, _In_opt_ const Vector3* objectForward = nullptr) noexcept;
 
-            static Matrix CreateTranslation(const Vector3& position) noexcept;
-            static Matrix CreateTranslation(float x, float y, float z) noexcept;
+            static Matrix4x4 CreateTranslation(const Vector3& position) noexcept;
+            static Matrix4x4 CreateTranslation(float x, float y, float z) noexcept;
 
-            static Matrix CreateScale(const Vector3& scales) noexcept;
-            static Matrix CreateScale(float xs, float ys, float zs) noexcept;
-            static Matrix CreateScale(float scale) noexcept;
+            static Matrix4x4 CreateScale(const Vector3& scales) noexcept;
+            static Matrix4x4 CreateScale(float xs, float ys, float zs) noexcept;
+            static Matrix4x4 CreateScale(float scale) noexcept;
 
-            static Matrix CreateRotationX(float radians) noexcept;
-            static Matrix CreateRotationY(float radians) noexcept;
-            static Matrix CreateRotationZ(float radians) noexcept;
+            static Matrix4x4 CreateRotationX(float radians) noexcept;
+            static Matrix4x4 CreateRotationY(float radians) noexcept;
+            static Matrix4x4 CreateRotationZ(float radians) noexcept;
 
-            static Matrix CreateFromAxisAngle(const Vector3& axis, float angle) noexcept;
+            static Matrix4x4 CreateFromAxisAngle(const Vector3& axis, float angle) noexcept;
 
-            static Matrix CreatePerspectiveFieldOfView(float fov, float aspectRatio, float nearPlane, float farPlane) noexcept;
-            static Matrix CreatePerspective(float width, float height, float nearPlane, float farPlane) noexcept;
-            static Matrix CreatePerspectiveOffCenter(float left, float right, float bottom, float top, float nearPlane, float farPlane) noexcept;
-            static Matrix CreateOrthographic(float width, float height, float zNearPlane, float zFarPlane) noexcept;
-            static Matrix CreateOrthographicOffCenter(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane) noexcept;
+            static Matrix4x4 CreatePerspectiveFieldOfView(float fov, float aspectRatio, float nearPlane, float farPlane) noexcept;
+            static Matrix4x4 CreatePerspective(float width, float height, float nearPlane, float farPlane) noexcept;
+            static Matrix4x4 CreatePerspectiveOffCenter(float left, float right, float bottom, float top, float nearPlane, float farPlane) noexcept;
+            static Matrix4x4 CreateOrthographic(float width, float height, float zNearPlane, float zFarPlane) noexcept;
+            static Matrix4x4 CreateOrthographicOffCenter(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane) noexcept;
 
-            static Matrix CreateLookAt(const Vector3& position, const Vector3& target, const Vector3& up) noexcept;
-            static Matrix CreateWorld(const Vector3& position, const Vector3& forward, const Vector3& up) noexcept;
+            static Matrix4x4 CreateLookAt(const Vector3& position, const Vector3& target, const Vector3& up) noexcept;
+            static Matrix4x4 CreateWorld(const Vector3& position, const Vector3& forward, const Vector3& up) noexcept;
 
-            static Matrix CreateFromQuaternion(const Quaternion& quat) noexcept;
+            static Matrix4x4 CreateFromQuaternion(const Quaternion& quat) noexcept;
 
             // Rotates about y-axis (yaw), then x-axis (pitch), then z-axis (roll)
-            static Matrix CreateFromYawPitchRoll(float yaw, float pitch, float roll) noexcept;
+            static Matrix4x4 CreateFromYawPitchRoll(float yaw, float pitch, float roll) noexcept;
 
             // Rotates about y-axis (angles.y), then x-axis (angles.x), then z-axis (angles.z)
-            static Matrix CreateFromYawPitchRoll(const Vector3& angles) noexcept;
+            static Matrix4x4 CreateFromYawPitchRoll(const Vector3& angles) noexcept;
 
-            static Matrix CreateShadow(const Vector3& lightDir, const Plane& plane) noexcept;
+            static Matrix4x4 CreateShadow(const Vector3& lightDir, const Plane& plane) noexcept;
 
-            static Matrix CreateReflection(const Plane& plane) noexcept;
+            static Matrix4x4 CreateReflection(const Plane& plane) noexcept;
 
-            static void Lerp(const Matrix& M1, const Matrix& M2, float t, Matrix& result) noexcept;
-            static Matrix Lerp(const Matrix& M1, const Matrix& M2, float t) noexcept;
+            static void Lerp(const Matrix4x4& M1, const Matrix4x4& M2, float t, Matrix4x4& result) noexcept;
+            static Matrix4x4 Lerp(const Matrix4x4& M1, const Matrix4x4& M2, float t) noexcept;
 
-            static void Transform(const Matrix& M, const Quaternion& rotation, Matrix& result) noexcept;
-            static Matrix Transform(const Matrix& M, const Quaternion& rotation) noexcept;
+            static void Transform(const Matrix4x4& M, const Quaternion& rotation, Matrix4x4& result) noexcept;
+            static Matrix4x4 Transform(const Matrix4x4& M, const Quaternion& rotation) noexcept;
 
             // Constants
-            static const Matrix Identity;
+            static const Matrix4x4 Identity;
         };
 
         // Binary operators
-        Matrix operator+ (const Matrix& M1, const Matrix& M2) noexcept;
-        Matrix operator- (const Matrix& M1, const Matrix& M2) noexcept;
-        Matrix operator* (const Matrix& M1, const Matrix& M2) noexcept;
-        Matrix operator* (const Matrix& M, float S) noexcept;
-        Matrix operator/ (const Matrix& M, float S) noexcept;
-        Matrix operator/ (const Matrix& M1, const Matrix& M2) noexcept;
+        Matrix4x4 operator+ (const Matrix4x4& M1, const Matrix4x4& M2) noexcept;
+        Matrix4x4 operator- (const Matrix4x4& M1, const Matrix4x4& M2) noexcept;
+        Matrix4x4 operator* (const Matrix4x4& M1, const Matrix4x4& M2) noexcept;
+        Matrix4x4 operator* (const Matrix4x4& M, float S) noexcept;
+        Matrix4x4 operator/ (const Matrix4x4& M, float S) noexcept;
+        Matrix4x4 operator/ (const Matrix4x4& M1, const Matrix4x4& M2) noexcept;
             // Element-wise divide
-        Matrix operator* (float S, const Matrix& M) noexcept;
+        Matrix4x4 operator* (float S, const Matrix4x4& M) noexcept;
 
 
         //-----------------------------------------------------------------------------
@@ -685,8 +685,8 @@ namespace DirectX
             float DotNormal(const Vector3& normal) const noexcept;
 
             // Static functions
-            static void Transform(const Plane& plane, const Matrix& M, Plane& result) noexcept;
-            static Plane Transform(const Plane& plane, const Matrix& M) noexcept;
+            static void Transform(const Plane& plane, const Matrix4x4& M, Plane& result) noexcept;
+            static Plane Transform(const Plane& plane, const Matrix4x4& M) noexcept;
 
             static void Transform(const Plane& plane, const Quaternion& rotation, Plane& result) noexcept;
             static Plane Transform(const Plane& plane, const Quaternion& rotation) noexcept;
@@ -759,7 +759,7 @@ namespace DirectX
             // Rotates about y-axis (angles.y), then x-axis (angles.x), then z-axis (angles.z)
             static Quaternion CreateFromYawPitchRoll(const Vector3& angles) noexcept;
 
-            static Quaternion CreateFromRotationMatrix(const Matrix& M) noexcept;
+            static Quaternion CreateFromRotationMatrix(const Matrix4x4& M) noexcept;
 
             static void Lerp(const Quaternion& q1, const Quaternion& q2, float t, Quaternion& result) noexcept;
             static Quaternion Lerp(const Quaternion& q1, const Quaternion& q2, float t) noexcept;
@@ -993,11 +993,11 @@ namespace DirectX
             // Viewport operations
             float AspectRatio() const noexcept;
 
-            Vector3 Project(const Vector3& p, const Matrix& proj, const Matrix& view, const Matrix& world) const noexcept;
-            void Project(const Vector3& p, const Matrix& proj, const Matrix& view, const Matrix& world, Vector3& result) const noexcept;
+            Vector3 Project(const Vector3& p, const Matrix4x4& proj, const Matrix4x4& view, const Matrix4x4& world) const noexcept;
+            void Project(const Vector3& p, const Matrix4x4& proj, const Matrix4x4& view, const Matrix4x4& world, Vector3& result) const noexcept;
 
-            Vector3 Unproject(const Vector3& p, const Matrix& proj, const Matrix& view, const Matrix& world) const noexcept;
-            void Unproject(const Vector3& p, const Matrix& proj, const Matrix& view, const Matrix& world, Vector3& result) const noexcept;
+            Vector3 Unproject(const Vector3& p, const Matrix4x4& proj, const Matrix4x4& view, const Matrix4x4& world) const noexcept;
+            void Unproject(const Vector3& p, const Matrix4x4& proj, const Matrix4x4& view, const Matrix4x4& world, Vector3& result) const noexcept;
 
             // Static methods
             static Rect DECLTYPE ComputeTitleSafeArea(unsigned int backBufferWidth, unsigned int backBufferHeight) noexcept;
@@ -1054,9 +1054,9 @@ namespace std
         }
     };
 
-    template<> struct less<DirectX::SimpleMath::Matrix>
+    template<> struct less<DirectX::SimpleMath::Matrix4x4>
     {
-        bool operator()(const DirectX::SimpleMath::Matrix& M1, const DirectX::SimpleMath::Matrix& M2) const noexcept
+        bool operator()(const DirectX::SimpleMath::Matrix4x4& M1, const DirectX::SimpleMath::Matrix4x4& M2) const noexcept
         {
             if (M1._11 != M2._11) return M1._11 < M2._11;
             if (M1._12 != M2._12) return M1._12 < M2._12;
