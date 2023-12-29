@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include "Prefix.h"
+
 #include <cassert>
 #include <cstddef>
 #include <cstring>
@@ -743,7 +745,7 @@ namespace DirectX
             float Dot(const Quaternion& Q) const noexcept;
 
             void RotateTowards(const Quaternion& target, float maxAngle) noexcept;
-            void __cdecl RotateTowards(const Quaternion& target, float maxAngle, Quaternion& result) const noexcept;
+            void DECLTYPE RotateTowards(const Quaternion& target, float maxAngle, Quaternion& result) const noexcept;
 
             // Computes rotation about y-axis (y), then x-axis (x), then z-axis (z)
             Vector3 ToEuler() const noexcept;
@@ -768,10 +770,10 @@ namespace DirectX
             static void Concatenate(const Quaternion& q1, const Quaternion& q2, Quaternion& result) noexcept;
             static Quaternion Concatenate(const Quaternion& q1, const Quaternion& q2) noexcept;
 
-            static void __cdecl FromToRotation(const Vector3& fromDir, const Vector3& toDir, Quaternion& result) noexcept;
+            static void DECLTYPE FromToRotation(const Vector3& fromDir, const Vector3& toDir, Quaternion& result) noexcept;
             static Quaternion FromToRotation(const Vector3& fromDir, const Vector3& toDir) noexcept;
 
-            static void __cdecl LookRotation(const Vector3& forward, const Vector3& up, Quaternion& result) noexcept;
+            static void DECLTYPE LookRotation(const Vector3& forward, const Vector3& up, Quaternion& result) noexcept;
             static Quaternion LookRotation(const Vector3& forward, const Vector3& up) noexcept;
 
             static float Angle(const Quaternion& q1, const Quaternion& q2) noexcept;
@@ -998,7 +1000,7 @@ namespace DirectX
             void Unproject(const Vector3& p, const Matrix& proj, const Matrix& view, const Matrix& world, Vector3& result) const noexcept;
 
             // Static methods
-            static Rect __cdecl ComputeTitleSafeArea(unsigned int backBufferWidth, unsigned int backBufferHeight) noexcept;
+            static Rect DECLTYPE ComputeTitleSafeArea(unsigned int backBufferWidth, unsigned int backBufferHeight) noexcept;
         };
 
     #include "SimpleMath.inl"
