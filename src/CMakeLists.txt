@@ -76,8 +76,7 @@ foreach (folder ${COMMON_SOURCE_FOLDERS})
     list(APPEND COMMON_SOURCES ${SOURCES})
 endforeach ()
 
-set(PLATFORM_SOURCES
-        Math/Math.h)
+set(PLATFORM_SOURCES)
 foreach (folder ${PLATFORM_SOURCE_FOLDERS})
     file(GLOB_RECURSE SOURCES "${folder}/*.cpp" "${folder}/*.mm" "${folder}/*.h")
     list(APPEND PLATFORM_SOURCES ${SOURCES})
