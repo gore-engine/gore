@@ -34,7 +34,6 @@ RenderSystem::~RenderSystem()
 void RenderSystem::Initialize()
 {
     m_VulkanInstance = new VulkanInstance(m_App);
-    bool result      = m_VulkanInstance->Initialize();
 
     std::vector<VulkanPhysicalDevice> physicalDevices = m_VulkanInstance->GetPhysicalDevices();
     std::sort(physicalDevices.begin(), physicalDevices.end(), [](const VulkanPhysicalDevice& a, const VulkanPhysicalDevice& b)
@@ -55,7 +54,6 @@ void RenderSystem::Shutdown()
 
     delete m_VulkanDevice;
 
-    bool result = m_VulkanInstance->Shutdown();
     delete m_VulkanInstance;
 }
 

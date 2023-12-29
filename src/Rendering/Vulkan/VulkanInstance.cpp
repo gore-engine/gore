@@ -16,20 +16,13 @@ VulkanInstance::VulkanInstance(App* app) :
     m_Instance(VK_NULL_HANDLE),
     m_EnabledExtensions()
 {
-}
-
-VulkanInstance::~VulkanInstance()
-{
-}
-
-bool VulkanInstance::Initialize()
-{
     VkResult res = volkInitialize();
 
+    VK_CHECK_RESULT(res);
     if (res != VK_SUCCESS)
     {
         LOG(FATAL, "Failed to load vulkan library\n");
-        return false;
+        return;
     }
 
     m_EnabledExtensions.reset();
@@ -115,7 +108,7 @@ bool VulkanInstance::Initialize()
     if (res != VK_SUCCESS)
     {
         LOG(FATAL, "Failed to create Vulkan instance.\n");
-        return false;
+        return;
     }
 
     LOG_STREAM(INFO) << "Created Vulkan instance version "
@@ -124,19 +117,15 @@ bool VulkanInstance::Initialize()
                      << VK_API_VERSION_PATCH(appInfo.apiVersion) << std::endl;
 
     volkLoadInstanceOnly(m_Instance);
-
-    return true;
 }
 
-bool VulkanInstance::Shutdown()
+VulkanInstance::~VulkanInstance()
 {
     if (m_Instance)
     {
         vkDestroyInstance(m_Instance, VK_NULL_HANDLE);
         LOG(INFO, "Destroyed Vulkan instance\n");
     }
-
-    return true;
 }
 
 bool VulkanInstance::HasExtension(VulkanInstanceExtension extension) const

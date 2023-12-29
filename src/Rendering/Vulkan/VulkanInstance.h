@@ -12,11 +12,8 @@ struct VulkanPhysicalDevice;
 class VulkanInstance
 {
 public:
-    VulkanInstance(App* app);
+    explicit VulkanInstance(App* app);
     ~VulkanInstance();
-
-    bool Initialize();
-    bool Shutdown();
 
     [[nodiscard]] VkInstance Get() const { return m_Instance; }
     [[nodiscard]] App* GetApp() const { return m_App; }
