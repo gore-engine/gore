@@ -1,7 +1,5 @@
 #include "Transform.h"
 
-#include <iostream>
-
 #include "GameObject.h"
 
 namespace gore
@@ -29,12 +27,12 @@ void Transform::SetLocalEulerAngles(const Vector3& eulerAngles)
 
 void Transform::Start()
 {
-    std::cout << "Created Transform in GameObject " << GetGameObject()->GetName() << std::endl;
+    LOG_STREAM(DEBUG) << "Created Transform in GameObject " << GetGameObject()->GetName() << std::endl;
 }
 
 void Transform::Update()
 {
-    std::cout << "Update Transform in GameObject " << GetGameObject()->GetName() << m_LocalPosition.x << std::endl;
+    LOG_STREAM(DEBUG) << "Update Transform in GameObject " << GetGameObject()->GetName() << m_LocalPosition.x << std::endl;
 }
 
 } // namespace gore
