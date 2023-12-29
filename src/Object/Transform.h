@@ -45,6 +45,8 @@ public:
     Vector3 GetLocalEulerAngles() const { return m_LocalRotation.ToEuler(); }
     void SetLocalEulerAngles(const Vector3& eulerAngles);
 
+    Matrix4x4 GetLocalToWorldMatrix() const { return Matrix4x4::CreateScale(m_LocalScale) * Matrix4x4::CreateFromQuaternion(m_LocalRotation) * Matrix4x4::CreateTranslation(m_LocalPosition); }
+
 private:
     Vector3 m_LocalPosition;
     Quaternion m_LocalRotation;
