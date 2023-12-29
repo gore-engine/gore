@@ -21,7 +21,8 @@ RenderSystem::RenderSystem(gore::App* app) :
     System(app),
     m_VulkanInstance(nullptr),
     m_VulkanDevice(nullptr),
-    m_VulkanSurface(nullptr)
+    m_VulkanSurface(nullptr),
+    m_VulkanSwapchain(nullptr)
 {
     g_RenderSystem = this;
 }
@@ -41,7 +42,8 @@ void RenderSystem::Initialize()
 
     m_VulkanDevice = new VulkanDevice(m_VulkanInstance, physicalDevices[0]);
 
-    m_VulkanSurface = new VulkanSurface(m_VulkanDevice, m_App->GetWindow()->GetNativeHandle());
+    m_VulkanSurface = new VulkanSurface(m_VulkanDevice, m_App->GetWindow());
+    m_VulkanSwapchain = new VulkanSwapchain(m_VulkanSurface, 3);
 }
 
 void RenderSystem::Update()
@@ -50,6 +52,7 @@ void RenderSystem::Update()
 
 void RenderSystem::Shutdown()
 {
+    delete m_VulkanSwapchain;
     delete m_VulkanSurface;
 
     delete m_VulkanDevice;

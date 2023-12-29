@@ -5,6 +5,7 @@
 #include "Rendering/Vulkan/VulkanInstance.h"
 #include "Rendering/Vulkan/VulkanDevice.h"
 #include "Rendering/Vulkan/VulkanSurface.h"
+#include "Rendering/Vulkan/VulkanSwapchain.h"
 
 namespace gore
 {
@@ -30,6 +31,7 @@ private:
     VulkanDevice* m_VulkanDevice;
 
     VulkanSurface* m_VulkanSurface;
+    VulkanSwapchain* m_VulkanSwapchain;
 };
 
 } // namespace gore

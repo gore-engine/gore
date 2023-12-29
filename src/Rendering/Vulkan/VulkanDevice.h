@@ -44,7 +44,7 @@ public:
 
     [[nodiscard]] VkDevice Get() const { return m_Device; }
     [[nodiscard]] VulkanInstance* GetInstance() const { return m_Instance; }
-    [[nodiscard]] const VulkanPhysicalDevice& GetPhysicalDeviceProperties() const { return m_PhysicalDevice; }
+    [[nodiscard]] const VulkanPhysicalDevice& GetPhysicalDevice() const { return m_PhysicalDevice; }
     [[nodiscard]] bool HasExtension(VulkanDeviceExtension extension) const;
 
     // The result queue may or may not be the same one as the previous call since we are using round-robin.

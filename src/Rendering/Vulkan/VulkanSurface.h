@@ -15,6 +15,8 @@ public:
     ~VulkanSurface();
 
     [[nodiscard]] VkSurfaceKHR Get() const { return m_Surface; }
+    [[nodiscard]] VulkanDevice* GetDevice() const { return m_Device; }
+    [[nodiscard]] Window* GetWindow() const { return m_Window; }
 
 private:
     Window* m_Window;
