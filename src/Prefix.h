@@ -42,6 +42,12 @@
     #error "Unknown architecture"
 #endif
 
+#if COMPILER_MSVC
+    #define DECLTYPE __cdecl
+#else
+    #define DECLTYPE
+#endif
+
 // common includes
 #include <cstdint>
 
