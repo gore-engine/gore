@@ -183,25 +183,32 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice physic
     m_QueueRoundRobinIndex()
 {
     // Create device
-    VkDeviceCreateInfo deviceCreateInfo = {};
-    deviceCreateInfo.sType              = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    deviceCreateInfo.pNext              = nullptr;
-    deviceCreateInfo.flags              = 0;
+    VkDeviceCreateInfo deviceCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+    };
 
     // Queue create info
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     queueCreateInfos.reserve(m_PhysicalDevice.queueFamilyProperties.size());
+    std::vector<std::vector<float>> queuePriorities;
+    queuePriorities.resize(m_PhysicalDevice.queueFamilyProperties.size());
     for (uint32_t i = 0; i < m_PhysicalDevice.queueFamilyProperties.size(); ++i)
     {
-        VkDeviceQueueCreateInfo queueCreateInfo = {};
-        queueCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueCreateInfo.pNext                   = nullptr;
-        queueCreateInfo.flags                   = 0;
-        queueCreateInfo.queueFamilyIndex        = i;
-        queueCreateInfo.queueCount              = m_PhysicalDevice.queueFamilyProperties[i].queueCount;
+        uint32_t queueCount = m_PhysicalDevice.queueFamilyProperties[i].queueCount;
         // TODO: we might want to set this for things like distinguishing between upload/download queues, high/low priority compute jobs, etc.
-        // TODO: as we are currently using round-robin queue selection, we set this to nullptr
-        queueCreateInfo.pQueuePriorities = nullptr;
+        // TODO: as we are currently using round-robin queue selection, we set this to all 1.0f (MoltenVK doesn't like nullptr)
+        queuePriorities[i].resize(queueCount, 1.0f);
+
+        VkDeviceQueueCreateInfo queueCreateInfo{
+            .sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+            .pNext            = nullptr,
+            .flags            = 0,
+            .queueFamilyIndex = i,
+            .queueCount       = queueCount,
+            .pQueuePriorities = queuePriorities[i].data(),
+        };
 
         queueCreateInfos.push_back(queueCreateInfo);
     }
@@ -210,8 +217,7 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice physic
     deviceCreateInfo.pQueueCreateInfos    = queueCreateInfos.data();
 
     // Device features
-    VkPhysicalDeviceFeatures deviceFeatures = {};
-    deviceCreateInfo.pEnabledFeatures       = &deviceFeatures;
+    deviceCreateInfo.pEnabledFeatures = &m_PhysicalDevice.features;
 
     // Device extensions
     std::vector<const char*> enabledDeviceExtensions = GetEnabledDeviceExtensions(m_EnabledExtensions,
@@ -271,7 +277,7 @@ VulkanQueue VulkanDevice::GetQueue(VulkanQueueType type)
         return VulkanQueue(this, -1, -1, VK_NULL_HANDLE, 0, false);
     }
 
-    int queueIndex = m_QueueRoundRobinIndex[queueFamilyIndex];
+    int queueIndex                           = m_QueueRoundRobinIndex[queueFamilyIndex];
     m_QueueRoundRobinIndex[queueFamilyIndex] = (m_QueueRoundRobinIndex[queueFamilyIndex] + 1) % static_cast<int>(m_Queues[queueFamilyIndex].size());
 
     return VulkanQueue(this,
