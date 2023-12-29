@@ -55,7 +55,7 @@ void SampleApp::UpdateFPSText(float deltaTime)
     if (timer >= 0.5f)
     {
         std::stringstream ss;
-        ss << "SampleApp FPS: " << std::fixed << std::setprecision(2) << (float)frameCount / timer << std::endl;
+        ss << "SampleApp FPS: " << std::fixed << std::setprecision(2) << (float)frameCount / timer << std::flush;
         GetWindow()->SetTitle(ss.str());
         timer      = 0.0f;
         frameCount = 0;
