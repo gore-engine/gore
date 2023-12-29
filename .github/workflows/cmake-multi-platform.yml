@@ -23,9 +23,18 @@ jobs:
       #
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        build_type: [Release]
-        c_compiler: [gcc, clang, cl]
+        os: [
+          ubuntu-latest, 
+          windows-latest,
+          macos-latest
+        ]
+        build_type: [Debug, Release]
+        c_compiler: [
+          gcc, 
+          clang, 
+          clang-17, # This is a workaround on Ubuntu on GitHub Actions to get C++20 support with Clang
+          cl
+        ]
         include:
           - os: windows-latest
             c_compiler: cl
@@ -34,6 +43,9 @@ jobs:
             c_compiler: gcc
             cpp_compiler: g++
           - os: ubuntu-latest
+            c_compiler: clang-17
+            cpp_compiler: clang++-17
+          - os: macos-latest
             c_compiler: clang
             cpp_compiler: clang++
         exclude:
@@ -41,8 +53,18 @@ jobs:
             c_compiler: gcc
           - os: windows-latest
             c_compiler: clang
+          - os: windows-latest
+            c_compiler: clang-17
           - os: ubuntu-latest
             c_compiler: cl
+          - os: ubuntu-latest
+            c_compiler: clang
+          - os: macos-latest
+            c_compiler: gcc
+          - os: macos-latest
+            c_compiler: cl
+          - os: macos-latest
+            c_compiler: clang-17
 
     steps:
     - uses: actions/checkout@v3
@@ -53,6 +75,35 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+    - name: Install Vulkan SDK
+      uses: humbletim/install-vulkan-sdk@v1.1.1
+      with:
+        version: latest
+        cache: true
+        quiet: true
+    
+    - name: Install Clang-17 for C++20 support
+      if: matrix.os == 'ubuntu-latest' && matrix.c_compiler == 'clang-17'
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x ./llvm.sh
+        sudo ./llvm.sh 17
+
+    - name: Install Package Dependencies on Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y curl zip unzip tar
+        # sudo apt-get install -y libglfw3-dev # This seems to be unnecessary
+        sudo apt-get install -y libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config
+    
+    - name: Install Package Dependencies on macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew update
+        brew install pkg-config
+        brew install glfw3
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
