@@ -5,6 +5,7 @@
 
 #include <utility>
 #include <iostream>
+#include <algorithm>
 
 namespace gore
 {
