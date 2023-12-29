@@ -44,6 +44,8 @@ private:
     uint32_t m_QueueIndex;
     VkQueueFlags m_Flags;
     bool m_Presentable;
+
+    [[nodiscard]] std::mutex& GetMutex() const;
 };
 
 } // namespace gore

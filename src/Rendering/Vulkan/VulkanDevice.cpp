@@ -180,7 +180,8 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice physic
     m_PhysicalDevice(std::move(physicalDevice)),
     m_EnabledExtensions(),
     m_Queues(),
-    m_QueueRoundRobinIndex()
+    m_QueueRoundRobinIndex(),
+    m_QueueMutexes()
 {
     // Create device
     VkDeviceCreateInfo deviceCreateInfo{
@@ -240,16 +241,22 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice physic
     volkLoadDeviceTable(&API, m_Device);
 
     // Get queues
-    m_Queues.resize(m_PhysicalDevice.queueFamilyProperties.size());
-    m_QueueRoundRobinIndex.resize(m_PhysicalDevice.queueFamilyProperties.size());
-    for (uint32_t i = 0; i < m_PhysicalDevice.queueFamilyProperties.size(); ++i)
+    size_t queueFamilyCount = m_PhysicalDevice.queueFamilyProperties.size();
+    m_Queues.resize(queueFamilyCount);
+    m_QueueRoundRobinIndex.resize(queueFamilyCount);
+    m_QueueMutexes.resize(queueFamilyCount);
+    for (size_t i = 0; i < queueFamilyCount; ++i)
     {
-        m_Queues[i].resize(m_PhysicalDevice.queueFamilyProperties[i].queueCount);
-        for (uint32_t j = 0; j < m_PhysicalDevice.queueFamilyProperties[i].queueCount; ++j)
+        uint32_t queueCount = m_PhysicalDevice.queueFamilyProperties[i].queueCount;
+        m_Queues[i].resize(queueCount);
+        m_QueueRoundRobinIndex[i] = 0;
+        m_QueueMutexes[i].resize(queueCount);
+
+        for (uint32_t j = 0; j < queueCount; ++j)
         {
             API.vkGetDeviceQueue(m_Device, i, j, &m_Queues[i][j]);
+            m_QueueMutexes[i][j] = std::make_unique<std::mutex>();
         }
-        m_QueueRoundRobinIndex[i] = 0;
     }
 }
 

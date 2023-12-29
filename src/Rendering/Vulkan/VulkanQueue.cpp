@@ -1,6 +1,7 @@
 #include "Prefix.h"
 
 #include "VulkanQueue.h"
+#include "VulkanDevice.h"
 
 #include "Core/Log.h"
 
@@ -78,6 +79,11 @@ int VulkanQueue::QueueFlagBitCount(VkQueueFlags flags, bool presentable)
         count++;
 
     return count;
+}
+
+std::mutex& VulkanQueue::GetMutex() const
+{
+    return *m_Device->m_QueueMutexes[m_FamilyIndex][m_QueueIndex];
 }
 
 } // namespace gore

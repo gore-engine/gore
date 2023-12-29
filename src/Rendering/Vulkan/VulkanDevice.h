@@ -6,7 +6,8 @@
 #include "VulkanQueue.h"
 
 #include <vector>
-#include <string>
+#include <memory>
+#include <mutex>
 
 namespace gore
 {
@@ -45,7 +46,7 @@ public:
     [[nodiscard]] bool HasExtension(VulkanDeviceExtension extension) const;
 
     // The result queue may or may not be the same one as the previous call since we are using round-robin.
-    // So you need to make sure you properly synchronize both queue access operations and commands submitted to them.
+    // So you need to make sure you properly synchronize the commands submitted to them.
     VulkanQueue GetQueue(VulkanQueueType type);
 
     VolkDeviceTable API;
@@ -57,8 +58,10 @@ private:
     VulkanPhysicalDevice m_PhysicalDevice;
     VulkanDeviceExtensionBitset m_EnabledExtensions;
 
+    friend class VulkanQueue;
     std::vector<std::vector<VkQueue>> m_Queues;
     std::vector<int> m_QueueRoundRobinIndex; // TODO: lock this?
+    std::vector<std::vector<std::unique_ptr<std::mutex>>> m_QueueMutexes;
 
     int FindQueueFamilyIndex(VulkanQueueType type);
 };
