@@ -8,6 +8,9 @@ namespace gore
 {
 
 class VulkanSurface;
+class VulkanImage;
+class VulkanSemaphore;
+class VulkanFence;
 
 class VulkanSwapchain
 {
@@ -23,8 +26,12 @@ public:
     [[nodiscard]] uint32_t GetHeight() const { return m_Height; }
     [[nodiscard]] uint32_t GetLayers() const { return m_Layers; }
     [[nodiscard]] uint32_t GetImageCount() const { return m_ImageCount; }
-    [[nodiscard]] const std::vector<VkImage>& GetImages() const { return m_Images; }
-    [[nodiscard]] const std::vector<VkImageView>& GetImageViews() const { return m_ImageViews; }
+    [[nodiscard]] const std::vector<VulkanImage*>& GetImages() const { return m_Images; }
+
+    [[nodiscard]] uint32_t GetCurrentBufferIndex() const { return m_CurrentImageIndex; }
+    [[nodiscard]] VulkanImage* GetBuffer(uint32_t index) const { return m_Images[index]; }
+
+    void Present(const std::vector<VulkanSemaphore*>& waitSemaphores);
 
 private:
     VulkanSurface* m_Surface;
@@ -37,10 +44,15 @@ private:
 
     uint32_t m_ImageCount;
 
-    std::vector<VkImage> m_Images;
-    std::vector<VkImageView> m_ImageViews;
+    std::vector<VulkanImage*> m_Images;
+    std::vector<VulkanSemaphore*> m_RenderFinishedSemaphores;
+    std::vector<VulkanFence*> m_ImageAcquiredFences;
 
     uint32_t m_CurrentImageIndex;
+
+    friend class VulkanQueue;
+    void AcquireNextImageIndex();
+    void Recreate();
 };
 
 } // namespace gore

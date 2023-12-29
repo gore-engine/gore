@@ -3,6 +3,8 @@
 #include "VulkanSwapchain.h"
 #include "VulkanDevice.h"
 #include "VulkanSurface.h"
+#include "VulkanImage.h"
+#include "VulkanSynchronization.h"
 
 #include "Windowing/Window.h"
 
@@ -31,7 +33,8 @@ VulkanSwapchain::VulkanSwapchain(VulkanSurface* surface, uint32_t imageCount) :
     m_Height(0),
     m_ImageCount(-1),
     m_Images(),
-    m_ImageViews()
+    m_RenderFinishedSemaphores(),
+    m_ImageAcquiredFences()
 {
     VulkanDevice* device            = m_Surface->GetDevice();
     VkPhysicalDevice physicalDevice = device->GetPhysicalDevice().physicalDevice;
@@ -97,17 +100,65 @@ VulkanSwapchain::VulkanSwapchain(VulkanSurface* surface, uint32_t imageCount) :
         return;
     }
 
+    std::vector<VkImage> images(m_ImageCount);
+    res = device->API.vkGetSwapchainImagesKHR(device->Get(), m_Swapchain, &m_ImageCount, images.data());
+
+    m_Images.resize(m_ImageCount);
+    m_RenderFinishedSemaphores.resize(m_ImageCount);
+    m_ImageAcquiredFences.resize(m_ImageCount);
+
+    for (uint32_t i = 0; i < m_ImageCount; ++i)
+    {
+        m_Images[i]                   = new VulkanImage(device, images[i]);
+        m_RenderFinishedSemaphores[i] = new VulkanSemaphore(device);
+        m_ImageAcquiredFences[i]      = new VulkanFence(device, true);
+    }
+
+    AcquireNextImageIndex();
 
     LOG(DEBUG, "Created Vulkan swapchain with %d images\n", m_ImageCount);
 }
 
 VulkanSwapchain::~VulkanSwapchain()
 {
+    for (uint32_t i = 0; i < m_ImageCount; ++i)
+    {
+        delete m_Images[i];
+        delete m_RenderFinishedSemaphores[i];
+        delete m_ImageAcquiredFences[i];
+    }
+
     if (m_Swapchain != VK_NULL_HANDLE)
     {
         m_Surface->GetDevice()->API.vkDestroySwapchainKHR(m_Surface->GetDevice()->Get(), m_Swapchain, VK_NULL_HANDLE);
         LOG(DEBUG, "Destroyed Vulkan swapchain\n");
     }
+}
+
+void VulkanSwapchain::AcquireNextImageIndex()
+{
+    VulkanDevice* device = m_Surface->GetDevice();
+
+    VulkanFence* fence = m_ImageAcquiredFences[m_CurrentImageIndex];
+    fence->Reset();
+
+    VkResult res = device->API.vkAcquireNextImageKHR(device->Get(), m_Swapchain, UINT64_MAX, VK_NULL_HANDLE, fence->Get(), &m_CurrentImageIndex);
+    VK_CHECK_RESULT(res);
+
+    // This will potentially lose some performance.
+    // It is designed like this to match the behavior of other APIs.
+    fence->Wait();
+}
+
+void VulkanSwapchain::Present(const std::vector<VulkanSemaphore*>& waitSemaphores)
+{
+    VulkanQueue presentQueue = m_Surface->GetDevice()->GetQueue(VulkanQueueType::Present);
+    presentQueue.Present(this, waitSemaphores);
+}
+
+void VulkanSwapchain::Recreate()
+{
+    // TODO
 }
 
 SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)

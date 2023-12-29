@@ -2,10 +2,14 @@
 
 #include "VulkanIncludes.h"
 
+#include <vector>
+
 namespace gore
 {
 
 class VulkanDevice;
+class VulkanSwapchain;
+class VulkanSemaphore;
 
 enum class VulkanQueueType
 {
@@ -35,6 +39,9 @@ public:
 
     [[nodiscard]] static bool IsCapableOf(VkQueueFlags flags, bool presentable, VulkanQueueType type);
     [[nodiscard]] static int QueueFlagBitCount(VkQueueFlags flags, bool presentable);
+
+    // void Submit();
+    void Present(VulkanSwapchain* swapchain, const std::vector<VulkanSemaphore*>& waitSemaphores);
 
 private:
     VulkanDevice* m_Device;

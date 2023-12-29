@@ -2,6 +2,8 @@
 
 #include "VulkanQueue.h"
 #include "VulkanDevice.h"
+#include "VulkanSwapchain.h"
+#include "VulkanSynchronization.h"
 
 #include "Core/Log.h"
 
@@ -84,6 +86,52 @@ int VulkanQueue::QueueFlagBitCount(VkQueueFlags flags, bool presentable)
 std::mutex& VulkanQueue::GetMutex() const
 {
     return *m_Device->m_QueueMutexes[m_FamilyIndex][m_QueueIndex];
+}
+
+void VulkanQueue::Present(VulkanSwapchain* swapchain, const std::vector<VulkanSemaphore*>& waitSemaphores)
+{
+    if (!IsCapableOf(VulkanQueueType::Present))
+    {
+        LOG(ERROR, "Vulkan queue is not capable of presenting\n");
+        return;
+    }
+
+    uint32_t imageIndex = swapchain->GetCurrentBufferIndex();
+    VkSwapchainKHR swapchainHandle = swapchain->Get();
+
+    std::vector<VkSemaphore> waitSemaphoreHandles(waitSemaphores.size());
+    for (size_t i = 0; i < waitSemaphores.size(); i++)
+    {
+        waitSemaphoreHandles[i] = waitSemaphores[i]->Get();
+    }
+
+    VkResult res;
+
+    VkPresentInfoKHR presentInfo{
+        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .pNext = VK_NULL_HANDLE,
+        .waitSemaphoreCount = static_cast<uint32_t>(waitSemaphoreHandles.size()),
+        .pWaitSemaphores = waitSemaphoreHandles.data(),
+        .swapchainCount = 1,
+        .pSwapchains = &swapchainHandle,
+        .pImageIndices = &imageIndex,
+        .pResults = &res
+    };
+
+    {
+        std::lock_guard<std::mutex> lock(GetMutex());
+        res = m_Device->API.vkQueuePresentKHR(m_Queue, &presentInfo);
+    }
+
+    VK_CHECK_RESULT(res);
+
+    if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+    {
+        LOG(DEBUG, "Vulkan swapchain is out of date or suboptimal\n");
+        swapchain->Recreate();
+    }
+
+    swapchain->AcquireNextImageIndex();
 }
 
 } // namespace gore
