@@ -132,6 +132,8 @@ void VulkanSwapchain::Create()
 
 void VulkanSwapchain::Destroy()
 {
+    m_Surface->GetDevice()->API.vkDeviceWaitIdle(m_Surface->GetDevice()->Get());
+
     for (uint32_t i = 0; i < m_ImageCount; ++i)
     {
         delete m_Images[i];
@@ -181,7 +183,6 @@ bool VulkanSwapchain::RecreateIfRequired(VkResult res)
     m_Surface->GetWindow()->GetSize(&width, &height);
     if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR || m_Width != width || m_Height != height)
     {
-        m_Surface->GetDevice()->API.vkDeviceWaitIdle(m_Surface->GetDevice()->Get());
         Destroy();
         Create();
 

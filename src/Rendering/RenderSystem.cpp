@@ -7,6 +7,8 @@
 #include "Windowing/Window.h"
 #include "Rendering/Vulkan/VulkanInstance.h"
 #include "Rendering/Vulkan/VulkanDevice.h"
+#include "Rendering/Vulkan/VulkanCommandPool.h"
+#include "Rendering/Vulkan/VulkanCommandBuffer.h"
 
 #include <iostream>
 #include <vector>
@@ -51,13 +53,22 @@ void RenderSystem::Update()
     uint32_t bufferIndex = m_VulkanSwapchain->GetCurrentBufferIndex();
     VulkanImage* image   = m_VulkanSwapchain->GetBuffer(bufferIndex);
 
+    VulkanQueue graphicsQueue = m_VulkanDevice->GetQueue(VulkanQueueType::Graphics);
 
+    VulkanCommandPool* commandPool = VulkanCommandPool::GetOrCreate(m_VulkanDevice, graphicsQueue.GetFamilyIndex());
+
+    VulkanCommandBuffer commandBuffer(commandPool, true);
+    commandBuffer.Begin();
+
+    commandBuffer.End();
 
     m_VulkanSwapchain->Present({});
 }
 
 void RenderSystem::Shutdown()
 {
+    VulkanCommandPool::ClearAll();
+
     delete m_VulkanSwapchain;
     delete m_VulkanSurface;
 

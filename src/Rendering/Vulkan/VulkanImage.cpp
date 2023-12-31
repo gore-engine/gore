@@ -14,8 +14,8 @@ VulkanImage::VulkanImage(VulkanDevice* device, VkImage image) :
 
 VulkanImage::~VulkanImage()
 {
-    if (!m_OwnsImage) return;
+    if (!m_OwnsImage)
+        return;
 }
 
-
-}
+} // namespace gore
