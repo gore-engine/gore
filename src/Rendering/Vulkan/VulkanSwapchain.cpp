@@ -31,10 +31,21 @@ VulkanSwapchain::VulkanSwapchain(VulkanSurface* surface, uint32_t imageCount) :
     m_Format(),
     m_Width(0),
     m_Height(0),
-    m_ImageCount(-1),
+    m_ImageCount(imageCount),
     m_Images(),
     m_RenderFinishedSemaphores(),
     m_ImageAcquiredFences()
+{
+    Create();
+}
+
+VulkanSwapchain::~VulkanSwapchain()
+{
+    Destroy();
+}
+
+
+void VulkanSwapchain::Create()
 {
     VulkanDevice* device            = m_Surface->GetDevice();
     VkPhysicalDevice physicalDevice = device->GetPhysicalDevice().physicalDevice;
@@ -65,7 +76,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanSurface* surface, uint32_t imageCount) :
                           swapChainSupport.capabilities.maxImageExtent.height);
     m_Layers = std::min(1u, swapChainSupport.capabilities.maxImageArrayLayers); // TODO: Require layers
 
-    m_ImageCount = std::clamp(imageCount,
+    m_ImageCount = std::clamp(m_ImageCount,
                               swapChainSupport.capabilities.minImageCount,
                               swapChainSupport.capabilities.maxImageCount);
 
@@ -116,10 +127,10 @@ VulkanSwapchain::VulkanSwapchain(VulkanSurface* surface, uint32_t imageCount) :
 
     AcquireNextImageIndex();
 
-    LOG(DEBUG, "Created Vulkan swapchain with %d images\n", m_ImageCount);
+    LOG(DEBUG, "Created Vulkan swapchain with %d images, size %dx%d\n", m_ImageCount, m_Width, m_Height);
 }
 
-VulkanSwapchain::~VulkanSwapchain()
+void VulkanSwapchain::Destroy()
 {
     for (uint32_t i = 0; i < m_ImageCount; ++i)
     {
@@ -132,6 +143,7 @@ VulkanSwapchain::~VulkanSwapchain()
     {
         m_Surface->GetDevice()->API.vkDestroySwapchainKHR(m_Surface->GetDevice()->Get(), m_Swapchain, VK_NULL_HANDLE);
         LOG(DEBUG, "Destroyed Vulkan swapchain\n");
+        m_Swapchain = VK_NULL_HANDLE;
     }
 }
 
@@ -165,9 +177,13 @@ void VulkanSwapchain::Present(const std::vector<VulkanSemaphore*>& waitSemaphore
 
 bool VulkanSwapchain::RecreateIfRequired(VkResult res)
 {
-    if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+    int width, height;
+    m_Surface->GetWindow()->GetSize(&width, &height);
+    if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR || m_Width != width || m_Height != height)
     {
-        // TODO
+        m_Surface->GetDevice()->API.vkDeviceWaitIdle(m_Surface->GetDevice()->Get());
+        Destroy();
+        Create();
 
         return true;
     }
