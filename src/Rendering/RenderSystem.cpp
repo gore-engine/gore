@@ -13,6 +13,7 @@
 #include "Rendering/Vulkan/VulkanImage.h"
 #include "Rendering/Vulkan/VulkanSynchronization.h"
 
+#include <cmath>
 #include <iostream>
 #include <vector>
 #include <algorithm>
