@@ -40,6 +40,8 @@ public:
     [[nodiscard]] static bool IsCapableOf(VkQueueFlags flags, bool presentable, VulkanQueueType type);
     [[nodiscard]] static int QueueFlagBitCount(VkQueueFlags flags, bool presentable);
 
+    void WaitIdle();
+
     // void Submit();
     void Present(VulkanSwapchain* swapchain, const std::vector<VulkanSemaphore*>& waitSemaphores);
 

@@ -275,6 +275,11 @@ bool VulkanDevice::HasExtension(VulkanDeviceExtension extension) const
     return m_EnabledExtensions.test(static_cast<size_t>(extension));
 }
 
+void VulkanDevice::WaitIdle()
+{
+    API.vkDeviceWaitIdle(m_Device);
+}
+
 VulkanQueue VulkanDevice::GetQueue(VulkanQueueType type)
 {
     int queueFamilyIndex = FindQueueFamilyIndex(type);

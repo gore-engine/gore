@@ -67,6 +67,8 @@ void RenderSystem::Update()
 
 void RenderSystem::Shutdown()
 {
+    m_VulkanDevice->WaitIdle();
+
     VulkanCommandPool::ClearAll();
 
     delete m_VulkanSwapchain;

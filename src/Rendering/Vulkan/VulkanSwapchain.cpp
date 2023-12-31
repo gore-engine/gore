@@ -132,7 +132,7 @@ void VulkanSwapchain::Create()
 
 void VulkanSwapchain::Destroy()
 {
-    m_Surface->GetDevice()->API.vkDeviceWaitIdle(m_Surface->GetDevice()->Get());
+    m_Surface->GetDevice()->WaitIdle();
 
     for (uint32_t i = 0; i < m_ImageCount; ++i)
     {

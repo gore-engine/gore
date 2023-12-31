@@ -82,6 +82,12 @@ int VulkanQueue::QueueFlagBitCount(VkQueueFlags flags, bool presentable)
     return count;
 }
 
+void VulkanQueue::WaitIdle()
+{
+    std::lock_guard<std::mutex> lock(GetMutex());
+    m_Device->API.vkQueueWaitIdle(m_Queue);
+}
+
 std::mutex& VulkanQueue::GetMutex() const
 {
     return *m_Device->m_QueueMutexes[m_FamilyIndex][m_QueueIndex];

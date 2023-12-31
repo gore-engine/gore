@@ -47,6 +47,8 @@ public:
     [[nodiscard]] const VulkanPhysicalDevice& GetPhysicalDevice() const { return m_PhysicalDevice; }
     [[nodiscard]] bool HasExtension(VulkanDeviceExtension extension) const;
 
+    void WaitIdle();
+
     // The result queue may or may not be the same one as the previous call since we are using round-robin.
     // So you need to make sure you properly synchronize the commands submitted to them.
     VulkanQueue GetQueue(VulkanQueueType type);
