@@ -156,19 +156,15 @@ void VulkanSwapchain::AcquireNextImageIndex()
     VulkanFence* fence = m_ImageAcquiredFences[m_CurrentImageIndex];
     fence->Reset();
 
+
     VkResult res = device->API.vkAcquireNextImageKHR(device->Get(), m_Swapchain, UINT64_MAX, VK_NULL_HANDLE, fence->Get(), &m_CurrentImageIndex);
+    VK_CHECK_RESULT(res);
 
     // This will potentially lose some performance.
     // It is designed like this to match the behavior of other APIs.
     fence->Wait();
 
-    if (RecreateIfRequired(res))
-    {
-        fence->Reset();
-        res = device->API.vkAcquireNextImageKHR(device->Get(), m_Swapchain, UINT64_MAX, VK_NULL_HANDLE, fence->Get(), &m_CurrentImageIndex);
-        fence->Wait();
-        VK_CHECK_RESULT(res);
-    }
+    RecreateIfRequired();
 }
 
 void VulkanSwapchain::Present(const std::vector<VulkanSemaphore*>& waitSemaphores)
@@ -177,11 +173,11 @@ void VulkanSwapchain::Present(const std::vector<VulkanSemaphore*>& waitSemaphore
     presentQueue.Present(this, waitSemaphores);
 }
 
-bool VulkanSwapchain::RecreateIfRequired(VkResult res)
+bool VulkanSwapchain::RecreateIfRequired()
 {
     int width, height;
     m_Surface->GetWindow()->GetSize(&width, &height);
-    if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR || m_Width != width || m_Height != height)
+    if (m_Width != width || m_Height != height)
     {
         Destroy();
         Create();
@@ -189,7 +185,6 @@ bool VulkanSwapchain::RecreateIfRequired(VkResult res)
         return true;
     }
 
-    VK_CHECK_RESULT(res);
     return false;
 }
 

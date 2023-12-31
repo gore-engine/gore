@@ -129,7 +129,7 @@ void VulkanQueue::Present(VulkanSwapchain* swapchain, const std::vector<VulkanSe
         res = m_Device->API.vkQueuePresentKHR(m_Queue, &presentInfo);
     }
 
-    swapchain->RecreateIfRequired(res);
+    swapchain->RecreateIfRequired();
     swapchain->AcquireNextImageIndex();
 }
 

@@ -52,7 +52,7 @@ private:
 
     friend class VulkanQueue;
     void AcquireNextImageIndex();
-    bool RecreateIfRequired(VkResult res);
+    bool RecreateIfRequired();
 
     void Create();
     void Destroy();
