@@ -1,6 +1,9 @@
 #pragma once
 
 #include "VulkanIncludes.h"
+#include "VulkanBarrier.h"
+
+#include <vector>
 
 namespace gore
 {
@@ -18,6 +21,8 @@ public:
 
     void Begin();
     void End();
+
+    void Barrier(const std::vector<VulkanResourceBarrier>& barriers, VulkanQueueType queueType);
 
 private:
     VulkanCommandPool* m_CommandPool;

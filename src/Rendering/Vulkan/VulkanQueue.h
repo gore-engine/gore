@@ -10,8 +10,10 @@ namespace gore
 class VulkanDevice;
 class VulkanSwapchain;
 class VulkanSemaphore;
+class VulkanFence;
+class VulkanCommandBuffer;
 
-enum class VulkanQueueType
+enum class VulkanQueueType : uint32_t
 {
     Graphics,
     Compute,
@@ -42,7 +44,10 @@ public:
 
     void WaitIdle();
 
-    // void Submit();
+    void Submit(const std::vector<VulkanCommandBuffer*>& commandBuffers,
+                const std::vector<VulkanSemaphore*>& waitSemaphores,
+                const std::vector<VulkanSemaphore*>& signalSemaphores,
+                VulkanFence* fence = nullptr);
     void Present(VulkanSwapchain* swapchain, const std::vector<VulkanSemaphore*>& waitSemaphores);
 
 private:

@@ -32,6 +32,8 @@ private:
 
     VulkanSurface* m_VulkanSurface;
     VulkanSwapchain* m_VulkanSwapchain;
+
+    std::vector<VulkanSemaphore*> m_RenderFinishedSemaphores;
 };
 
 } // namespace gore

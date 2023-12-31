@@ -4,6 +4,7 @@
 #include "VulkanDevice.h"
 #include "VulkanSwapchain.h"
 #include "VulkanSynchronization.h"
+#include "VulkanCommandBuffer.h"
 
 #include "Core/Log.h"
 
@@ -130,6 +131,51 @@ void VulkanQueue::Present(VulkanSwapchain* swapchain, const std::vector<VulkanSe
 
     swapchain->RecreateIfRequired(res);
     swapchain->AcquireNextImageIndex();
+}
+
+void VulkanQueue::Submit(const std::vector<VulkanCommandBuffer*>& commandBuffers,
+                         const std::vector<VulkanSemaphore*>& waitSemaphores,
+                         const std::vector<VulkanSemaphore*>& signalSemaphores,
+                         VulkanFence* fence)
+{
+    std::vector<VkSemaphore> waitSemaphoresVk;
+    std::vector<VkPipelineStageFlags> waitStagesVk;
+    std::vector<VkSemaphore> signalSemaphoresVk;
+
+    std::vector<VkCommandBuffer> commandBuffersVk(commandBuffers.size());
+
+    for (uint32_t i = 0; i < waitSemaphores.size(); ++i)
+    {
+        waitSemaphoresVk.push_back(waitSemaphores[i]->Get());
+        waitStagesVk.push_back(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT); // TODO
+    }
+
+    for (uint32_t i = 0; i < signalSemaphores.size(); ++i)
+    {
+        signalSemaphoresVk.push_back(signalSemaphores[i]->Get());
+    }
+
+    for (uint32_t i = 0; i < commandBuffers.size(); ++i)
+    {
+        commandBuffersVk[i] = commandBuffers[i]->Get();
+    }
+
+    VkSubmitInfo submitInfoVK{
+        .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext                = VK_NULL_HANDLE,
+        .waitSemaphoreCount   = (uint32_t)waitSemaphoresVk.size(),
+        .pWaitSemaphores      = waitSemaphoresVk.empty() ? VK_NULL_HANDLE : waitSemaphoresVk.data(),
+        .pWaitDstStageMask    = waitStagesVk.empty() ? VK_NULL_HANDLE : waitStagesVk.data(),
+        .commandBufferCount   = (uint32_t)commandBuffersVk.size(),
+        .pCommandBuffers      = commandBuffersVk.data(),
+        .signalSemaphoreCount = (uint32_t)signalSemaphoresVk.size(),
+        .pSignalSemaphores    = signalSemaphoresVk.empty() ? VK_NULL_HANDLE : signalSemaphoresVk.data()
+    };
+
+    VkFence signalFence = fence ? fence->Get() : VK_NULL_HANDLE;
+
+    VkResult res = m_Device->API.vkQueueSubmit(m_Queue, 1, &submitInfoVK, signalFence);
+    VK_CHECK_RESULT(res);
 }
 
 } // namespace gore
