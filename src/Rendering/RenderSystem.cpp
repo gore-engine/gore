@@ -48,6 +48,12 @@ void RenderSystem::Initialize()
 
 void RenderSystem::Update()
 {
+    uint32_t bufferIndex = m_VulkanSwapchain->GetCurrentBufferIndex();
+    VulkanImage* image   = m_VulkanSwapchain->GetBuffer(bufferIndex);
+
+
+
+    m_VulkanSwapchain->Present({});
 }
 
 void RenderSystem::Shutdown()

@@ -18,7 +18,6 @@ VulkanQueue::VulkanQueue(VulkanDevice* device, uint32_t familyIndex, uint32_t qu
     m_Flags(flags),
     m_Presentable(presentable)
 {
-    LOG_STREAM(DEBUG) << "Created Vulkan Queue in family " << familyIndex << " with index " << queueIndex << std::endl;
 }
 
 VulkanQueue::~VulkanQueue()
@@ -123,14 +122,7 @@ void VulkanQueue::Present(VulkanSwapchain* swapchain, const std::vector<VulkanSe
         res = m_Device->API.vkQueuePresentKHR(m_Queue, &presentInfo);
     }
 
-    VK_CHECK_RESULT(res);
-
-    if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
-    {
-        LOG(DEBUG, "Vulkan swapchain is out of date or suboptimal\n");
-        swapchain->Recreate();
-    }
-
+    swapchain->RecreateIfRequired(res);
     swapchain->AcquireNextImageIndex();
 }
 

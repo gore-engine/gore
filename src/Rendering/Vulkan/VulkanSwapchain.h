@@ -52,7 +52,7 @@ private:
 
     friend class VulkanQueue;
     void AcquireNextImageIndex();
-    void Recreate();
+    bool RecreateIfRequired(VkResult res);
 };
 
 } // namespace gore

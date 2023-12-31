@@ -143,11 +143,18 @@ void VulkanSwapchain::AcquireNextImageIndex()
     fence->Reset();
 
     VkResult res = device->API.vkAcquireNextImageKHR(device->Get(), m_Swapchain, UINT64_MAX, VK_NULL_HANDLE, fence->Get(), &m_CurrentImageIndex);
-    VK_CHECK_RESULT(res);
 
     // This will potentially lose some performance.
     // It is designed like this to match the behavior of other APIs.
     fence->Wait();
+
+    if (RecreateIfRequired(res))
+    {
+        fence->Reset();
+        res = device->API.vkAcquireNextImageKHR(device->Get(), m_Swapchain, UINT64_MAX, VK_NULL_HANDLE, fence->Get(), &m_CurrentImageIndex);
+        fence->Wait();
+        VK_CHECK_RESULT(res);
+    }
 }
 
 void VulkanSwapchain::Present(const std::vector<VulkanSemaphore*>& waitSemaphores)
@@ -156,9 +163,17 @@ void VulkanSwapchain::Present(const std::vector<VulkanSemaphore*>& waitSemaphore
     presentQueue.Present(this, waitSemaphores);
 }
 
-void VulkanSwapchain::Recreate()
+bool VulkanSwapchain::RecreateIfRequired(VkResult res)
 {
-    // TODO
+    if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+    {
+        // TODO
+
+        return true;
+    }
+
+    VK_CHECK_RESULT(res);
+    return false;
 }
 
 SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
