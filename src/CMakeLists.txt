@@ -26,6 +26,7 @@ set(COMMON_SOURCE_FOLDERS
         "Scene"
         "Object"
         "Utilities"
+        "rtm" # TODO: move into Math/ or External/ 
 )
 set(COMMON_INCLUDE_FOLDERS "${CMAKE_CURRENT_SOURCE_DIR}")
 
