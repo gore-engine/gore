@@ -5,13 +5,7 @@
 
 #include "Core/Log.h"
 
-
-// THIS IS IMPORTANT: DO NOT INCLUDE ANYTHING (OTHER THAN this Math.h) FROM THE ENGINE BELOW THIS LINE
-// This is because the SAL annotation preprocessor (sal.h) provided by Microsft::DirectXMath conflicts with GNU C++ STL
-// and the workaround is to include system headers BEFORE including DirectXMath headers
-// See https://github.com/Microsoft/DirectXMath?tab=readme-ov-file#compiler-support for details
-// Also, this has already an issue before: https://github.com/microsoft/vcpkg/issues/26702 
-#include "Math/Math.h"
+#include "Math\Types.h"
 
 namespace gore
 {
@@ -34,18 +28,18 @@ public:
     void Update() override;
 
 public:
-    Vector3 GetLocalPosition() const { return m_LocalPosition; }
+    [[nodiscard]] Vector3 GetLocalPosition() const;
     void SetLocalPosition(const Vector3& position);
 
-    Vector3 GetLocalScale() const { return m_LocalScale; }
+    [[nodiscard]] Vector3 GetLocalScale() const;
     void SetLocalScale(const Vector3& scale);
 
-    Quaternion GetLocalRotation() const { return m_LocalRotation; }
+    [[nodiscard]] Quaternion GetLocalRotation() const;
     void SetLocalRotation(const Quaternion& rotation);
-    Vector3 GetLocalEulerAngles() const { return m_LocalRotation.ToEuler(); }
+    [[nodiscard]] Vector3 GetLocalEulerAngles() const;
     void SetLocalEulerAngles(const Vector3& eulerAngles);
 
-    Matrix4x4 GetLocalToWorldMatrix() const { return Matrix4x4::CreateScale(m_LocalScale) * Matrix4x4::CreateFromQuaternion(m_LocalRotation) * Matrix4x4::CreateTranslation(m_LocalPosition); }
+    [[nodiscard]] Matrix4x4 GetLocalToWorldMatrix() const;
 
 private:
     Vector3 m_LocalPosition;
