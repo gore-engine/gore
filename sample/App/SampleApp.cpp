@@ -9,6 +9,7 @@
 #include "Windowing/Window.h"
 #include "Scene/Scene.h"
 #include "Object/GameObject.h"
+#include "Object/Transform.h"
 #include "Core/Log.h"
 
 #include "Scripts/TestComponent.h"
@@ -32,6 +33,7 @@ void SampleApp::Initialize()
     gameObject->SetName("TestObject");
 
     TestComponent* testComponent = gameObject->AddComponent<TestComponent>();
+    gore::Transform* transform   = gameObject->AddComponent<gore::Transform>();
 }
 
 void SampleApp::Update()
