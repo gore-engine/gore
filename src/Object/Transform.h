@@ -5,7 +5,7 @@
 
 #include "Core/Log.h"
 
-#include "Math\Types.h"
+#include "Math/Types.h"
 
 namespace gore
 {
