@@ -4,8 +4,8 @@
 
 #define MATHF_SIMD_CONVERSION_WITH_VALUE_TYPE_DECLARATIONS(CLASS_NAME) \
     explicit operator ValueType() const noexcept;                      \
-    constexpr explicit CLASS_NAME(const ValueType& F) noexcept;        \
-    constexpr explicit CLASS_NAME(ValueType&& F) noexcept;             \
+    explicit CLASS_NAME(const ValueType& F) noexcept;                  \
+    explicit CLASS_NAME(ValueType&& F) noexcept;                       \
     CLASS_NAME& operator=(const ValueType& F) noexcept;
 
 
