@@ -89,11 +89,6 @@ find_package(glfw3 CONFIG REQUIRED)
 list(APPEND COMMON_LIBRARIES glfw)
 list(APPEND COMMON_DEFINITIONS "GLFW_INCLUDE_NONE")
 
-# DirectXMath
-# We are using a modified version of SimpleMath.h from DirectXTK12 for convenience
-find_package(DirectXMath CONFIG REQUIRED)
-list(APPEND COMMON_LIBRARIES Microsoft::DirectXMath)
-
 # vulkan
 find_package(Vulkan REQUIRED)
 list(APPEND COMMON_LIBRARIES Vulkan::Headers)
