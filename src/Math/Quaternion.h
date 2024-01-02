@@ -6,7 +6,9 @@
 
 #include "Math/Defines.h"
 
+#include "rtm/vector4f.h"
 #include "rtm/quatf.h"
+#include "rtm/impl/quat_common.h"
 
 namespace gore
 {
@@ -18,14 +20,6 @@ ENGINE_STRUCT(Matrix4x4);
 ENGINE_STRUCT(Quaternion)
 {
 public:
-    float x;
-    float y;
-    float z;
-    float w;
-
-    friend std::ostream& operator<<(std::ostream& os, const Quaternion& q) noexcept;
-
-public:
     MATHF_SIMD_SET_VALUE_TYPE(rtm::quatf);
     MATHF_SIMD_CONVERSION_WITH_VALUE_TYPE_DECLARATIONS(Quaternion);
 
@@ -35,43 +29,42 @@ public:
     MATHF_VECTOR_COMPARISON_OPERATOR_DECLARATIONS(Quaternion);
     MATHF_VECTOR_COMPOUND_ASSIGNMENT_OPERATOR_DECLARATIONS(Quaternion);
 
+public:
+    ValueType m_Q;
+    friend std::ostream& operator<<(std::ostream& os, const Quaternion& q) noexcept;
+
     Quaternion() noexcept :
-        x(0),
-        y(0),
-        z(0),
-        w(1)
+        m_Q(Identity)
     {
     }
-    constexpr Quaternion(float ix, float iy, float iz, float iw) noexcept :
-        x(ix),
-        y(iy),
-        z(iz),
-        w(iw)
+    Quaternion(float ix, float iy, float iz, float iw) noexcept :
+        m_Q(rtm::vector_to_quat(rtm::vector_set(ix, iy, iz, iw)))
     {
     }
+
     Quaternion(const Vector3& v, float scalar) noexcept;
     explicit Quaternion(const Vector4& v) noexcept;
     explicit Quaternion(const float* pArray) noexcept;
 
     // Quaternion operations
-    float Length() const noexcept;
-    float LengthSquared() const noexcept;
+    [[nodiscard]] float Length() const noexcept;
+    [[nodiscard]] float LengthSquared() const noexcept;
 
     void Normalize() noexcept;
-    void Normalize(Quaternion& result) const noexcept;
+    void Normalize(Quaternion & result) const noexcept;
 
     void Conjugate() noexcept;
-    void Conjugate(Quaternion& result) const noexcept;
+    void Conjugate(Quaternion & result) const noexcept;
 
-    void Inverse(Quaternion& result) const noexcept;
+    void Inverse(Quaternion & result) const noexcept;
 
-    float Dot(const Quaternion& Q) const noexcept;
+    [[nodiscard]] float Dot(const Quaternion& Q) const noexcept;
 
     void RotateTowards(const Quaternion& target, float maxAngle) noexcept;
     void DECLTYPE RotateTowards(const Quaternion& target, float maxAngle, Quaternion& result) const noexcept;
 
     // Computes rotation about y-axis (y), then x-axis (x), then z-axis (z)
-    Vector3 ToEuler() const noexcept;
+    [[nodiscard]] Vector3 ToEuler() const noexcept;
 
     // Static functions
     static Quaternion CreateFromAxisAngle(const Vector3& axis, float angle) noexcept;
@@ -106,6 +99,13 @@ public:
     static const Quaternion Identity;
 };
 
-MATHF_VECTOR_BINARY_OPERATOR_DECLARATIONS(Quaternion);
+Quaternion operator+(const Quaternion& Q1, const Quaternion& Q2) noexcept;
+Quaternion operator-(const Quaternion& Q1, const Quaternion& Q2) noexcept;
+Quaternion operator*(const Quaternion& Q1, const Quaternion& Q2) noexcept;
+Quaternion operator*(const Quaternion& Q, float S) noexcept;
+Quaternion operator/(const Quaternion& Q1, const Quaternion& Q2) noexcept;
+Quaternion operator*(float S, const Quaternion& Q) noexcept;
+
+#include "Math/Quaternion.inl"
 
 } // namespace gore
