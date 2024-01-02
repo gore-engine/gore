@@ -1,5 +1,10 @@
 #pragma once
 
+#if (__cplusplus >= 202002L)
+// default comparison operators (==, <=>)
+#include <compare>
+#endif
+
 #include "Export.h"
 
 #include "Utilities/Defines.h"
