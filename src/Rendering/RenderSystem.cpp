@@ -114,8 +114,6 @@ void RenderSystem::Update()
 
 void RenderSystem::Shutdown()
 {
-    m_VulkanDevice->WaitIdle();
-
     for (uint32_t i = 0; i < m_RenderFinishedSemaphores.size(); ++i)
     {
         delete m_RenderFinishedSemaphores[i];
