@@ -77,8 +77,6 @@ VkShaderModule VulkanShader::LoadShader(const std::filesystem::path& path)
     VkResult res = m_Device->API.vkCreateShaderModule(m_Device->Get(), &createInfo, VK_NULL_HANDLE, &shaderModule);
     VK_CHECK_RESULT(res);
 
-    LOG_STREAM(DEBUG) << "Loaded shader: " << path << std::endl;
-
     return shaderModule;
 }
 

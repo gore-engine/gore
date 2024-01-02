@@ -4,6 +4,8 @@ find_program(SPIRV_CROSS_EXECUTABLE NAMES spirv-cross)
 # dxc
 find_package(directx-dxc CONFIG REQUIRED)
 
+file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/shaders)
+
 # convert shader stage names to DirectX convention
 function(DIRECTX_SHADER_STAGE SHADER_STAGE OUTPUT_DIRECTX_STAGE)
     if(${SHADER_STAGE} STREQUAL "vertex" OR ${SHADER_STAGE} STREQUAL "vert" OR ${SHADER_STAGE} STREQUAL "vs")
@@ -130,6 +132,8 @@ function(add_shader_dependencies PROJECT_TARGET)
     add_custom_target(Shaders ALL DEPENDS ${SHADER_BINARY_OUTPUT})
     add_dependencies(${PROJECT_TARGET} Shaders)
 
+    set(SHADER_INTERMEDIATE_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders)
+
     if (WIN32)
         set(SHADER_FINAL_OUTPUT_DIR $<TARGET_FILE_DIR:${PROJECT_NAME}>/Resources/Shaders)
     elseif (APPLE)
@@ -141,8 +145,17 @@ function(add_shader_dependencies PROJECT_TARGET)
     add_custom_command(TARGET ${PROJECT_TARGET} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E remove_directory ${SHADER_FINAL_OUTPUT_DIR}
             COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_FINAL_OUTPUT_DIR}
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_BINARY_DIR}/shaders"
-            "${SHADER_FINAL_OUTPUT_DIR}"
     )
+
+    foreach (SHADER_BINARY ${SHADER_BINARY_OUTPUT})
+        # get relative path of SHADER_BINARY_OUTPUT to SHADER_INTERMEDIATE_OUTPUT_DIR
+        file(RELATIVE_PATH SHADER_BINARY_RELATIVE_PATH ${SHADER_INTERMEDIATE_OUTPUT_DIR} ${SHADER_BINARY})
+
+        add_custom_command(TARGET ${PROJECT_TARGET} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${SHADER_BINARY}"
+                "${SHADER_FINAL_OUTPUT_DIR}/${SHADER_BINARY_RELATIVE_PATH}"
+        )
+    endforeach ()
+
 endfunction()
