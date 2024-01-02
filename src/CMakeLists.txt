@@ -10,11 +10,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Target Platform Detection
 if (WIN32)
     set(TARGET_PLATFORM "Windows")
-elseif (UNIX AND NOT APPLE)
-    set(TARGET_PLATFORM "Linux")
 elseif (APPLE)
     set(TARGET_PLATFORM "Darwin")
+elseif (UNIX)
+    set(TARGET_PLATFORM "Linux")
 endif ()
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/ShaderCompile.cmake)
 
 # Configurations
 
@@ -36,6 +38,10 @@ endif ()
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     list(APPEND COMMON_DEFINITIONS "ENGINE_DEBUG")
 endif ()
+
+set (SHADER_SOURCE_FILES "Shaders/sample/triangle.hlsl")
+compile_shader(${SHADER_SOURCE_FILES} "vulkan" "vertex" "vs")
+compile_shader(${SHADER_SOURCE_FILES} "vulkan" "pixel" "ps")
 
 # Platform Specific Configurations
 
@@ -128,6 +134,7 @@ list(APPEND COMMON_INCLUDE_FOLDERS ${CGLTF_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} ${COMMON_SOURCES} ${PLATFORM_SOURCES})
 
+add_shader_dependencies(${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME} PRIVATE ${COMMON_INCLUDE_FOLDERS} ${PLATFORM_INCLUDE_DIRECTORIES})
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${COMMON_DEFINITIONS})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${COMMON_LIBRARIES} ${PLATFORM_LIBRARIES})

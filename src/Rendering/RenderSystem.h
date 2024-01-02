@@ -6,6 +6,7 @@
 #include "Rendering/Vulkan/VulkanDevice.h"
 #include "Rendering/Vulkan/VulkanSurface.h"
 #include "Rendering/Vulkan/VulkanSwapchain.h"
+#include "Rendering/Vulkan/VulkanShader.h"
 
 namespace gore
 {
@@ -34,6 +35,8 @@ private:
     VulkanSwapchain* m_VulkanSwapchain;
 
     std::vector<VulkanSemaphore*> m_RenderFinishedSemaphores;
+
+    VulkanShader* m_TriangleShader;
 };
 
 } // namespace gore

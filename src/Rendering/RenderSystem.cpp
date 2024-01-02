@@ -29,7 +29,8 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_VulkanDevice(nullptr),
     m_VulkanSurface(nullptr),
     m_VulkanSwapchain(nullptr),
-    m_RenderFinishedSemaphores()
+    m_RenderFinishedSemaphores(),
+    m_TriangleShader(nullptr)
 {
     g_RenderSystem = this;
 }
@@ -57,6 +58,8 @@ void RenderSystem::Initialize()
     {
         m_RenderFinishedSemaphores[i] = new VulkanSemaphore(m_VulkanDevice);
     }
+
+    m_TriangleShader = new VulkanShader(m_VulkanDevice, "sample/triangle", ShaderStage::Vertex | ShaderStage::Fragment);
 }
 
 void RenderSystem::Update()
@@ -114,6 +117,8 @@ void RenderSystem::Update()
 
 void RenderSystem::Shutdown()
 {
+    delete m_TriangleShader;
+
     for (uint32_t i = 0; i < m_RenderFinishedSemaphores.size(); ++i)
     {
         delete m_RenderFinishedSemaphores[i];

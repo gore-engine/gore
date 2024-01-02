@@ -10,6 +10,7 @@ namespace gore
 {
 
 std::filesystem::path FileSystem::s_ExecutablePath;
+std::filesystem::path FileSystem::s_ResourceFolder;
 
 std::filesystem::path FileSystem::GetExecutablePath()
 {
@@ -48,6 +49,8 @@ std::vector<char> FileSystem::ReadAllBinary(const std::filesystem::path& path)
     file.seekg(0, std::ios::beg);
     file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
     file.close();
+
+    return buffer;
 }
 
 }
