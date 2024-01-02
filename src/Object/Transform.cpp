@@ -1,6 +1,7 @@
 #include "Transform.h"
 
 #include "GameObject.h"
+#include "Math/Quaternion.h"
 
 #include "rtm/matrix3x4f.h"
 
@@ -34,6 +35,7 @@ void Transform::Start()
 
 void Transform::Update()
 {
+    this->RotateAroundAxis(Vector3::Up, 0.01f);
     LOG_STREAM(DEBUG) << "Update Transform in GameObject: " << GetGameObject()->GetName()
                       << "  Position: " << m_LocalPosition
                       << "  Rotation: " << m_LocalRotation
@@ -64,6 +66,11 @@ inline Quaternion Transform::GetLocalRotation() const
 Matrix4x4 Transform::GetLocalToWorldMatrix() const
 {
     return rtm::matrix_from_qvv(m_LocalPosition, m_LocalRotation, m_LocalScale);
+}
+
+void Transform::RotateAroundAxis(const Vector3& axis, float angle)
+{
+    m_LocalRotation = m_LocalRotation * Quaternion::CreateFromAxisAngle(axis, angle);
 }
 
 } // namespace gore
