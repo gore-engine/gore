@@ -3,12 +3,6 @@
 namespace gore
 {
 
-Quaternion::Quaternion(const ValueType& F) noexcept :
-    Quaternion()
-{
-    rtm::quat_store(F, reinterpret_cast<float*>(this));
-}
-
 Quaternion::Quaternion(ValueType&& F) noexcept :
     Quaternion()
 {
