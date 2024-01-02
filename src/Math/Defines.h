@@ -3,9 +3,8 @@
 #define MATHF_SIMD_SET_VALUE_TYPE(VALUE_TYPE) using ValueType = VALUE_TYPE;
 
 #define MATHF_SIMD_CONVERSION_WITH_VALUE_TYPE_DECLARATIONS(CLASS_NAME) \
-    explicit operator ValueType() const noexcept;                      \
-    explicit CLASS_NAME(const ValueType& F) noexcept;                  \
-    explicit CLASS_NAME(ValueType&& F) noexcept;                       \
+    operator ValueType() const noexcept;                               \
+    CLASS_NAME(ValueType&& F) noexcept;                                \
     CLASS_NAME& operator=(const ValueType& F) noexcept;
 
 
@@ -21,10 +20,10 @@
 
 
 #define MATHF_COMMON_COMPOUND_ASSIGNMENT_OPERATOR_DECLARATIONS(CLASS_NAME) \
-    CLASS_NAME& operator+=(const CLASS_NAME& V) noexcept;         \
-    CLASS_NAME& operator-=(const CLASS_NAME& V) noexcept;         \
-    CLASS_NAME& operator*=(const CLASS_NAME& V) noexcept;         \
-    CLASS_NAME& operator*=(float S) noexcept;                     \
+    CLASS_NAME& operator+=(const CLASS_NAME& V) noexcept;                  \
+    CLASS_NAME& operator-=(const CLASS_NAME& V) noexcept;                  \
+    CLASS_NAME& operator*=(const CLASS_NAME& V) noexcept;                  \
+    CLASS_NAME& operator*=(float S) noexcept;                              \
     CLASS_NAME& operator/=(float S) noexcept;
 
 #define MATHF_VECTOR_COMPOUND_ASSIGNMENT_OPERATOR_DECLARATIONS(CLASS_NAME) \
