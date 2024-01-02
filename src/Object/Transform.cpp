@@ -2,6 +2,8 @@
 
 #include "GameObject.h"
 
+#include "rtm/matrix3x4f.h"
+
 namespace gore
 {
 
@@ -51,17 +53,14 @@ inline Quaternion Transform::GetLocalRotation() const
 }
 
 // Quaternion.ToEuler() has not been implemented
-//Vector3 Transform::GetLocalEulerAngles() const
+// Vector3 Transform::GetLocalEulerAngles() const
 //{
 //    return m_LocalRotation.ToEuler();
 //}
 
-// Matrix4x4::CreateT/R/S() has not been implemented
-// Matrix4x4 Transform::GetLocalToWorldMatrix() const
-// {
-//     return Matrix4x4::CreateScale(m_LocalScale)
-//            * Matrix4x4::CreateFromQuaternion(m_LocalRotation)
-//            * Matrix4x4::CreateTranslation(m_LocalPosition);
-// }
+Matrix4x4 Transform::GetLocalToWorldMatrix() const
+{
+    return rtm::matrix_from_qvv(m_LocalPosition, m_LocalRotation, m_LocalScale);
+}
 
 } // namespace gore
