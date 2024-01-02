@@ -61,7 +61,7 @@ public:
     Vector4 Cross(const Vector4& v1, const Vector4& v2) const noexcept;
 
     void Normalize() noexcept;
-    void Normalize(Vector4& result) const noexcept;
+    void Normalize(Vector4 & result) const noexcept;
 
     void Clamp(const Vector4& vmin, const Vector4& vmax) noexcept;
     void Clamp(const Vector4& vmin, const Vector4& vmax, Vector4& result) const noexcept;
