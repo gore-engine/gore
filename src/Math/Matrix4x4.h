@@ -44,6 +44,8 @@ public:
     MATHF_MATRIX_COMPARISON_OPERATOR_DECLARATIONS(Matrix4x4);
     MATHF_MATRIX_COMPOUND_ASSIGNMENT_OPERATOR_DECLARATIONS(Matrix4x4);
 
+    Matrix4x4(rtm::matrix3x4f&& F) noexcept;
+
     // clang-format off
     Matrix4x4() noexcept = default;
     constexpr Matrix4x4(
