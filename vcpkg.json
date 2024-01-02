@@ -11,6 +11,8 @@
     "stb",
     "vulkan",
     "vulkan-memory-allocator",
-    "volk"
+    "volk",
+    "directx-dxc",
+    "spirv-cross"
   ]
 }
