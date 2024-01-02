@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ostream>
 #include "Export.h"
 
 #include "Math/Defines.h"
@@ -21,6 +22,8 @@ public:
     float y;
     float z;
     float w;
+
+    friend std::ostream& operator<<(std::ostream& os, const Vector4& v) noexcept;
 
 public:
     MATHF_SIMD_SET_VALUE_TYPE(rtm::vector4f);

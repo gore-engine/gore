@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ostream>
+
 #include "Export.h"
 
 #include "Math/Defines.h"
@@ -20,6 +22,8 @@ ENGINE_STRUCT(Vector2)
 public:
     float x;
     float y;
+
+    friend std::ostream& operator<<(std::ostream& os, const Vector2& v) noexcept;
 
 public:
     MATHF_SIMD_SET_VALUE_TYPE(rtm::vector4f);

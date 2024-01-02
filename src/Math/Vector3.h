@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ostream>
+
 #include "Export.h"
 
 #include "Math/Defines.h"
@@ -19,6 +21,8 @@ public:
     float x;
     float y;
     float z;
+
+    friend std::ostream& operator<<(std::ostream& os, const Vector3& v) noexcept;
 
 public:
     MATHF_SIMD_SET_VALUE_TYPE(rtm::vector4f);
@@ -44,7 +48,6 @@ public:
         z(iz)
     {
     }
-
 
     // Vector operations
     bool InBounds(const Vector3& Bounds) const noexcept;
@@ -106,7 +109,6 @@ public:
     static void TransformNormal(const Vector3& v, const Matrix4x4& m, Vector3& result) noexcept;
     static Vector3 TransformNormal(const Vector3& v, const Matrix4x4& m) noexcept;
     static void TransformNormal(const Vector3* varray, size_t count, const Matrix4x4& m, Vector3* resultArray) noexcept;
-
 
 public:
     // Common Values

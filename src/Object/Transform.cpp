@@ -34,7 +34,10 @@ void Transform::Start()
 
 void Transform::Update()
 {
-    LOG_STREAM(DEBUG) << "Update Transform in GameObject " << GetGameObject()->GetName() << m_LocalPosition.x << std::endl;
+    LOG_STREAM(DEBUG) << "Update Transform in GameObject: " << GetGameObject()->GetName()
+                      << "  Position: " << m_LocalPosition
+                      << "  Rotation: " << m_LocalRotation
+                      << "  Scale: " << m_LocalScale << std::endl;
 }
 
 inline Vector3 Transform::GetLocalPosition() const

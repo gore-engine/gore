@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ostream>
+
 #include "Export.h"
 
 #include "Math/Defines.h"
@@ -20,6 +22,8 @@ public:
     float y;
     float z;
     float w;
+
+    friend std::ostream& operator<<(std::ostream& os, const Quaternion& q) noexcept;
 
 public:
     MATHF_SIMD_SET_VALUE_TYPE(rtm::quatf);
@@ -48,7 +52,6 @@ public:
     Quaternion(const Vector3& v, float scalar) noexcept;
     explicit Quaternion(const Vector4& v) noexcept;
     explicit Quaternion(const float* pArray) noexcept;
-
 
     // Quaternion operations
     float Length() const noexcept;
@@ -97,7 +100,6 @@ public:
     static Quaternion LookRotation(const Vector3& forward, const Vector3& up) noexcept;
 
     static float Angle(const Quaternion& q1, const Quaternion& q2) noexcept;
-
 
 public:
     // Common Values

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ostream>
+
 #include "Export.h"
 
 #include "Math/Defines.h"
@@ -33,6 +35,8 @@ public:
         };
         float m[4][4];
     };
+
+    friend std::ostream& operator<<(std::ostream& os, const Matrix4x4& m) noexcept;
 
 public:
     MATHF_SIMD_SET_VALUE_TYPE(rtm::matrix4x4f);
