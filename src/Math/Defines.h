@@ -4,7 +4,7 @@
 
 #define MATHF_SIMD_CONVERSION_WITH_VALUE_TYPE_DECLARATIONS(CLASS_NAME) \
     operator ValueType() const noexcept;                               \
-    CLASS_NAME(ValueType&& F) noexcept;                                \
+    CLASS_NAME(ValueType F) noexcept;                                  \
     CLASS_NAME& operator=(ValueType&& F) noexcept;
 
 
