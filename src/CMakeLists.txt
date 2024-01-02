@@ -20,6 +20,7 @@ endif ()
 
 set(COMMON_SOURCE_FOLDERS
         "Core"
+        "FileSystem"
         "Windowing"
         "Rendering"
         "Scene"

@@ -24,6 +24,8 @@ public:
 
     NON_COPYABLE(App);
 
+    static App* Get();
+
     int Run(int width, int height, const char* title);
 
     [[nodiscard]] Window* GetWindow() const
@@ -43,7 +45,9 @@ protected:
     friend class Window;
 
 private:
+    friend class FileSystem;
     std::vector<std::string> m_Args;
+    std::string m_ExecutablePath;
 
 private:
     Time* m_TimeSystem;
