@@ -32,6 +32,11 @@ public:
     template <typename T>
     // should this be void (i.e. SelfOrDerivedTypeNoReturnValue) instead of T*?
     Component::SelfOrDerivedTypePointer<T> AddComponent(T * component);
+    template <>
+    Transform* AddComponent<Transform>();
+    template <>
+    Transform* AddComponent(Transform* component);
+
 
     template <typename T>
     Component::SelfOrDerivedTypePointer<T> GetComponent();
@@ -52,6 +57,9 @@ private:
     Scene* m_Scene;
 
     std::vector<Component*> m_Components;
+
+    public:
+    const Transform* transform;
 };
 
 template <typename T>

@@ -50,7 +50,6 @@ void Scene::Update()
 GameObject* Scene::NewObject(std::string name)
 {
     auto* gameObject = new GameObject(std::move(name), this);
-    gameObject->AddComponent<Transform>();
     m_GameObjects.push_back(gameObject);
     return gameObject;
 }
