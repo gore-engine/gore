@@ -33,7 +33,6 @@ void SampleApp::Initialize()
     gameObject->SetName("TestObject");
 
     TestComponent* testComponent = gameObject->AddComponent<TestComponent>();
-    gore::Transform* transform   = gameObject->AddComponent<gore::Transform>();
 }
 
 void SampleApp::Update()
