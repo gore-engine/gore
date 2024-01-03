@@ -17,10 +17,12 @@ using namespace rtm;
 
 std::ostream& operator<<(std::ostream& os, const Quaternion& q) noexcept
 {
-    return os << "Quaternion(" << static_cast<float>(quat_get_x(q))
-              << ", " << static_cast<float>(quat_get_y(q))
-              << ", " << static_cast<float>(quat_get_z(q))
-              << ", " << static_cast<float>(quat_get_w(q)) << ")";
+    float temp[4];
+    vector_store(q.m_Q, temp);
+    return os << "Quaternion(" << temp[0]
+              << ", " << temp[1]
+              << ", " << temp[2]
+              << ", " << temp[3] << ")";
 }
 
 Quaternion::operator SIMDValueType() const noexcept
