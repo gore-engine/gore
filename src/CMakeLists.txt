@@ -26,7 +26,6 @@ set(COMMON_SOURCE_FOLDERS
         "Scene"
         "Object"
         "Utilities"
-        "rtm" # TODO: move into Math/ or External/ 
 )
 set(COMMON_INCLUDE_FOLDERS "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -114,13 +113,17 @@ list(APPEND COMMON_LIBRARIES assimp::assimp)
 find_path(CGLTF_INCLUDE_DIRS "cgltf.h")
 list(APPEND COMMON_INCLUDE_FOLDERS ${CGLTF_INCLUDE_DIRS})
 
+# Manually add RealtimeMath
+add_subdirectory(External/rtm)
+list(APPEND COMMON_LIBRARIES RealtimeMath)
+
 # Targets
 
 add_library(${PROJECT_NAME} ${COMMON_SOURCES} ${PLATFORM_SOURCES})
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${COMMON_INCLUDE_FOLDERS} ${PLATFORM_INCLUDE_DIRECTORIES})
+target_include_directories(${PROJECT_NAME} PUBLIC ${COMMON_INCLUDE_FOLDERS} ${PLATFORM_INCLUDE_DIRECTORIES})
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${COMMON_DEFINITIONS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${COMMON_LIBRARIES} ${PLATFORM_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${COMMON_LIBRARIES} ${PLATFORM_LIBRARIES})
 
 # Vulkan Post Build copy
 if (${TARGET_PLATFORM} STREQUAL "Darwin")
