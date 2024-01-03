@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.20)
 project(gore)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+# TODO: check debug or something else
+option(ENABLE_TEST "Enable gore engine test" ON)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -23,11 +25,13 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/ShaderCompile.cmake)
 set(COMMON_SOURCE_FOLDERS
         "Core"
         "FileSystem"
+        "Memory"
         "Windowing"
         "Rendering"
         "Scene"
         "Object"
         "Utilities"
+        "Test"
 )
 set(COMMON_INCLUDE_FOLDERS "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -129,6 +133,21 @@ list(APPEND COMMON_LIBRARIES assimp::assimp)
 # cgltf
 find_path(CGLTF_INCLUDE_DIRS "cgltf.h")
 list(APPEND COMMON_INCLUDE_FOLDERS ${CGLTF_INCLUDE_DIRS})
+
+# catch2
+if (${ENABLE_TEST})
+    find_package(Catch2 3 REQUIRED)
+    
+    list(APPEND COMMON_LIBRARIES Catch2::Catch2WithMain)
+    list(APPEND COMMON_DEFINITIONS "ENABLE_TEST")
+
+    # These tests can use the Catch2-provided main
+    add_executable(${PROJECT_NAME}Test ${COMMON_SOURCES} ${PLATFORM_SOURCES})
+    
+    target_include_directories(${PROJECT_NAME}Test PRIVATE ${COMMON_INCLUDE_FOLDERS} ${PLATFORM_INCLUDE_DIRECTORIES})
+    target_compile_definitions(${PROJECT_NAME}Test PRIVATE ${COMMON_DEFINITIONS})
+    target_link_libraries(${PROJECT_NAME}Test PRIVATE ${COMMON_LIBRARIES} ${PLATFORM_LIBRARIES})
+endif()
 
 # Targets
 

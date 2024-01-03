@@ -13,6 +13,7 @@
     "vulkan-memory-allocator",
     "volk",
     "directx-dxc",
-    "spirv-cross"
+    "spirv-cross",
+    "catch2"
   ]
 }
