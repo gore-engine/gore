@@ -66,11 +66,22 @@ void RenderSystem::Initialize()
     m_TriangleShader->SetEntryPoint(ShaderStage::Vertex, "vs");
     m_TriangleShader->SetEntryPoint(ShaderStage::Fragment, "ps");
 
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{
+        .blendEnable         = VK_FALSE,
+        .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+        .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
+        .colorBlendOp        = VK_BLEND_OP_ADD,
+        .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+        .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+        .alphaBlendOp        = VK_BLEND_OP_ADD,
+        .colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+    };
+
     VulkanGraphicsPipelineCreateInfo pipelineCreateInfo{
         .shader = m_TriangleShader,
- // TODO: descriptor set
-  // TODO: descriptor pool
-  // TODO: pipeline layout
+        // TODO: descriptor set
+        // TODO: descriptor pool
+        // TODO: pipeline layout
         .vertexInputInfo = {
                             .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
                             .pNext                           = VK_NULL_HANDLE,
@@ -106,8 +117,8 @@ void RenderSystem::Initialize()
                             .sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
                             .pNext                 = VK_NULL_HANDLE,
                             .flags                 = 0,
-                            .depthTestEnable       = VK_TRUE,
-                            .depthWriteEnable      = VK_TRUE,
+                            .depthTestEnable       = VK_FALSE,
+                            .depthWriteEnable      = VK_FALSE,
                             .depthCompareOp        = VK_COMPARE_OP_LESS,
                             .depthBoundsTestEnable = VK_FALSE,
                             .stencilTestEnable     = VK_FALSE,
@@ -122,8 +133,8 @@ void RenderSystem::Initialize()
                             .flags           = 0,
                             .logicOpEnable   = VK_FALSE,
                             .logicOp         = VK_LOGIC_OP_COPY,
-                            .attachmentCount = 0,
-                            .pAttachments    = VK_NULL_HANDLE,
+                            .attachmentCount = 1,
+                            .pAttachments    = &colorBlendAttachment,
                             .blendConstants  = {0.0f, 0.0f, 0.0f, 0.0f},
                             },
         .renderTargetCount      = 1,

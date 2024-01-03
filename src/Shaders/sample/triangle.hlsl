@@ -1,7 +1,7 @@
 static const float2 vertPos[3] =
 {
-    float2( 0.0f, -0.5f),
     float2( 0.5f,  0.5f),
+    float2( 0.0f, -0.5f),
     float2(-0.5f,  0.5f)
 };
 
