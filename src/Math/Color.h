@@ -18,7 +18,10 @@ public:
     float b;
     float a;
 
-    friend std::ostream& operator<<(std::ostream& os, const Color& c) noexcept;
+    friend std::ostream& operator<<(std::ostream& os, const Color& c) noexcept
+    {
+        return os << "Color(" << c.r << ", " << c.g << ", " << c.b << ", " << c.a << ")";
+    }
 
 public:
     MATHF_SIMD_SET_VALUE_TYPE(rtm::vector4f);
@@ -96,5 +99,7 @@ Color operator*(const Color& C1, const Color& C2) noexcept;
 Color operator*(const Color& C, float S) noexcept;
 Color operator/(const Color& C1, const Color& C2) noexcept;
 Color operator*(float S, const Color& C) noexcept;
+
+#include "Math/Color.inl"
 
 } // namespace gore

@@ -1,12 +1,4 @@
-#include "Color.h"
-
-namespace gore
-{
-
-std::ostream& operator<<(std::ostream& os, const Color& c) noexcept
-{
-    return os << "Color(" << c.r << ", " << c.g << ", " << c.b << ", " << c.a << ")";
-}
+#pragma once
 
 inline Color::Color(const float* pArray) noexcept :
     r(pArray[0]),
@@ -61,5 +53,3 @@ const Color Color::DarkCyan(0.0f, 0.5f, 0.5f, 1.0f);
 const Color Color::DarkOrange(1.0f, 0.55f, 0.0f, 1.0f);
 const Color Color::DarkPurple(0.5f, 0.0f, 0.5f, 1.0f);
 const Color Color::DarkPink(1.0f, 0.08f, 0.58f, 1.0f);
-
-} // namespace gore

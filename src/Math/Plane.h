@@ -79,4 +79,6 @@ public:
     // Input quaternion must be the inverse transpose of the transformation
 };
 
+#include "Math/Plane.inl"
+
 } // namespace gore

@@ -1,11 +1,8 @@
-#include "Plane.h"
+#pragma once
 
 #include "Vector3.h"
 #include "Vector4.h"
 #include "rtm/quatf.h"
-
-namespace gore
-{
 
 std::ostream& operator<<(std::ostream& os, const Plane& p) noexcept
 {
@@ -54,5 +51,3 @@ inline void Plane::Normal(const Vector3& normal) noexcept
     y = normal.y;
     z = normal.z;
 }
-
-} // namespace gore
