@@ -60,6 +60,8 @@ void RenderSystem::Initialize()
     }
 
     m_TriangleShader = new VulkanShader(m_VulkanDevice, "sample/triangle", ShaderStage::Vertex | ShaderStage::Fragment);
+    m_TriangleShader->SetEntryPoint(ShaderStage::Vertex, "vs");
+    m_TriangleShader->SetEntryPoint(ShaderStage::Fragment, "ps");
 }
 
 void RenderSystem::Update()

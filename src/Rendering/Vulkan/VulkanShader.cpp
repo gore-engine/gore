@@ -18,6 +18,7 @@ static std::string GetOpenGLShaderStageName(ShaderStage stage);
 VulkanShader::VulkanShader(VulkanDevice* device, const std::filesystem::path& path, ShaderStage stages) :
     m_Device(device),
     m_ShaderModules(),
+    m_EntryPoints(),
     m_Stages(stages)
 {
     auto getShaderFile = [&path](ShaderStage stage) -> std::filesystem::path
@@ -80,7 +81,24 @@ VkShaderModule VulkanShader::LoadShader(const std::filesystem::path& path)
     return shaderModule;
 }
 
-VkPipelineShaderStageCreateInfo VulkanShader::GetShaderStageCreateInfo(ShaderStage stage, const char* entryPoint) const
+void VulkanShader::SetEntryPoint(ShaderStage stage, const std::string& entryPoint)
+{
+    // assert(CountBit(stage) == 1);
+    m_EntryPoints[stage] = entryPoint;
+}
+
+const std::string& VulkanShader::GetEntryPoint(ShaderStage stage) const
+{
+    // assert(CountBit(stage) == 1);
+    if (m_EntryPoints.contains(stage))
+    {
+        return m_EntryPoints.at(stage);
+    }
+
+    return "";
+}
+
+VkPipelineShaderStageCreateInfo VulkanShader::GetShaderStageCreateInfo(ShaderStage stage) const
 {
     VkShaderModule shaderModule = Get(stage);
     if (shaderModule == VK_NULL_HANDLE)
@@ -88,11 +106,19 @@ VkPipelineShaderStageCreateInfo VulkanShader::GetShaderStageCreateInfo(ShaderSta
         return {};
     }
 
+    const std::string& entryPoint = GetEntryPoint(stage);
+    if (entryPoint.empty())
+    {
+        return {};
+    }
+
     VkPipelineShaderStageCreateInfo createInfo{
         .sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage  = static_cast<VkShaderStageFlagBits>(stage),
+        .pNext  = VK_NULL_HANDLE,
+        .flags  = 0,
+        .stage  = static_cast<VkShaderStageFlagBits>(stage), // TODO: proper conversion
         .module = shaderModule,
-        .pName  = entryPoint,
+        .pName  = entryPoint.c_str(), // this is saved as a std::string inside std::map, so this is safe
     };
 
     return createInfo;

@@ -42,13 +42,18 @@ public:
 
     [[nodiscard]] VkShaderModule Get(ShaderStage stage) const;
     [[nodiscard]] VulkanDevice* GetDevice() const { return m_Device; }
+    [[nodiscard]] ShaderStage GetStages() const { return m_Stages; }
 
-    [[nodiscard]] VkPipelineShaderStageCreateInfo GetShaderStageCreateInfo(ShaderStage stage, const char* entryPoint) const;
+    void SetEntryPoint(ShaderStage stage, const std::string& entryPoint);
+    [[nodiscard]] const std::string& GetEntryPoint(ShaderStage stage) const;
+
+    [[nodiscard]] VkPipelineShaderStageCreateInfo GetShaderStageCreateInfo(ShaderStage stage) const;
 
 private:
     VulkanDevice* m_Device;
 
     std::map<ShaderStage, VkShaderModule> m_ShaderModules;
+    std::map<ShaderStage, std::string> m_EntryPoints;
     ShaderStage m_Stages;
 
     VkShaderModule LoadShader(const std::filesystem::path& path);
