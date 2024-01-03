@@ -120,7 +120,7 @@ void VulkanSwapchain::Create()
 
     for (uint32_t i = 0; i < m_ImageCount; ++i)
     {
-        m_Images[i]                   = new VulkanImage(device, images[i]);
+        m_Images[i]                   = new VulkanImage(device, images[i], m_Format.format);
         m_RenderFinishedSemaphores[i] = new VulkanSemaphore(device);
         m_ImageAcquiredFences[i]      = new VulkanFence(device, true);
     }

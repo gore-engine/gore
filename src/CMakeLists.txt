@@ -36,7 +36,7 @@ if (${BUILD_SHARED_LIBS})
 endif ()
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    list(APPEND COMMON_DEFINITIONS "ENGINE_DEBUG")
+    list(APPEND COMMON_DEFINITIONS "ENGINE_DEBUG=1")
 endif ()
 
 set (SHADER_SOURCE_FILES "Shaders/sample/triangle.hlsl")
