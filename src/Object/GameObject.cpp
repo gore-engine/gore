@@ -36,4 +36,11 @@ void GameObject::Update()
     }
 }
 
+template <>
+void GameObject::RemoveComponent<Transform>() noexcept(false)
+{
+    LOG_STREAM(ERROR) << "Cannot remove Transform component from GameObject" << std::endl;
+    throw std::runtime_error("Cannot remove Transform component from GameObject");
+}
+
 } // namespace gore

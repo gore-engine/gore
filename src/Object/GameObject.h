@@ -4,6 +4,7 @@
 
 #include "Object/Object.h"
 #include "Object/Component.h"
+#include "Object/Transform.h"
 
 #include <vector>
 
@@ -26,17 +27,28 @@ public:
     }
 
     template <typename T>
-    T* AddComponent();
+    Component::SelfOrDerivedTypePointer<T> AddComponent();
 
     template <typename T>
-    T* GetComponent();
+    // should this be void (i.e. SelfOrDerivedTypeNoReturnValue) instead of T*?
+    Component::SelfOrDerivedTypePointer<T> AddComponent(T * component);
 
     template <typename T>
-    void RemoveComponent();
+    Component::SelfOrDerivedTypePointer<T> GetComponent();
+
+    // Should we have this?
+    // template <typename T>
+    // Component::SelfOrDerivedTypeReference<T> GetComponent();
+
+    template <typename T>
+    Component::SelfOrDerivedTypeNoReturnValue<T> RemoveComponent();
+
+    template <>
+    void RemoveComponent<Transform>() noexcept(false);
 
 private:
     friend class Scene;
-    GameObject(std::string name, Scene* scene);
+    GameObject(std::string name, Scene * scene);
     ~GameObject() override;
 
     Scene* m_Scene;
@@ -45,16 +57,24 @@ private:
 };
 
 template <typename T>
-T* GameObject::AddComponent()
+Component::SelfOrDerivedTypePointer<T> GameObject::AddComponent()
 {
+    static_assert(std::is_abstract_v<T> == false, "Cannot instantiate abstract class");
     T* component = new T(this);
+    m_Components.push_back(component);
+    return component;
+}
+
+template <typename T>
+Component::SelfOrDerivedTypePointer<T> GameObject::AddComponent(T* component)
+{
     m_Components.push_back(component);
     return component;
 }
 
 // todo: RTTI and dynamic_cast
 template <typename T>
-T* GameObject::GetComponent()
+Component::SelfOrDerivedTypePointer<T> GameObject::GetComponent()
 {
     for (auto& component : m_Components)
     {
@@ -66,7 +86,7 @@ T* GameObject::GetComponent()
 }
 
 template <typename T>
-void GameObject::RemoveComponent()
+Component::SelfOrDerivedTypeNoReturnValue<T> GameObject::RemoveComponent()
 {
     for (auto it = m_Components.begin(); it != m_Components.end(); ++it)
     {
