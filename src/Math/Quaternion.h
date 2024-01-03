@@ -5,6 +5,8 @@
 #include "Export.h"
 
 #include "Math/Defines.h"
+#include "Math/Vector3.h"
+#include "Math/Vector4.h"
 
 #include "rtm/vector4f.h"
 #include "rtm/quatf.h"
@@ -13,7 +15,7 @@
 namespace gore
 {
 
-ENGINE_STRUCT(Vector3);
+// ENGINE_STRUCT(Vector3);
 ENGINE_STRUCT(Vector4);
 ENGINE_STRUCT(Matrix4x4);
 
