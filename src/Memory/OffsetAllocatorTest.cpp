@@ -1,4 +1,7 @@
 #include "Test/TestPrefix.h"
+
+#ifdef ENABLE_TEST
+
 #include "OffsetAllocator.h"
 
 namespace OffsetAllocator
@@ -47,8 +50,8 @@ TEST_CASE("numbers", "[SmallFloat]")
         for (uint32_t i = 0; i < sizeof(testData) / sizeof(NumberFloatUpDown); i++)
         {
             NumberFloatUpDown v = testData[i];
-            uint32_t roundUp      = OffsetAllocator::SmallFloat::uintToFloatRoundUp(v.number);
-            uint32_t roundDown    = OffsetAllocator::SmallFloat::uintToFloatRoundDown(v.number);
+            uint32_t roundUp    = OffsetAllocator::SmallFloat::uintToFloatRoundUp(v.number);
+            uint32_t roundDown  = OffsetAllocator::SmallFloat::uintToFloatRoundDown(v.number);
             REQUIRE(roundUp == v.up);
             REQUIRE(roundDown == v.down);
         }
@@ -85,7 +88,7 @@ TEST_CASE("basic", "[offsetAllocator]")
 {
     OffsetAllocator::Allocator allocator(1024 * 1024 * 256);
     OffsetAllocator::Allocation a = allocator.allocate(1337);
-    uint32_t offset                 = a.offset;
+    uint32_t offset               = a.offset;
     REQUIRE(offset == 0);
     allocator.free(a);
 }
@@ -250,3 +253,4 @@ TEST_CASE("allocate", "[offsetAllocator]")
         allocator.free(validateAll);
     }
 }
+#endif
