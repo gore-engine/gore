@@ -5,8 +5,12 @@
 #include "Export.h"
 
 #include "Math/Defines.h"
+#include "Math/Quaternion.h"
+#include "Math/Matrix4x4.h"
 
+#include "rtm/matrix4x4f.h"
 #include "rtm/vector4f.h"
+#include "rtm/quatf.h"
 
 namespace gore
 {
@@ -96,19 +100,6 @@ public:
     static void Refract(const Vector3& ivec, const Vector3& nvec, float refractionIndex, Vector3& result) noexcept;
     static Vector3 Refract(const Vector3& ivec, const Vector3& nvec, float refractionIndex) noexcept;
 
-    static void Transform(const Vector3& v, const Quaternion& quat, Vector3& result) noexcept;
-    static Vector3 Transform(const Vector3& v, const Quaternion& quat) noexcept;
-
-    static void Transform(const Vector3& v, const Matrix4x4& m, Vector3& result) noexcept;
-    static Vector3 Transform(const Vector3& v, const Matrix4x4& m) noexcept;
-    static void Transform(const Vector3* varray, size_t count, const Matrix4x4& m, Vector3* resultArray) noexcept;
-
-    static void Transform(const Vector3& v, const Matrix4x4& m, Vector4& result) noexcept;
-    static void Transform(const Vector3* varray, size_t count, const Matrix4x4& m, Vector4* resultArray) noexcept;
-
-    static void TransformNormal(const Vector3& v, const Matrix4x4& m, Vector3& result) noexcept;
-    static Vector3 TransformNormal(const Vector3& v, const Matrix4x4& m) noexcept;
-    static void TransformNormal(const Vector3* varray, size_t count, const Matrix4x4& m, Vector3* resultArray) noexcept;
 
 public:
     // Common Values
@@ -127,5 +118,7 @@ public:
 };
 
 MATHF_VECTOR_BINARY_OPERATOR_DECLARATIONS(Vector3);
+
+#include "Vector3.inl"
 
 } // namespace gore
