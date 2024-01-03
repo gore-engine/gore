@@ -30,7 +30,7 @@ public:
     MATHF_VECTOR_COMPOUND_ASSIGNMENT_OPERATOR_DECLARATIONS(Quaternion);
 
 public:
-    ValueType m_Q;
+    SIMDValueType m_Q;
     friend std::ostream& operator<<(std::ostream& os, const Quaternion& q) noexcept;
 
     Quaternion() noexcept :

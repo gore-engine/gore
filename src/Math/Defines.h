@@ -1,11 +1,11 @@
 #pragma once
 
-#define MATHF_SIMD_SET_VALUE_TYPE(VALUE_TYPE) using ValueType = VALUE_TYPE;
+#define MATHF_SIMD_SET_VALUE_TYPE(SIMD_VALUE_TYPE) using SIMDValueType = SIMD_VALUE_TYPE;
 
 #define MATHF_SIMD_CONVERSION_WITH_VALUE_TYPE_DECLARATIONS(CLASS_NAME) \
-    operator ValueType() const noexcept;                               \
-    CLASS_NAME(ValueType F) noexcept;                                  \
-    CLASS_NAME& operator=(ValueType&& F) noexcept;
+    operator SIMDValueType() const noexcept;                               \
+    CLASS_NAME(SIMDValueType F) noexcept;                                  \
+    CLASS_NAME& operator=(SIMDValueType&& F) noexcept;
 
 
 #define MATHF_COMMON_COMPARISON_OPERATOR_DECLARATIONS(CLASS_NAME) \

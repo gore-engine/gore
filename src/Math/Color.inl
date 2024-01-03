@@ -16,7 +16,7 @@ inline Color::Color(const float* pArray) noexcept :
 {
 }
 
-inline Color& Color::operator=(const gore::Color::ValueType& F) noexcept
+inline Color& Color::operator=(const gore::Color::SIMDValueType& F) noexcept
 {
     rtm::vector_store(F, reinterpret_cast<float*>(this));
     return *this;

@@ -39,7 +39,7 @@ public:
     }
     explicit Color(const float* pArray) noexcept;
 
-    Color& operator=(const ValueType& F) noexcept;
+    Color& operator=(const SIMDValueType& F) noexcept;
     //    Color& operator= (const DirectX::PackedVector::XMCOLOR& Packed) noexcept;
     //    Color& operator= (const DirectX::PackedVector::XMUBYTEN4& Packed) noexcept;
     Color& operator+=(const Color& c) noexcept;

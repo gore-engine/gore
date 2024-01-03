@@ -19,12 +19,12 @@ std::ostream& operator<<(std::ostream& os, const Matrix4x4& m) noexcept
     return os << "Matrix4x4()";
 }
 
-Matrix4x4::operator ValueType() const noexcept
+Matrix4x4::operator SIMDValueType() const noexcept
 {
     return matrix_set(vector_load(m[0]), vector_load(m[1]), vector_load(m[2]), vector_load(m[3]));
 }
 
-Matrix4x4::Matrix4x4(gore::Matrix4x4::ValueType F) noexcept
+Matrix4x4::Matrix4x4(gore::Matrix4x4::SIMDValueType F) noexcept
 {
     vector_store(matrix_get_axis(F, rtm::axis4::x), m[0]);
     vector_store(matrix_get_axis(F, rtm::axis4::y), m[1]);

@@ -37,7 +37,7 @@ inline Plane::Plane(const float* pArray) noexcept :
 {
 }
 
-inline Plane& Plane::operator=(ValueType&& F) noexcept
+inline Plane& Plane::operator=(SIMDValueType&& F) noexcept
 {
     rtm::quat_store(F, reinterpret_cast<float*>(this));
     return *this;

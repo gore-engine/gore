@@ -23,12 +23,12 @@ std::ostream& operator<<(std::ostream& os, const Quaternion& q) noexcept
               << ", " << static_cast<float>(quat_get_w(q)) << ")";
 }
 
-Quaternion::operator ValueType() const noexcept
+Quaternion::operator SIMDValueType() const noexcept
 {
     return m_Q;
 }
 
-Quaternion::Quaternion(ValueType F) noexcept :
+Quaternion::Quaternion(SIMDValueType F) noexcept :
     m_Q(F)
 {
 }
@@ -109,7 +109,7 @@ inline void Quaternion::RotateTowards(const Quaternion& target, float maxAngle) 
 
 inline Quaternion Quaternion::CreateFromAxisAngle(const Vector3& axis, float angle) noexcept
 {
-    return quat_from_axis_angle(static_cast<Vector3::ValueType>(axis), angle);
+    return quat_from_axis_angle(static_cast<Vector3::SIMDValueType>(axis), angle);
 }
 
 inline Quaternion Quaternion::CreateFromYawPitchRoll(float yaw, float pitch, float roll) noexcept
