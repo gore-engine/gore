@@ -26,23 +26,21 @@ public:
         return m_Scene;
     }
 
+public:
     template <typename T>
     Component::SelfOrDerivedTypePointer<T> AddComponent();
-
     template <typename T>
     // should this be void (i.e. SelfOrDerivedTypeNoReturnValue) instead of T*?
     Component::SelfOrDerivedTypePointer<T> AddComponent(T * component);
 
     template <typename T>
     Component::SelfOrDerivedTypePointer<T> GetComponent();
-
     // Should we have this?
     // template <typename T>
     // Component::SelfOrDerivedTypeReference<T> GetComponent();
 
     template <typename T>
     Component::SelfOrDerivedTypeNoReturnValue<T> RemoveComponent();
-
     template <>
     void RemoveComponent<Transform>() noexcept(false);
 
