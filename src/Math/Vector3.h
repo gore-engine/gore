@@ -5,7 +5,6 @@
 #include "Export.h"
 
 #include "Math/Defines.h"
-#include "Math/Quaternion.h"
 #include "Math/Matrix4x4.h"
 
 #include "rtm/matrix4x4f.h"
