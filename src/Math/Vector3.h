@@ -25,7 +25,7 @@ public:
     float y;
     float z;
 
-    friend std::ostream& operator<<(std::ostream& os, const Vector3& v) noexcept;
+    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream& os, const Vector3& v) noexcept;
 
 public:
     MATHF_SIMD_SET_VALUE_TYPE(rtm::vector4f);

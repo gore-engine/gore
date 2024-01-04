@@ -33,7 +33,7 @@ public:
 
 public:
     SIMDValueType m_Q;
-    friend std::ostream& operator<<(std::ostream& os, const Quaternion& q) noexcept;
+    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream& os, const Quaternion& q) noexcept;
 
     Quaternion() noexcept :
         m_Q(Identity)

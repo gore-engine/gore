@@ -35,10 +35,7 @@ void SampleApp::Initialize()
     // It will only print an Error message to console.
     gameObject->AddComponent<gore::Transform>();
 
-    // I don't know why but this will cause Link Error saying it cannot find the ostream& operator<< overload
-    // However in Transform.cpp it works perfectly
-    // TODO: Maybe Check CMake SampleApp's library linking
-    // LOG_STREAM(INFO) << (gameObject->transform->GetLocalPosition()) << std::endl;
+    LOG_STREAM(INFO) << (gameObject->transform->GetLocalPosition()) << std::endl;
 
     TestComponent* testComponent = gameObject->AddComponent<TestComponent>();
 }

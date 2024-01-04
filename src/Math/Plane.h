@@ -25,7 +25,7 @@ public:
     float z;
     float w;
 
-    friend std::ostream& operator<<(std::ostream& os, const Plane& p) noexcept;
+    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream& os, const Plane& p) noexcept;
 
 public:
     MATHF_SIMD_SET_VALUE_TYPE(rtm::vector4f);

@@ -3,8 +3,8 @@
 #define MATHF_SIMD_SET_VALUE_TYPE(SIMD_VALUE_TYPE) using SIMDValueType = SIMD_VALUE_TYPE;
 
 #define MATHF_SIMD_CONVERSION_WITH_VALUE_TYPE_DECLARATIONS(CLASS_NAME) \
-    operator SIMDValueType() const noexcept;                               \
-    CLASS_NAME(SIMDValueType F) noexcept;                                  \
+    operator SIMDValueType() const noexcept;                           \
+    CLASS_NAME(SIMDValueType F) noexcept;                              \
     CLASS_NAME& operator=(SIMDValueType&& F) noexcept;
 
 
