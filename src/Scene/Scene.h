@@ -30,6 +30,9 @@ public:
     void Update();
 
     GameObject* NewObject(std::string name = "New GameObject");
+    // If we have time to implement this
+    // GameObject* NewObject(std::string name = "New GameObject", Vector3 position = Vector3::Zero);
+
     void DestroyObject(GameObject* gameObject);
 
     GameObject* FindObject(const std::string& name);

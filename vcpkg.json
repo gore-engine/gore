@@ -6,7 +6,6 @@
     "assimp",
     "cgltf",
     "glfw3",
-    "glm",
     "imgui",
     "stb",
     "vulkan",

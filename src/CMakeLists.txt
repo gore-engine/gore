@@ -22,6 +22,7 @@ endif ()
 
 set(COMMON_SOURCE_FOLDERS
         "Core"
+        "Math"
         "Memory"
         "Windowing"
         "Rendering"
@@ -36,7 +37,7 @@ if (${BUILD_SHARED_LIBS})
     list(APPEND COMMON_DEFINITIONS "ENGINE_DLL" "ENGINE_EXPORTS")
 endif ()
 
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND COMMON_DEFINITIONS "ENGINE_DEBUG")
 endif ()
 
@@ -75,7 +76,7 @@ endif ()
 
 set(COMMON_SOURCES "Prefix.h" "Export.h")
 foreach (folder ${COMMON_SOURCE_FOLDERS})
-    file(GLOB_RECURSE SOURCES "${folder}/*.cpp" "${folder}/*.h")
+    file(GLOB_RECURSE SOURCES "${folder}/*.cpp" "${folder}/*.inl" "${folder}/*.h")
     list(APPEND COMMON_SOURCES ${SOURCES})
 endforeach ()
 
@@ -91,10 +92,6 @@ endforeach ()
 find_package(glfw3 CONFIG REQUIRED)
 list(APPEND COMMON_LIBRARIES glfw)
 list(APPEND COMMON_DEFINITIONS "GLFW_INCLUDE_NONE")
-
-# glm
-find_package(glm CONFIG REQUIRED)
-list(APPEND COMMON_LIBRARIES glm::glm)
 
 # vulkan
 find_package(Vulkan REQUIRED)
@@ -120,6 +117,11 @@ list(APPEND COMMON_LIBRARIES assimp::assimp)
 find_path(CGLTF_INCLUDE_DIRS "cgltf.h")
 list(APPEND COMMON_INCLUDE_FOLDERS ${CGLTF_INCLUDE_DIRS})
 
+# Manually add RealtimeMath
+add_subdirectory(External/rtm)
+list(APPEND COMMON_LIBRARIES RealtimeMath)
+
+
 # catch2
 if (${ENABLE_TEST})
     find_package(Catch2 3 REQUIRED)
@@ -139,9 +141,9 @@ endif()
 
 add_library(${PROJECT_NAME} ${COMMON_SOURCES} ${PLATFORM_SOURCES})
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${COMMON_INCLUDE_FOLDERS} ${PLATFORM_INCLUDE_DIRECTORIES})
+target_include_directories(${PROJECT_NAME} PUBLIC ${COMMON_INCLUDE_FOLDERS} ${PLATFORM_INCLUDE_DIRECTORIES})
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${COMMON_DEFINITIONS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${COMMON_LIBRARIES} ${PLATFORM_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${COMMON_LIBRARIES} ${PLATFORM_LIBRARIES})
 
 # Vulkan Post Build copy
 if (${TARGET_PLATFORM} STREQUAL "Darwin")

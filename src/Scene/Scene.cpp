@@ -2,6 +2,7 @@
 
 #include "Scene.h"
 #include "Object/GameObject.h"
+#include "Object/Transform.h"
 
 #include <utility>
 #include <iostream>
