@@ -3,6 +3,8 @@
 #define VOLK_IMPLEMENTATION
 #include "VulkanIncludes.h"
 
+#if ENGINE_DEBUG
+
 const char* gore::VkResultToString(VkResult result)
 {
 #define ENUM_TO_STRING_CASE(x) \
@@ -39,3 +41,5 @@ const char* gore::VkResultToString(VkResult result)
     }
 #undef ENUM_TO_STRING_CASE
 }
+
+#endif

@@ -104,7 +104,7 @@ void Logger::Log(LogLevel level, const char* file, int line, const char* format,
                         << "." << std::setfill('0') << std::setw(3) << nowMsTime
                         << " " << GetLogLevelStr(level) << ": " << buf;
 
-        if (m_LogLevel >= LogLevel::WARNING)
+        if (level >= LogLevel::WARNING)
             *m_OutputStream << "    " << file << ":" << line << std::endl;
         else
             *m_OutputStream << std::flush;
