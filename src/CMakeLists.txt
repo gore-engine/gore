@@ -12,16 +12,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Target Platform Detection
 if (WIN32)
     set(TARGET_PLATFORM "Windows")
-elseif (UNIX AND NOT APPLE)
-    set(TARGET_PLATFORM "Linux")
 elseif (APPLE)
     set(TARGET_PLATFORM "Darwin")
+elseif (UNIX)
+    set(TARGET_PLATFORM "Linux")
 endif ()
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/ShaderCompile.cmake)
 
 # Configurations
 
 set(COMMON_SOURCE_FOLDERS
         "Core"
+        "FileSystem"
         "Math"
         "Memory"
         "Windowing"
@@ -38,8 +41,12 @@ if (${BUILD_SHARED_LIBS})
 endif ()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    list(APPEND COMMON_DEFINITIONS "ENGINE_DEBUG")
+    list(APPEND COMMON_DEFINITIONS "ENGINE_DEBUG=1")
 endif ()
+
+set (SHADER_SOURCE_FILES "Shaders/sample/triangle.hlsl")
+compile_shader(${SHADER_SOURCE_FILES} "vulkan" "vertex" "vs")
+compile_shader(${SHADER_SOURCE_FILES} "vulkan" "pixel" "ps")
 
 # Platform Specific Configurations
 
@@ -51,7 +58,7 @@ if (${TARGET_PLATFORM} STREQUAL "Windows")
 elseif (${TARGET_PLATFORM} STREQUAL "Linux")
     find_package(X11 REQUIRED)
 
-    set(PLATFORM_SOURCE_FOLDERS "Platform/Linux")
+    set(PLATFORM_SOURCE_FOLDERS "Platform/Linux" "Platform/CommonUnix")
     set(PLATFORM_INCLUDE_DIRECTORIES ${X11_INCLUDE_DIR})
     set(PLATFORM_LIBRARIES ${X11_LIBRARIES})
     set(PLATFORM_DEFINITIONS)
@@ -66,7 +73,7 @@ elseif (${TARGET_PLATFORM} STREQUAL "Darwin")
 
     set(CMAKE_MACOSX_BUNDLE TRUE)
 
-    set(PLATFORM_SOURCE_FOLDERS "Platform/macOS")
+    set(PLATFORM_SOURCE_FOLDERS "Platform/macOS" "Platform/CommonUnix")
     set(PLATFORM_INCLUDE_DIRECTORIES)
     set(PLATFORM_LIBRARIES ${COCOA} ${METAL} ${METALKIT} ${APPKIT} ${QUARTZCORE} ${FOUNDATION} ${IOKIT})
     set(PLATFORM_DEFINITIONS)
@@ -79,6 +86,9 @@ foreach (folder ${COMMON_SOURCE_FOLDERS})
     file(GLOB_RECURSE SOURCES "${folder}/*.cpp" "${folder}/*.inl" "${folder}/*.h")
     list(APPEND COMMON_SOURCES ${SOURCES})
 endforeach ()
+
+file(GLOB COMMON_PLATFORM_SOURCES "Platform/*.cpp" "Platform/*.h")
+list(APPEND COMMON_SOURCES ${COMMON_PLATFORM_SOURCES})
 
 set(PLATFORM_SOURCES)
 foreach (folder ${PLATFORM_SOURCE_FOLDERS})
@@ -100,6 +110,10 @@ list(APPEND COMMON_LIBRARIES Vulkan::Headers)
 # vulkan memory allocator
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 list(APPEND COMMON_LIBRARIES GPUOpen::VulkanMemoryAllocator)
+
+# volk
+find_package(volk CONFIG REQUIRED)
+list(APPEND COMMON_LIBRARIES volk::volk_headers)
 
 # imgui
 find_package(imgui CONFIG REQUIRED)
@@ -141,6 +155,7 @@ endif()
 
 add_library(${PROJECT_NAME} ${COMMON_SOURCES} ${PLATFORM_SOURCES})
 
+add_shader_dependencies(${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME} PUBLIC ${COMMON_INCLUDE_FOLDERS} ${PLATFORM_INCLUDE_DIRECTORIES})
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${COMMON_DEFINITIONS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${COMMON_LIBRARIES} ${PLATFORM_LIBRARIES})

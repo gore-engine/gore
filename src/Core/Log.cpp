@@ -102,8 +102,12 @@ void Logger::Log(LogLevel level, const char* file, int line, const char* format,
         std::lock_guard<std::mutex> lock(m_Mutex);
         *m_OutputStream << std::put_time(nowTimeTm, "%Y-%m-%d %H:%M:%S")
                         << "." << std::setfill('0') << std::setw(3) << nowMsTime
-                        << " " << GetLogLevelStr(level) << ": " << buf
-                        << "    " << file << ":" << line << std::endl;
+                        << " " << GetLogLevelStr(level) << ": " << buf;
+
+        if (level >= LogLevel::WARNING)
+            *m_OutputStream << "    " << file << ":" << line << std::endl;
+        else
+            *m_OutputStream << std::flush;
     }
 }
 

@@ -14,16 +14,21 @@
 namespace gore
 {
 
+static App *g_App = nullptr;
+
 App::App(int argc, char** argv) :
     m_Args(argv + 1, argv + argc),
+    m_ExecutablePath(argv[0]),
     m_TimeSystem(nullptr),
     m_RenderSystem(nullptr),
     m_Window(nullptr)
 {
+    g_App = this;
 }
 
 App::~App()
 {
+    g_App = nullptr;
 }
 
 bool App::HasArg(const std::string& arg) const
@@ -63,8 +68,6 @@ int App::Run(int width, int height, const char* title)
             scene->Update();
 
         m_RenderSystem->Update();
-
-        Render();
     }
 
     m_TimeSystem->Shutdown();
@@ -82,6 +85,11 @@ int App::Run(int width, int height, const char* title)
     glfwTerminate();
 
     return 0;
+}
+
+App* App::Get()
+{
+    return g_App;
 }
 
 } // namespace gore

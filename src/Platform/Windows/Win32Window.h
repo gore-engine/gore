@@ -7,8 +7,8 @@ namespace gore
 
 struct Win32Window
 {
-    HINSTANCE m_hInstance;
-    HWND m_hWnd;
+    HINSTANCE hInstance;
+    HWND hWnd;
 };
 
 } // namespace gore

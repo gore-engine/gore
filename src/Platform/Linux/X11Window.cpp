@@ -15,6 +15,7 @@ void Window::CreateNativeHandle()
     auto* w        = new X11Window();
     w->display     = glfwGetX11Display();
     w->window      = glfwGetX11Window(m_Window);
+    w->visualID    = XVisualIDFromVisual(DefaultVisual(w->display, DefaultScreen(w->display)));
     m_NativeHandle = w;
 }
 
