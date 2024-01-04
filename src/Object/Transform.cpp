@@ -42,17 +42,17 @@ void Transform::Update()
                       << "  Scale: " << m_LocalScale << std::endl;
 }
 
-inline Vector3 Transform::GetLocalPosition() const
+Vector3 Transform::GetLocalPosition() const
 {
     return m_LocalPosition;
 }
 
-inline Vector3 Transform::GetLocalScale() const
+Vector3 Transform::GetLocalScale() const
 {
     return m_LocalScale;
 }
 
-inline Quaternion Transform::GetLocalRotation() const
+Quaternion Transform::GetLocalRotation() const
 {
     return m_LocalRotation;
 }
