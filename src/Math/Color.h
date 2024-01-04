@@ -18,7 +18,7 @@ public:
     float b;
     float a;
 
-    friend std::ostream& operator<<(std::ostream& os, const Color& c) noexcept
+    friend inline ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream& os, const Color& c) noexcept
     {
         return os << "Color(" << c.r << ", " << c.g << ", " << c.b << ", " << c.a << ")";
     }

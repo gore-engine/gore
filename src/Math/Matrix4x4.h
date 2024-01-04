@@ -36,7 +36,7 @@ public:
         float m[4][4];
     };
 
-    friend std::ostream& operator<<(std::ostream& os, const Matrix4x4& m) noexcept;
+    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream & os, const Matrix4x4& m) noexcept;
 
 public:
     MATHF_SIMD_SET_VALUE_TYPE(rtm::matrix4x4f);
@@ -48,7 +48,7 @@ public:
     MATHF_MATRIX_COMPARISON_OPERATOR_DECLARATIONS(Matrix4x4);
     MATHF_MATRIX_COMPOUND_ASSIGNMENT_OPERATOR_DECLARATIONS(Matrix4x4);
 
-    Matrix4x4(rtm::matrix3x4f&& F) noexcept;
+    Matrix4x4(rtm::matrix3x4f && F) noexcept;
 
     // clang-format off
     Matrix4x4() noexcept = default;
