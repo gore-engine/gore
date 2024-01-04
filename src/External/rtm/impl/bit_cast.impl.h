@@ -42,9 +42,10 @@ namespace rtm
 	{
 		//////////////////////////////////////////////////////////////////////////
 		// C++20 introduced std::bit_cast which is safer than reinterpret_cast
+		// But AppleClang only supports it after 14.0.3, see https://en.cppreference.com/w/cpp/compiler_support
 		//////////////////////////////////////////////////////////////////////////
 
-	#if RTM_CPP_VERSION >= RTM_CPP_VERSION_20
+	#if RTM_CPP_VERSION >= RTM_CPP_VERSION_20 && (!defined(__APPLE__) || !defined(__clang__) || __clang_major__ > 14 || (__clang_major__ == 14 && __clang_minor__ > 0) || (__clang_major__ == 14 && __clang_minor__ == 0 && __clang_patchlevel__ >= 3))
 		using std::bit_cast;
 	#else
 		template<class dest_type_t, class src_type_t>
