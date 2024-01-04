@@ -22,7 +22,7 @@ public:
     void Begin();
     void End();
 
-    void Barrier(const std::vector<VulkanResourceBarrier>& barriers, VulkanQueueType queueType);
+    void Barrier(const std::vector<VulkanResourceBarrier>& barriers, VulkanQueueType currentQueueType, VulkanQueueType newQueueType);
 
 private:
     VulkanCommandPool* m_CommandPool;

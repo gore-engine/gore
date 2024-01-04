@@ -51,7 +51,7 @@ void VulkanCommandBuffer::End()
     VK_CHECK_RESULT(res);
 }
 
-void VulkanCommandBuffer::Barrier(const std::vector<VulkanResourceBarrier>& barriers, VulkanQueueType queueType)
+void VulkanCommandBuffer::Barrier(const std::vector<VulkanResourceBarrier>& barriers, VulkanQueueType currentQueueType, VulkanQueueType newQueueType)
 {
     VulkanDevice* device = m_CommandPool->GetDevice();
 
@@ -110,8 +110,8 @@ void VulkanCommandBuffer::Barrier(const std::vector<VulkanResourceBarrier>& barr
     }
 
     device->API.vkCmdPipelineBarrier(m_CommandBuffer,
-                                     PipelineStageFlagsFromAccessFlags(srcAccessMask, queueType),
-                                     PipelineStageFlagsFromAccessFlags(dstAccessMask, queueType),
+                                     PipelineStageFlagsFromAccessFlags(srcAccessMask, currentQueueType),
+                                     PipelineStageFlagsFromAccessFlags(dstAccessMask, newQueueType),
                                      0,
                                      0,
                                      VK_NULL_HANDLE,

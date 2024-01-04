@@ -118,8 +118,6 @@ VkPipelineStageFlags PipelineStageFlagsFromAccessFlags(VkAccessFlags accessFlags
 
             break;
         }
-        case VulkanQueueType::Transfer:
-            return VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
         case VulkanQueueType::Compute:
         {
             if ((accessFlags & (VK_ACCESS_INDEX_READ_BIT | VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT)) != 0 ||
@@ -133,6 +131,9 @@ VkPipelineStageFlags PipelineStageFlagsFromAccessFlags(VkAccessFlags accessFlags
 
             break;
         }
+        case VulkanQueueType::Transfer:
+        case VulkanQueueType::Present:
+            return VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     }
 
     if ((accessFlags & VK_ACCESS_INDIRECT_COMMAND_READ_BIT) != 0)

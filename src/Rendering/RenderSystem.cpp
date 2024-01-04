@@ -66,6 +66,8 @@ void RenderSystem::Initialize()
     m_TriangleShader->SetEntryPoint(ShaderStage::Vertex, "vs");
     m_TriangleShader->SetEntryPoint(ShaderStage::Fragment, "ps");
 
+    // TODO: hide these pure Vulkan structs
+    // -------------------------------------
     VkPipelineColorBlendAttachmentState colorBlendAttachment{
         .blendEnable         = VK_FALSE,
         .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
@@ -141,6 +143,7 @@ void RenderSystem::Initialize()
         .colorAttachmentFormats = {m_VulkanSwapchain->GetImageFormat()},
         .depthAttachmentFormat  = VK_FORMAT_UNDEFINED,
     };
+    // -------------------------------------
 
     m_TrianglePipeline = new VulkanPipeline(m_VulkanDevice, pipelineCreateInfo);
 }
@@ -178,7 +181,7 @@ void RenderSystem::Update()
         .newState     = ResourceState::RenderTarget,
     };
 
-    commandBuffer.Barrier({transitionToRTBarrier}, VulkanQueueType::Graphics);
+    commandBuffer.Barrier({transitionToRTBarrier}, VulkanQueueType::Present, VulkanQueueType::Graphics);
 
     // TODO: Hide these pure vulkan calls
     float totalTime              = GetTotalTime();
@@ -238,7 +241,7 @@ void RenderSystem::Update()
         .newState     = ResourceState::Present,
     };
 
-    commandBuffer.Barrier({transitionToPresentBarrier}, VulkanQueueType::Graphics);
+    commandBuffer.Barrier({transitionToPresentBarrier}, VulkanQueueType::Graphics, VulkanQueueType::Present);
 
     commandBuffer.End();
 
