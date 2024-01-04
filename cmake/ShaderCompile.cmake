@@ -1,8 +1,22 @@
-# spirv-cross
-find_program(SPIRV_CROSS_EXECUTABLE NAMES spirv-cross)
-
 # dxc
-find_package(directx-dxc CONFIG REQUIRED)
+# FindVulkan with dxc component emits warning on Windows Debug setup
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.25 AND NOT WIN32)
+    find_package(Vulkan REQUIRED COMPONENTS dxc)
+    set(VULKAN_DXC_EXECUTABLE ${Vulkan_dxc_EXECUTABLE})
+else ()
+    find_package(Vulkan REQUIRED)
+    # try to find dxc executable in (and only in) glslangValidator directory
+    get_filename_component(GLSLANG_VALIDATOR_DIR ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} DIRECTORY)
+    find_program(VULKAN_DXC_EXECUTABLE NAMES dxc PATHS ${GLSLANG_VALIDATOR_DIR} NO_CACHE NO_DEFAULT_PATH)
+endif ()
+
+if (VULKAN_DXC_EXECUTABLE STREQUAL "")
+    message(FATAL_ERROR "dxc (from Vulkan SDK) not found! It is needed for shader compilation. Try installing Vulkan SDK with dxc.")
+endif ()
+
+# spirv-cross
+find_package(spirv_cross_core CONFIG REQUIRED)
+find_program(SPIRV_CROSS_EXECUTABLE NAMES spirv-cross REQUIRED)
 
 file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/shaders)
 
@@ -100,7 +114,7 @@ function(HLSL_TO_SPIRV INPUT_HLSL SHADER_STAGE ENTRY_POINT OUTPUT_BINARY)
     add_custom_command(
         OUTPUT ${OUTPUT_SPIRV}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${OUTPUT_DIR}
-        COMMAND ${DIRECTX_DXC_TOOL} -spirv -T ${DIRECTX_STAGE}_6_0 -E ${ENTRY_POINT} -Fo ${OUTPUT_SPIRV} ${INPUT_HLSL}
+        COMMAND ${VULKAN_DXC_EXECUTABLE} -spirv -T ${DIRECTX_STAGE}_6_0 -E ${ENTRY_POINT} -Fo ${OUTPUT_SPIRV} ${INPUT_HLSL} -DENABLE_SPIRV_CODEGEN=ON
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS ${INPUT_HLSL}
     )

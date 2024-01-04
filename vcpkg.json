@@ -12,7 +12,6 @@
     "vulkan",
     "vulkan-memory-allocator",
     "volk",
-    "directx-dxc",
     "spirv-cross",
     "catch2"
   ]
