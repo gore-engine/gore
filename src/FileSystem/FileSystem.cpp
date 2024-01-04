@@ -22,6 +22,10 @@ std::filesystem::path FileSystem::GetExecutablePath()
     return s_ExecutablePath;
 }
 
+#if PLATFORM_MACOS
+std::string GetMacOSAppBundleResourcePath();
+#endif
+
 std::filesystem::path FileSystem::GetResourceFolder()
 {
     if (!s_ResourceFolder.empty())
@@ -30,7 +34,7 @@ std::filesystem::path FileSystem::GetResourceFolder()
     }
 
 #if PLATFORM_MACOS
-    s_ResourceFolder = s_ExecutablePath.parent_path().parent_path() / "Resources";
+    s_ResourceFolder = GetMacOSAppBundleResourcePath();
 #else
     s_ResourceFolder = s_ExecutablePath / "Resources";
 #endif
