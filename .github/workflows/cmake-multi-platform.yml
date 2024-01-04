@@ -25,13 +25,13 @@ jobs:
       matrix:
         os: [
           ubuntu-latest, 
-          windows-latest
-#          macos-latest  # macOS-latest on GitHub Actions is macOS 12 and Apple Clang 14, which does NOT fully support C++20 yet
+          windows-latest,
+          macos-latest
         ]
         build_type: [Debug, Release]
         c_compiler: [
           gcc, 
-#          clang,
+          clang,
           clang-17, # This is a workaround on Ubuntu on GitHub Actions to get C++20 support with Clang
           cl
         ]
@@ -45,9 +45,9 @@ jobs:
           - os: ubuntu-latest
             c_compiler: clang-17
             cpp_compiler: clang++-17
-#          - os: macos-latest
-#            c_compiler: clang
-#            cpp_compiler: clang++
+          - os: macos-latest
+            c_compiler: clang
+            cpp_compiler: clang++
         exclude:
           - os: windows-latest
             c_compiler: gcc
