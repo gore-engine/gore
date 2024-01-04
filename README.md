@@ -1,3 +1,5 @@
+![MSVC, Linux-GCC, Linux-Clang-17](https://github.com/gore-engine/gore/actions/workflows/cmake-multi-platform.yml/badge.svg)
+
 # gore
 gpu-oriented-rendering-engine
 Only vulkan now...
