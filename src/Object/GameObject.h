@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Prefix.h"
 #include "Export.h"
 
 #include "Object/Object.h"
@@ -32,6 +33,13 @@ public:
     template <typename T>
     // should this be void (i.e. SelfOrDerivedTypeNoReturnValue) instead of T*?
     Component::SelfOrDerivedTypePointer<T> AddComponent(T * component);
+#if !COMPILER_GCC
+    template <>
+    Component::SelfOrDerivedTypePointer<Transform> AddComponent<Transform>();
+    template <>
+    Component::SelfOrDerivedTypePointer<Transform> AddComponent<Transform>(Transform* inpTransform);
+#endif // !COMPILER_GCC
+
 
     template <typename T>
     Component::SelfOrDerivedTypePointer<T> GetComponent();
@@ -41,6 +49,10 @@ public:
 
     template <typename T>
     Component::SelfOrDerivedTypeNoReturnValue<T> RemoveComponent();
+#if !COMPILER_GCC
+    template <>
+    Component::SelfOrDerivedTypeNoReturnValue<Transform> RemoveComponent<Transform>() noexcept(false);
+#endif // !COMPILER_GCC
 
 private:
     friend class Scene;
@@ -55,14 +67,15 @@ private:
     const Transform* transform;
 };
 
+#if COMPILER_GCC
 template <>
-Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent<Transform>();
+inline Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent<Transform>();
 template <>
 Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent(Transform* inpTransform);
 
 template <>
 Component::SelfOrDerivedTypeNoReturnValue<Transform> GameObject::RemoveComponent<Transform>() noexcept(false);
-
+#endif  // COMPILER_GCC
 
 template <typename T>
 Component::SelfOrDerivedTypePointer<T> GameObject::AddComponent()
