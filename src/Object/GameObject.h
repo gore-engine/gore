@@ -32,11 +32,6 @@ public:
     template <typename T>
     // should this be void (i.e. SelfOrDerivedTypeNoReturnValue) instead of T*?
     Component::SelfOrDerivedTypePointer<T> AddComponent(T * component);
-    template <>
-    Transform* AddComponent<Transform>();
-    template <>
-    Transform* AddComponent(Transform* component);
-
 
     template <typename T>
     Component::SelfOrDerivedTypePointer<T> GetComponent();
@@ -46,8 +41,6 @@ public:
 
     template <typename T>
     Component::SelfOrDerivedTypeNoReturnValue<T> RemoveComponent();
-    template <>
-    void RemoveComponent<Transform>() noexcept(false);
 
 private:
     friend class Scene;
@@ -61,6 +54,15 @@ private:
     public:
     const Transform* transform;
 };
+
+template <>
+Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent<Transform>();
+template <>
+Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent(Transform* inpTransform);
+
+template <>
+Component::SelfOrDerivedTypeNoReturnValue<Transform> GameObject::RemoveComponent<Transform>() noexcept(false);
+
 
 template <typename T>
 Component::SelfOrDerivedTypePointer<T> GameObject::AddComponent()

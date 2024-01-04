@@ -40,7 +40,7 @@ void GameObject::Update()
 }
 
 template <>
-Transform* GameObject::AddComponent<Transform>()
+Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent<Transform>()
 {
     if (transform != nullptr)
     {
@@ -54,7 +54,7 @@ Transform* GameObject::AddComponent<Transform>()
     return pTransform;
 }
 template <>
-Transform* GameObject::AddComponent(Transform* inpTransform)
+Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent(Transform* inpTransform)
 {
     if (transform != nullptr)
     {
@@ -68,7 +68,7 @@ Transform* GameObject::AddComponent(Transform* inpTransform)
 }
 
 template <>
-void GameObject::RemoveComponent<Transform>() noexcept(false)
+Component::SelfOrDerivedTypeNoReturnValue<Transform> GameObject::RemoveComponent<Transform>() noexcept(false)
 {
     LOG_STREAM(ERROR) << "Cannot remove Transform component from GameObject" << std::endl;
     throw std::runtime_error("Cannot remove Transform component from GameObject");
