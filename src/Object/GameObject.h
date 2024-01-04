@@ -69,7 +69,7 @@ private:
 
 #if COMPILER_GCC
 template <>
-inline Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent<Transform>();
+Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent<Transform>();
 template <>
 Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent(Transform* inpTransform);
 
