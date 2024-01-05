@@ -59,11 +59,13 @@ public:
     float LengthSquared() const noexcept;
 
     float Dot(const Vector3& V) const noexcept;
-    void Cross(const Vector3& V, Vector3& result) const noexcept;
-    Vector3 Cross(const Vector3& V) const noexcept;
+    static float Dot(const Vector3& lhs, const Vector3& rhs) noexcept;
+    Vector3 Cross(const Vector3& rhs) const noexcept;
+    static Vector3 Cross(const Vector3& lhs, const Vector3& rhs) noexcept;
 
+    Vector3 Normalized() const noexcept;
     void Normalize() noexcept;
-    void Normalize(Vector3 & result) const noexcept;
+    static Vector3 Normalize(const Vector3& v) noexcept;
 
     void Clamp(const Vector3& vmin, const Vector3& vmax) noexcept;
     void Clamp(const Vector3& vmin, const Vector3& vmax, Vector3& result) const noexcept;
@@ -98,10 +100,6 @@ public:
 
     static void Reflect(const Vector3& ivec, const Vector3& nvec, Vector3& result) noexcept;
     static Vector3 Reflect(const Vector3& ivec, const Vector3& nvec) noexcept;
-
-    static void Refract(const Vector3& ivec, const Vector3& nvec, float refractionIndex, Vector3& result) noexcept;
-    static Vector3 Refract(const Vector3& ivec, const Vector3& nvec, float refractionIndex) noexcept;
-
 
 public:
     // Common Values

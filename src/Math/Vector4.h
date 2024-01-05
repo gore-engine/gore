@@ -23,7 +23,7 @@ public:
     float z;
     float w;
 
-    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream& os, const Vector4& v) noexcept;
+    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream & os, const Vector4& v) noexcept;
 
 public:
     MATHF_SIMD_SET_VALUE_TYPE(rtm::vector4f);
@@ -60,14 +60,13 @@ public:
     float LengthSquared() const noexcept;
 
     float Dot(const Vector4& V) const noexcept;
-    void Cross(const Vector4& v1, const Vector4& v2, Vector4& result) const noexcept;
-    Vector4 Cross(const Vector4& v1, const Vector4& v2) const noexcept;
+    static float Dot(const Vector4& lhs, const Vector4& rhs) noexcept;
 
+    Vector4 Normalized() const noexcept;
     void Normalize() noexcept;
-    void Normalize(Vector4 & result) const noexcept;
+    static void Normalize(Vector4 & v) noexcept;
 
-    void Clamp(const Vector4& vmin, const Vector4& vmax) noexcept;
-    void Clamp(const Vector4& vmin, const Vector4& vmax, Vector4& result) const noexcept;
+    static Vector4 Clamp(const Vector4& v, const Vector4& vmin, const Vector4& vmax) noexcept;
 
     // Static functions
     static float Distance(const Vector4& v1, const Vector4& v2) noexcept;
@@ -96,9 +95,6 @@ public:
 
     static void Reflect(const Vector4& ivec, const Vector4& nvec, Vector4& result) noexcept;
     static Vector4 Reflect(const Vector4& ivec, const Vector4& nvec) noexcept;
-
-    static void Refract(const Vector4& ivec, const Vector4& nvec, float refractionIndex, Vector4& result) noexcept;
-    static Vector4 Refract(const Vector4& ivec, const Vector4& nvec, float refractionIndex) noexcept;
 
     static void Transform(const Vector2& v, const Quaternion& quat, Vector4& result) noexcept;
     static Vector4 Transform(const Vector2& v, const Quaternion& quat) noexcept;

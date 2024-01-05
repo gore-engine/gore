@@ -56,14 +56,14 @@ public:
     float LengthSquared() const noexcept;
 
     float Dot(const Vector2& V) const noexcept;
-    void Cross(const Vector2& V, Vector2& result) const noexcept;
-    Vector2 Cross(const Vector2& V) const noexcept;
+    static float Dot(const Vector2& lhs, const Vector2& rhs) noexcept;
 
-    void Normalize() noexcept;
-    void Normalize(Vector2 & result) const noexcept;
 
-    void Clamp(const Vector2& vmin, const Vector2& vmax) noexcept;
-    void Clamp(const Vector2& vmin, const Vector2& vmax, Vector2& result) const noexcept;
+    Vector2 Normalized() noexcept;
+    void Normalize() const noexcept;
+    static Vector2 Normalize(const Vector2& v) noexcept;
+
+    static Vector2 Clamp(const Vector2& v, const Vector2& vmin, const Vector2& vmax) noexcept;
 
     // Static functions
     static float Distance(const Vector2& v1, const Vector2& v2) noexcept;
@@ -81,20 +81,7 @@ public:
     static void SmoothStep(const Vector2& v1, const Vector2& v2, float t, Vector2& result) noexcept;
     static Vector2 SmoothStep(const Vector2& v1, const Vector2& v2, float t) noexcept;
 
-    static void Barycentric(const Vector2& v1, const Vector2& v2, const Vector2& v3, float f, float g, Vector2& result) noexcept;
-    static Vector2 Barycentric(const Vector2& v1, const Vector2& v2, const Vector2& v3, float f, float g) noexcept;
-
-    static void CatmullRom(const Vector2& v1, const Vector2& v2, const Vector2& v3, const Vector2& v4, float t, Vector2& result) noexcept;
-    static Vector2 CatmullRom(const Vector2& v1, const Vector2& v2, const Vector2& v3, const Vector2& v4, float t) noexcept;
-
-    static void Hermite(const Vector2& v1, const Vector2& t1, const Vector2& v2, const Vector2& t2, float t, Vector2& result) noexcept;
-    static Vector2 Hermite(const Vector2& v1, const Vector2& t1, const Vector2& v2, const Vector2& t2, float t) noexcept;
-
-    static void Reflect(const Vector2& ivec, const Vector2& nvec, Vector2& result) noexcept;
     static Vector2 Reflect(const Vector2& ivec, const Vector2& nvec) noexcept;
-
-    static void Refract(const Vector2& ivec, const Vector2& nvec, float refractionIndex, Vector2& result) noexcept;
-    static Vector2 Refract(const Vector2& ivec, const Vector2& nvec, float refractionIndex) noexcept;
 
     static void Transform(const Vector2& v, const Quaternion& quat, Vector2& result) noexcept;
     static Vector2 Transform(const Vector2& v, const Quaternion& quat) noexcept;
