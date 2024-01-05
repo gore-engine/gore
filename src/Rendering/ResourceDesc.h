@@ -45,7 +45,7 @@ struct MaterialDesc final
     const char* debugName = "Noname Material";
 };
 
-struct ShaderDesc final
+struct ShaderModuleDesc final
 {
     const char* debugName = "Noname Shader";
     ShaderStage stage     = ShaderStage::Vertex;
