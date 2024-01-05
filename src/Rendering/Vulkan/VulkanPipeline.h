@@ -43,6 +43,7 @@ public:
     NON_COPYABLE(VulkanPipeline);
 
     [[nodiscard]] VkPipeline Get() const { return m_Pipeline; }
+    [[nodiscard]] VkPipelineLayout GetLayout() const { return m_PipelineLayout; }
 
 private:
     VulkanDevice* m_Device;

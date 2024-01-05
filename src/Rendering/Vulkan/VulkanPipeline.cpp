@@ -47,14 +47,22 @@ VulkanPipeline::VulkanPipeline(VulkanDevice* device, const VulkanGraphicsPipelin
 
     VulkanRenderPass renderPass(m_Device, colorAttachments, depthAttachment);
 
+    // TODO: this is temporary now!
+    VkPushConstantRange pushConstantRange{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .offset     = 0,
+        .size       = 4 * sizeof(float),
+    };
+
     // create temporary pipeline layout
     // TODO: change this when we have a working descriptor management system
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{
         .sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        .pNext                  = VK_NULL_HANDLE,
         .setLayoutCount         = 0,
-        .pSetLayouts            = nullptr,
-        .pushConstantRangeCount = 0,
-        .pPushConstantRanges    = nullptr,
+        .pSetLayouts            = VK_NULL_HANDLE,
+        .pushConstantRangeCount = 1,
+        .pPushConstantRanges    = &pushConstantRange,
     };
     VkResult res = m_Device->API.vkCreatePipelineLayout(m_Device->Get(), &pipelineLayoutInfo, VK_NULL_HANDLE, &m_PipelineLayout);
     VK_CHECK_RESULT(res);

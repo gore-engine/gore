@@ -6,6 +6,10 @@
 #include "Core/App.h"
 #include "Core/Time.h"
 #include "Windowing/Window.h"
+#include "Math/Matrix4x4.h"
+#include "Math/Vector3.h"
+#include "Math/Quaternion.h"
+#include "Math/Constants.h"
 #include "Rendering/Vulkan/VulkanInstance.h"
 #include "Rendering/Vulkan/VulkanDevice.h"
 #include "Rendering/Vulkan/VulkanCommandPool.h"
@@ -32,8 +36,8 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_VulkanSurface(nullptr),
     m_VulkanSwapchain(nullptr),
     m_RenderFinishedSemaphores(),
-    m_TriangleShader(nullptr),
-    m_TrianglePipeline(nullptr)
+    m_CubeShader(nullptr),
+    m_CubePipeline(nullptr)
 {
     g_RenderSystem = this;
 }
@@ -62,9 +66,9 @@ void RenderSystem::Initialize()
         m_RenderFinishedSemaphores[i] = new VulkanSemaphore(m_VulkanDevice);
     }
 
-    m_TriangleShader = new VulkanShader(m_VulkanDevice, "sample/triangle", ShaderStage::Vertex | ShaderStage::Fragment);
-    m_TriangleShader->SetEntryPoint(ShaderStage::Vertex, "vs");
-    m_TriangleShader->SetEntryPoint(ShaderStage::Fragment, "ps");
+    m_CubeShader = new VulkanShader(m_VulkanDevice, "sample/cube", ShaderStage::Vertex | ShaderStage::Fragment);
+    m_CubeShader->SetEntryPoint(ShaderStage::Vertex, "vs");
+    m_CubeShader->SetEntryPoint(ShaderStage::Fragment, "ps");
 
     // TODO: hide these pure Vulkan structs
     // -------------------------------------
@@ -80,7 +84,7 @@ void RenderSystem::Initialize()
     };
 
     VulkanGraphicsPipelineCreateInfo pipelineCreateInfo{
-        .shader = m_TriangleShader,
+        .shader = m_CubeShader,
         // TODO: descriptor set
         // TODO: descriptor pool
         // TODO: pipeline layout
@@ -145,11 +149,25 @@ void RenderSystem::Initialize()
     };
     // -------------------------------------
 
-    m_TrianglePipeline = new VulkanPipeline(m_VulkanDevice, pipelineCreateInfo);
+    m_CubePipeline = new VulkanPipeline(m_VulkanDevice, pipelineCreateInfo);
 }
+
+struct PushConstant
+{
+    Matrix4x4 model;
+    Matrix4x4 proj;
+};
 
 void RenderSystem::Update()
 {
+    PushConstant pushConstant{
+//        .model = Matrix4x4::CreateFromQuaternion(Quaternion::CreateFromAxisAngle(Vector3::Right, math::constants::PI_4)).Transpose(),
+        .model = Matrix4x4::CreateTranslation(Vector3::Forward * 2.0f),
+        .proj = Matrix4x4::CreatePerspectiveFieldOfViewLH(math::constants::PI / 3.0f,
+                                               (float)m_VulkanSwapchain->GetWidth() / (float)m_VulkanSwapchain->GetHeight(),
+                                               0.1f, 100.0f)
+    };
+
     uint32_t bufferIndex        = m_VulkanSwapchain->GetCurrentBufferIndex();
     VulkanImage* swapchainImage = m_VulkanSwapchain->GetBuffer(bufferIndex);
 
@@ -157,7 +175,7 @@ void RenderSystem::Update()
 
     VkAttachmentDescription colorAttachmentDescription{
         .flags          = 0,
-        .format         = swapchainImage->GetFormat(),
+        .format         = m_VulkanSwapchain->GetImageFormat(),
         .samples        = VK_SAMPLE_COUNT_1_BIT, // TODO: MSAA
         .loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp        = VK_ATTACHMENT_STORE_OP_STORE,
@@ -184,11 +202,7 @@ void RenderSystem::Update()
     commandBuffer.Barrier({transitionToRTBarrier}, VulkanQueueType::Present, VulkanQueueType::Graphics);
 
     // TODO: Hide these pure vulkan calls
-    float totalTime              = GetTotalTime();
-    float val1                   = sinf(totalTime) * 0.5f + 0.5f;
-    float val2                   = sinf(totalTime + 2 * 3.14159f / 3) * 0.5f + 0.5f;
-    float val3                   = sinf(totalTime + 4 * 3.14159f / 3) * 0.5f + 0.5f;
-    VkClearColorValue clearColor = {val1, val2, val3, 1.0f};
+    VkClearColorValue clearColor = {0.5f, 0.5f, 0.5f, 1.0f};
     VkClearValue clearValue      = {.color = clearColor};
 
     VkExtent2D swapchainExtent{
@@ -211,7 +225,7 @@ void RenderSystem::Update()
 
     m_VulkanDevice->API.vkCmdBeginRenderPass(commandBuffer.Get(), &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    m_VulkanDevice->API.vkCmdBindPipeline(commandBuffer.Get(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_TrianglePipeline->Get());
+    m_VulkanDevice->API.vkCmdBindPipeline(commandBuffer.Get(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_CubePipeline->Get());
 
     VkViewport viewport{
         .x        = 0.0f,
@@ -229,7 +243,9 @@ void RenderSystem::Update()
     };
     m_VulkanDevice->API.vkCmdSetScissor(commandBuffer.Get(), 0, 1, &scissor);
 
-    m_VulkanDevice->API.vkCmdDraw(commandBuffer.Get(), 3, 1, 0, 0);
+    m_VulkanDevice->API.vkCmdPushConstants(commandBuffer.Get(), m_CubePipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pushConstant), &pushConstant);
+
+    m_VulkanDevice->API.vkCmdDraw(commandBuffer.Get(), 36, 1, 0, 0);
 
     m_VulkanDevice->API.vkCmdEndRenderPass(commandBuffer.Get());
     //
@@ -252,8 +268,8 @@ void RenderSystem::Update()
 
 void RenderSystem::Shutdown()
 {
-    delete m_TrianglePipeline;
-    delete m_TriangleShader;
+    delete m_CubePipeline;
+    delete m_CubeShader;
 
     for (uint32_t i = 0; i < m_RenderFinishedSemaphores.size(); ++i)
     {

@@ -44,7 +44,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND COMMON_DEFINITIONS "ENGINE_DEBUG=1")
 endif ()
 
-set (SHADER_SOURCE_FILES "Shaders/sample/triangle.hlsl")
+set (SHADER_SOURCE_FILES "Shaders/sample/cube.hlsl")
 compile_shader(${SHADER_SOURCE_FILES} "vulkan" "vertex" "vs")
 compile_shader(${SHADER_SOURCE_FILES} "vulkan" "pixel" "ps")
 

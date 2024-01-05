@@ -37,8 +37,8 @@ private:
 
     std::vector<VulkanSemaphore*> m_RenderFinishedSemaphores;
 
-    VulkanShader* m_TriangleShader;
-    VulkanPipeline* m_TrianglePipeline;
+    VulkanShader* m_CubeShader;
+    VulkanPipeline* m_CubePipeline;
 };
 
 } // namespace gore
