@@ -56,10 +56,10 @@ public:
         objectDesc[index].objDesc = ObjectDesc{};
         objectDesc[index].gen++;
         objectDesc[index].nextFree = _freeListHead;
-        _freeListHead               = index;
+        _freeListHead              = index;
         _numObjects--;
     }
-    const ImplObjectType* get(Handle<ObjectDesc> handle) const
+    const ImplObjectType* getObjectPtr(Handle<ObjectDesc> handle) const
     {
         if (handle.empty())
             return nullptr;
@@ -69,7 +69,7 @@ public:
         assert(handle.gen() == objectDesc[index].gen); // accessing deleted object
         return &objects[index];
     }
-    ImplObjectType* get(Handle<ObjectDesc> handle)
+    ImplObjectType* getObjectPtr(Handle<ObjectDesc> handle)
     {
         if (handle.empty())
             return nullptr;
@@ -79,7 +79,27 @@ public:
         assert(handle.gen() == objectDesc[index].gen); // accessing deleted object
         return &objects[index];
     }
-    Handle<ObjectDesc> findObject(const ImplObjectType* obj)
+    const ObjectDesc* getObjectDescPtr(Handle<ObjectDesc> handle) const
+    {
+        if (handle.empty())
+            return nullptr;
+
+        const uint32_t index = handle.index();
+        assert(index < objectDesc.size());
+        assert(handle.gen() == objectDesc[index].gen); // accessing deleted object
+        return &objectDesc[index].objDesc;
+    }
+    ObjectDesc* getObjectDescPtr(Handle<ObjectDesc> handle)
+    {
+        if (handle.empty())
+            return nullptr;
+
+        const uint32_t index = handle.index();
+        assert(index < objectDesc.size());
+        assert(handle.gen() == objectDesc[index].gen); // accessing deleted object
+        return &objectDesc[index].objDesc;
+    }
+    Handle<ObjectDesc> getObjectHandle(const ImplObjectType* obj)
     {
         if (!obj)
             return {};
