@@ -121,7 +121,6 @@ public:
     static Matrix4x4 CreateFromAxisAngle(const Vector3& axis, float angle) noexcept;
 
     static Matrix4x4 CreatePerspectiveFieldOfViewLH(float fov, float aspectRatio, float nearPlane, float farPlane) noexcept;
-    static Matrix4x4 CreatePerspectiveLH(float width, float height, float nearPlane, float farPlane) noexcept;
     static Matrix4x4 CreatePerspectiveOffCenter(float left, float right, float bottom, float top, float nearPlane, float farPlane) noexcept;
     static Matrix4x4 CreateOrthographic(float width, float height, float zNearPlane, float zFarPlane) noexcept;
     static Matrix4x4 CreateOrthographicOffCenter(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane) noexcept;
