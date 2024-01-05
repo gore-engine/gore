@@ -3,7 +3,7 @@ namespace gore
 {
 // Non-ref counted handles; based on:
 // https://enginearchitecture.realtimerendering.com/downloads/reac2023_modern_mobile_rendering_at_hypehype.pdf
-template <typename ObjectType>
+template <typename ObjectDesc>
 class Handle final
 {
 public:
@@ -29,11 +29,11 @@ public:
     {
         return reinterpret_cast<void*>(static_cast<ptrdiff_t>(_index));
     }
-    bool operator==(const Handle<ObjectType>& other) const
+    bool operator==(const Handle<ObjectDesc>& other) const
     {
         return _index == other._index && _gen == other._gen;
     }
-    bool operator!=(const Handle<ObjectType>& other) const
+    bool operator!=(const Handle<ObjectDesc>& other) const
     {
         return _index != other._index || _gen != other._gen;
     }
@@ -55,5 +55,8 @@ private:
     uint32_t _gen   = 0;
 };
 
-using ShaderModuleHandle = Handle<struct ShaderModule>;
+using BufferHandle = Handle<struct BufferDesc>;
+using TextureHandle = Handle<struct TextureDesc>;
+using ShaderModuleHandle = Handle<struct ShaderModuleDesc>;
+using PipelineHandle = Handle<struct PipelineDesc>;
 } // namespace gore
