@@ -68,6 +68,9 @@ public:
     void Clamp(const Vector3& vmin, const Vector3& vmax) noexcept;
     void Clamp(const Vector3& vmin, const Vector3& vmax, Vector3& result) const noexcept;
 
+    Vector4 AsPoint() const noexcept;
+    Vector4 AsVector() const noexcept;
+
     // Static functions
     static float Distance(const Vector3& v1, const Vector3& v2) noexcept;
     static float DistanceSquared(const Vector3& v1, const Vector3& v2) noexcept;
