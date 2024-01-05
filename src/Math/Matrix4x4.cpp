@@ -5,6 +5,7 @@
 
 #include "Vector3.h"
 #include "Vector4.h"
+#include "Quaternion.h
 
 #include "rtm/impl/matrix_cast.h"
 #include "rtm/matrix3x4f.h"
@@ -37,75 +38,75 @@ Matrix4x4::Matrix4x4(const matrix3x4f& F) noexcept :
 }
 
 // Properties
-Vector3 Matrix4x4::Up() const noexcept
+Vector3 Matrix4x4::GetUp() const noexcept
 {
     return matrix_get_axis(m_M, rtm::axis4::y);
 }
-void Matrix4x4::Up(const Vector3& v) noexcept
+void Matrix4x4::SetUp(const Vector3& v) noexcept
 {
     m_M = matrix_set_axis(m_M, v, rtm::axis4::y);
 }
 
-Vector3 Matrix4x4::Down() const noexcept
+Vector3 Matrix4x4::GetDown() const noexcept
 {
-    return -Up();
+    return -GetUp();
 }
-void Matrix4x4::Down(const Vector3& v) noexcept
+void Matrix4x4::SetDown(const Vector3& v) noexcept
 {
     m_M = matrix_set_axis(m_M, -v, rtm::axis4::y);
 }
 
-Vector3 Matrix4x4::Right() const noexcept
+Vector3 Matrix4x4::GetRight() const noexcept
 {
     return matrix_get_axis(m_M, rtm::axis4::x);
 }
-void Matrix4x4::Right(const Vector3& v) noexcept
+void Matrix4x4::SetRight(const Vector3& v) noexcept
 {
     m_M = matrix_set_axis(m_M, v, rtm::axis4::x);
 }
 
-Vector3 Matrix4x4::Left() const noexcept
+Vector3 Matrix4x4::GetLeft() const noexcept
 {
-    return -Right();
+    return -GetRight();
 }
-void Matrix4x4::Left(const Vector3& v) noexcept
+void Matrix4x4::SetLeft(const Vector3& v) noexcept
 {
     m_M = matrix_set_axis(m_M, -v, rtm::axis4::x);
 }
 
-Vector3 Matrix4x4::Forward() const noexcept
+Vector3 Matrix4x4::GetForward() const noexcept
 {
     return matrix_get_axis(m_M, rtm::axis4::z);
 }
-void Matrix4x4::Forward(const Vector3& v) noexcept
+void Matrix4x4::SetForward(const Vector3& v) noexcept
 {
     m_M = matrix_set_axis(m_M, v, rtm::axis4::z);
 }
 
-Vector3 Matrix4x4::Backward() const noexcept
+Vector3 Matrix4x4::GetBackward() const noexcept
 {
-    return -Forward();
+    return -GetForward();
 }
-void Matrix4x4::Backward(const Vector3& v) noexcept
+void Matrix4x4::SetBackward(const Vector3& v) noexcept
 {
     m_M = matrix_set_axis(m_M, -v, rtm::axis4::z);
 }
 
-Vector3 Matrix4x4::Translation() const noexcept
+Vector3 Matrix4x4::GetTranslation() const noexcept
 {
     return matrix_get_axis(m_M, rtm::axis4::w);
 }
-void Matrix4x4::Translation(const Vector3& v) noexcept
+void Matrix4x4::SetTranslation(const Vector3& v) noexcept
 {
     m_M = matrix_set_axis(m_M, static_cast<Vector4::SIMDValueType>(v.AsPoint()), rtm::axis4::w);
 }
 
-Matrix4x4 Matrix4x4::CreateTranslation(const Vector3& position) noexcept
+Matrix4x4 Matrix4x4::FromTranslation(const Vector3& position) noexcept
 {
     return rtm::matrix_from_translation(static_cast<Vector4::SIMDValueType>(position.AsPoint()));
 }
 
-Matrix4x4 Matrix4x4::CreateTranslation(float x, float y, float z) noexcept
+Matrix4x4 Matrix4x4::FromTranslation(float x, float y, float z) noexcept
 {
     return rtm::matrix_from_translation(rtm::vector_set(x, y, z, 1.0f));
 }
