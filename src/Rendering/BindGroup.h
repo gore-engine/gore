@@ -8,7 +8,8 @@ namespace gore
 {
 struct BindLayout;
 
-struct BufferBinding final
+/// @brief Buffer handle with byte offset
+struct DynamicBuffer final
 {
     BufferHandle handle = {};
     uint32_t byteOffset = 0;
@@ -19,6 +20,6 @@ struct BindGroup final
     const char* debugName               = "Noname BindGroup";
     const BindLayout* bindLayout        = nullptr;
     std::vector<TextureHandle> textures = {};
-    std::vector<BufferBinding> buffers  = {};
+    std::vector<DynamicBuffer> buffers  = {};
 };
 } // namespace gore
