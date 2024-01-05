@@ -1,5 +1,7 @@
 #include "Vector3.h"
 
+#include "Vector4.h"
+
 #include "rtm/vector4f.h"
 
 namespace gore
@@ -23,6 +25,16 @@ Vector3::Vector3(SIMDValueType F) noexcept :
     z()
 {
     vector_store(F, reinterpret_cast<float*>(this));
+}
+
+Vector4 Vector3::AsPoint() const noexcept
+{
+    return Vector4(x, y, z, 1.0f);
+}
+
+Vector4 Vector3::AsVector() const noexcept
+{
+    return Vector4(x, y, z, 0.0f);
 }
 
 } // namespace gore

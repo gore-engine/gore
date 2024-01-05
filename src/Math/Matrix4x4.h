@@ -6,7 +6,10 @@
 
 #include "Math/Defines.h"
 
+#include "rtm/vector4f.h"
+#include "rtm/matrix3x4f.h"
 #include "rtm/matrix4x4f.h"
+#include "rtm/impl/matrix_common.h"
 
 namespace gore
 {
@@ -20,22 +23,6 @@ ENGINE_STRUCT(Quaternion);
 ENGINE_STRUCT(Matrix4x4)
 {
 public:
-    // This is exactly how XMFLOAT4X4 declares its members
-    // Yes its constructor names parameters starting from "m00", which is different
-    // Since I'm simply copying calculations from SimpleMath.h (after removing its dependencies to types in DirectXMath)
-    // I'm keeping it this way
-    union
-    {
-        struct
-        {
-            float _11, _12, _13, _14;
-            float _21, _22, _23, _24;
-            float _31, _32, _33, _34;
-            float _41, _42, _43, _44;
-        };
-        float m[4][4];
-    };
-
     friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream & os, const Matrix4x4& m) noexcept;
 
 public:
@@ -48,19 +35,22 @@ public:
     MATHF_MATRIX_COMPARISON_OPERATOR_DECLARATIONS(Matrix4x4);
     MATHF_MATRIX_COMPOUND_ASSIGNMENT_OPERATOR_DECLARATIONS(Matrix4x4);
 
+    SIMDValueType m_M;
+
     Matrix4x4(rtm::matrix3x4f && F) noexcept;
 
     // clang-format off
     Matrix4x4() noexcept = default;
-    constexpr Matrix4x4(
+    Matrix4x4(
         float m00, float m01, float m02, float m03,
         float m10, float m11, float m12, float m13,
         float m20, float m21, float m22, float m23,
         float m30, float m31, float m32, float m33) noexcept :
-        _11(m00), _12(m01), _13(m02), _14(m03),
-        _21(m10), _22(m11), _23(m12), _24(m13),
-        _31(m20), _32(m21), _33(m22), _34(m23),
-        _41(m30), _42(m31), _43(m32), _44(m33)
+        m_M(rtm::matrix_set(
+            rtm::vector_set(m00, m01, m02, m03),
+            rtm::vector_set(m10, m11, m12, m13),
+            rtm::vector_set(m20, m21, m22, m23),
+            rtm::vector_set(m30, m31, m32, m33)))
     {
     }
     // clang-format on
@@ -130,8 +120,8 @@ public:
 
     static Matrix4x4 CreateFromAxisAngle(const Vector3& axis, float angle) noexcept;
 
-    static Matrix4x4 CreatePerspectiveFieldOfView(float fov, float aspectRatio, float nearPlane, float farPlane) noexcept;
-    static Matrix4x4 CreatePerspective(float width, float height, float nearPlane, float farPlane) noexcept;
+    static Matrix4x4 CreatePerspectiveFieldOfViewLH(float fov, float aspectRatio, float nearPlane, float farPlane) noexcept;
+    static Matrix4x4 CreatePerspectiveLH(float width, float height, float nearPlane, float farPlane) noexcept;
     static Matrix4x4 CreatePerspectiveOffCenter(float left, float right, float bottom, float top, float nearPlane, float farPlane) noexcept;
     static Matrix4x4 CreateOrthographic(float width, float height, float zNearPlane, float zFarPlane) noexcept;
     static Matrix4x4 CreateOrthographicOffCenter(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane) noexcept;
