@@ -28,7 +28,7 @@ TEST_CASE("Pool class tests", "[Pool]") {
         TestObject objDesc{1};
         TestObject obj{2};
         auto handle = pool.create(std::move(objDesc), std::move(obj));
-        REQUIRE(pool.get(handle)->value == 2);
+        REQUIRE(pool.getObjectPtr(handle)->value == 2);
     }
 
     SECTION("Find object") {
@@ -36,7 +36,7 @@ TEST_CASE("Pool class tests", "[Pool]") {
         TestObject objDesc{1};
         TestObject obj{2};
         auto handle = pool.create(std::move(objDesc), std::move(obj));
-        auto foundHandle = pool.findObject(&obj);
+        auto foundHandle = pool.getObjectHandle(&obj);
         REQUIRE(foundHandle == handle);
     }
 
