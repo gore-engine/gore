@@ -6,10 +6,10 @@
 #include "Vector3.h"
 #include "Vector4.h"
 
+#include "rtm/impl/matrix_cast.h"
 #include "rtm/matrix3x4f.h"
 #include "rtm/matrix4x4f.h"
 #include "rtm/impl/matrix_common.h"
-#include "rtm/impl/matrix_cast.h"
 
 namespace gore
 {
@@ -31,12 +31,8 @@ Matrix4x4::Matrix4x4(gore::Matrix4x4::SIMDValueType F) noexcept
     m_M = F;
 }
 
-Matrix4x4::Matrix4x4(rtm::matrix3x4f&& F) noexcept :
-    m_M(matrix_set(
-        matrix_get_axis(F, rtm::axis4::x),
-        matrix_get_axis(F, rtm::axis4::y),
-        matrix_get_axis(F, rtm::axis4::z),
-        vector_set(0.0f, 0.0f, 0.0f, 1.0f)))
+Matrix4x4::Matrix4x4(const matrix3x4f& F) noexcept :
+    m_M(rtm::matrix_cast(F))
 {
 }
 

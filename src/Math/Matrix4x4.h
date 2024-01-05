@@ -37,7 +37,7 @@ public:
 
     SIMDValueType m_M;
 
-    Matrix4x4(rtm::matrix3x4f && F) noexcept;
+    Matrix4x4(const rtm::matrix3x4f& F) noexcept;
 
     // clang-format off
     Matrix4x4() noexcept = default;
