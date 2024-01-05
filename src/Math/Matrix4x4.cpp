@@ -1,6 +1,7 @@
 #include "Matrix4x4.h"
 
 #include <type_traits>
+#include <cmath>
 
 #include "Vector3.h"
 
@@ -129,6 +130,36 @@ inline Matrix4x4 Matrix4x4::CreateTranslation(const Vector3& position) noexcept
 inline Matrix4x4 Matrix4x4::CreateTranslation(float x, float y, float z) noexcept
 {
     return rtm::matrix_from_translation(vector_set(x, y, z));
+}
+
+Matrix4x4 Matrix4x4::CreatePerspectiveFieldOfViewLH(float fov, float aspectRatio, float nearPlane, float farPlane) noexcept
+{
+    float SinFov = sinf(fov);
+    float CosFov = cosf(fov);
+    float Height = CosFov / SinFov;
+    float Width  = Height / aspectRatio;
+    float fRange = farPlane / (farPlane - nearPlane);
+
+    SIMDValueType m = matrix_set(
+        vector_set(Width, 0.0f, 0.0f, 0.0f),
+        vector_set(0.0f, Height, 0.0f, 0.0f),
+        vector_set(0.0f, 0.0f, fRange, 1.0f),
+        vector_set(0.0f, 0.0f, -fRange * nearPlane, 0.0f));
+    return static_cast<Matrix4x4>(m);
+}
+
+Matrix4x4 Matrix4x4::CreatePerspectiveLH(float width, float height, float nearPlane, float farPlane) noexcept
+{
+    float TwoNearZ = nearPlane + farPlane;
+    float fRange   = farPlane / (farPlane - nearPlane);
+
+    SIMDValueType m = matrix_set(
+        vector_set(TwoNearZ / width, 0.0f, 0.0f, 0.0f),
+        vector_set(0.0f, TwoNearZ / height, 0.0f, 0.0f),
+        vector_set(0.0f, 0.0f, fRange, 1.0f),
+        vector_set(0.0f, 0.0f, -fRange * nearPlane, 0.0f));
+
+    return static_cast<Matrix4x4>(m);
 }
 
 } // namespace gore
