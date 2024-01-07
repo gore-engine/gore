@@ -5,7 +5,7 @@
 
 #include "Vector3.h"
 #include "Vector4.h"
-#include "Quaternion.h
+#include "Quaternion.h"
 
 #include "rtm/impl/matrix_cast.h"
 #include "rtm/matrix3x4f.h"
