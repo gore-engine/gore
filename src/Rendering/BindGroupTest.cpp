@@ -8,12 +8,12 @@ namespace gore
 {
 namespace test
 {
-TEST_CASE("BindGroup struct tests", "[BindGroup]")
+TEST_CASE("BindGroupDesc struct tests", "[BindGroupDesc]")
 {
     SECTION("Default values")
     {
-        BindGroup bg;
-        REQUIRE(std::strcmp(bg.debugName, "Noname BindGroup") == 0);
+        BindGroupDesc bg;
+        REQUIRE(std::strcmp(bg.debugName, "Noname BindGroupDesc") == 0);
         REQUIRE(bg.bindLayout == nullptr);
         REQUIRE(bg.textures.empty());
         REQUIRE(bg.buffers.empty());
@@ -21,8 +21,8 @@ TEST_CASE("BindGroup struct tests", "[BindGroup]")
 
     SECTION("Change values")
     {
-        BindGroup bg;
-        bg.debugName = "Test BindGroup";
+        BindGroupDesc bg;
+        bg.debugName = "Test BindGroupDesc";
         BindLayout bl;
         bg.bindLayout = &bl;
         TextureHandle th;
@@ -30,7 +30,7 @@ TEST_CASE("BindGroup struct tests", "[BindGroup]")
         BufferHandle bh;
         bg.buffers.push_back({bh, 0});
 
-        REQUIRE(std::strcmp(bg.debugName, "Test BindGroup") == 0);
+        REQUIRE(std::strcmp(bg.debugName, "Test BindGroupDesc") == 0);
         REQUIRE(bg.bindLayout == &bl);
         REQUIRE(bg.textures.size() == 1);
         REQUIRE(bg.buffers.size() == 1);
