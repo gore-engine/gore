@@ -53,53 +53,41 @@ public:
     }
 
     // Vector operations
-    bool InBounds(const Vector3& Bounds) const noexcept;
+    [[nodiscard]] inline bool InBounds(const Vector3& Bounds) const noexcept;
 
-    float Length() const noexcept;
-    float LengthSquared() const noexcept;
+    [[nodiscard]] inline float Length() const noexcept;
+    [[nodiscard]] inline float LengthSquared() const noexcept;
 
-    float Dot(const Vector3& V) const noexcept;
-    static float Dot(const Vector3& lhs, const Vector3& rhs) noexcept;
-    Vector3 Cross(const Vector3& rhs) const noexcept;
-    static Vector3 Cross(const Vector3& lhs, const Vector3& rhs) noexcept;
+    [[nodiscard]] inline float Dot(const Vector3& V) const noexcept;
+    [[nodiscard]] inline static float Dot(const Vector3& lhs, const Vector3& rhs) noexcept;
+    [[nodiscard]] inline Vector3 Cross(const Vector3& rhs) const noexcept;
+    [[nodiscard]] inline static Vector3 Cross(const Vector3& lhs, const Vector3& rhs) noexcept;
 
-    Vector3 Normalized() const noexcept;
-    void Normalize() noexcept;
-    static Vector3 Normalize(const Vector3& v) noexcept;
+    [[nodiscard]] inline Vector3 Normalized() const noexcept;
+    inline void Normalize() noexcept;
+    inline static void Normalize(Vector3& v) noexcept;
 
-    void Clamp(const Vector3& vmin, const Vector3& vmax) noexcept;
-    void Clamp(const Vector3& vmin, const Vector3& vmax, Vector3& result) const noexcept;
+    inline void Clamp(const Vector3& vMin, const Vector3& vMax) noexcept;
+    [[nodiscard]] inline Vector3 Clamp(const Vector3& input, const Vector3& vMin, const Vector3& vMax) const noexcept;
 
-    Vector4 AsPoint() const noexcept;
-    Vector4 AsVector() const noexcept;
+    [[nodiscard]] Vector4 AsPoint() const noexcept;
+    [[nodiscard]] Vector4 AsVector() const noexcept;
 
     // Static functions
-    static float Distance(const Vector3& v1, const Vector3& v2) noexcept;
-    static float DistanceSquared(const Vector3& v1, const Vector3& v2) noexcept;
+    [[nodiscard]] inline static float Distance(const Vector3& v1, const Vector3& v2) noexcept;
+    [[nodiscard]] inline static float DistanceSquared(const Vector3& v1, const Vector3& v2) noexcept;
 
-    static void Min(const Vector3& v1, const Vector3& v2, Vector3& result) noexcept;
-    static Vector3 Min(const Vector3& v1, const Vector3& v2) noexcept;
+    [[nodiscard]] inline static Vector3 Min(const Vector3& v1, const Vector3& v2) noexcept;
+    [[nodiscard]] inline static Vector3 Max(const Vector3& v1, const Vector3& v2) noexcept;
 
-    static void Max(const Vector3& v1, const Vector3& v2, Vector3& result) noexcept;
-    static Vector3 Max(const Vector3& v1, const Vector3& v2) noexcept;
+    [[nodiscard]] inline static Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) noexcept;
+    [[nodiscard]] inline static Vector3 SmoothStep(const Vector3& v1, const Vector3& v2, float t) noexcept;
 
-    static void Lerp(const Vector3& v1, const Vector3& v2, float t, Vector3& result) noexcept;
-    static Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) noexcept;
+    [[nodiscard]] inline static Vector3 Barycentric(const Vector3& v1, const Vector3& v2, const Vector3& v3, float f, float g) noexcept;
+    [[nodiscard]] inline static Vector3 CatmullRom(const Vector3& v1, const Vector3& v2, const Vector3& v3, const Vector3& v4, float t) noexcept;
+    [[nodiscard]] inline static Vector3 Hermite(const Vector3& v1, const Vector3& t1, const Vector3& v2, const Vector3& t2, float t) noexcept;
 
-    static void SmoothStep(const Vector3& v1, const Vector3& v2, float t, Vector3& result) noexcept;
-    static Vector3 SmoothStep(const Vector3& v1, const Vector3& v2, float t) noexcept;
-
-    static void Barycentric(const Vector3& v1, const Vector3& v2, const Vector3& v3, float f, float g, Vector3& result) noexcept;
-    static Vector3 Barycentric(const Vector3& v1, const Vector3& v2, const Vector3& v3, float f, float g) noexcept;
-
-    static void CatmullRom(const Vector3& v1, const Vector3& v2, const Vector3& v3, const Vector3& v4, float t, Vector3& result) noexcept;
-    static Vector3 CatmullRom(const Vector3& v1, const Vector3& v2, const Vector3& v3, const Vector3& v4, float t) noexcept;
-
-    static void Hermite(const Vector3& v1, const Vector3& t1, const Vector3& v2, const Vector3& t2, float t, Vector3& result) noexcept;
-    static Vector3 Hermite(const Vector3& v1, const Vector3& t1, const Vector3& v2, const Vector3& t2, float t) noexcept;
-
-    static void Reflect(const Vector3& ivec, const Vector3& nvec, Vector3& result) noexcept;
-    static Vector3 Reflect(const Vector3& ivec, const Vector3& nvec) noexcept;
+    [[nodiscard]] inline static Vector3 Reflect(const Vector3& ivec, const Vector3& nvec) noexcept;
 
 public:
     // Common Values
