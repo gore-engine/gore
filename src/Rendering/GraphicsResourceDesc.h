@@ -1,11 +1,14 @@
 #pragma once
 
-#include "ResourcePrefix.h"
+#include "GraphicsResourcePrefix.h"
 #include <glm/glm.hpp>
+
+namespace gore
+{
 
 struct BufferDesc final
 {
-    const char* debugName = "Noname Vertex_Buffer";
+    const char* debugName = "Noname VertexBufferDesc";
     uint32_t byteSize     = 0;
     BufferUsage usage     = BufferUsage::Vertex;
     MemoryUsage memUsage  = MemoryUsage::GPU;
@@ -13,7 +16,7 @@ struct BufferDesc final
 
 struct TextureDesc final
 {
-    const char* debugName = "Noname Texture_2D_R8G8B8A8_SRGB";
+    const char* debugName = "Noname TextureDesc_2D_R8G8B8A8_SRGB";
     TextureType type      = TextureType::Tex2D;
     // use dimentions.z for different texturetypes
     glm::ivec3 dimentions = glm::ivec3(0);
@@ -29,7 +32,7 @@ struct TextureDesc final
 // Default values are linear, repeat
 struct SamplerDesc final
 {
-    const char* debugName   = "Noname Sampler";
+    const char* debugName   = "Noname SamplerDesc";
     SamplerFilter minFilter = SamplerFilter::Linear;
     SamplerFilter magFilter = SamplerFilter::Linear;
 
@@ -42,14 +45,15 @@ struct SamplerDesc final
 
 struct MaterialDesc final
 {
-    const char* debugName = "Noname Material";
+    const char* debugName = "Noname MaterialDesc";
 };
 
 struct ShaderModuleDesc final
 {
-    const char* debugName = "Noname Shader";
+    const char* debugName = "Noname ShaderModuleDesc";
     ShaderStage stage     = ShaderStage::Vertex;
     uint8_t* data         = nullptr;
     uint32_t byteSize     = 0;
     const char* entryFunc = "main";
 };
+} // namespace gore
