@@ -20,11 +20,16 @@ Vector3::operator SIMDValueType() const noexcept
 }
 
 Vector3::Vector3(SIMDValueType F) noexcept :
-    x(),
-    y(),
-    z()
+    x(vector_get_x(F)),
+    y(vector_get_y(F)),
+    z(vector_get_z(F))
 {
-    vector_store(F, reinterpret_cast<float*>(this));
+}
+
+Vector3& Vector3::operator=(Vector3::SIMDValueType&& F) noexcept
+{
+    vector_store3(F, reinterpret_cast<float*>(this));
+    return *this;
 }
 
 Vector4 Vector3::AsPoint() const noexcept
