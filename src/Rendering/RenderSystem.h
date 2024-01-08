@@ -13,6 +13,7 @@ namespace gore
 {
 
 class Window;
+class RenderContext;
 
 class RenderSystem final : System
 {
@@ -39,6 +40,8 @@ private:
 
     VulkanShader* m_TriangleShader;
     VulkanPipeline* m_TrianglePipeline;
+    
+    RenderContext* m_RenderContext;
 };
 
 } // namespace gore

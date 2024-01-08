@@ -5,6 +5,7 @@
 #include "Core/Log.h"
 #include "Core/App.h"
 #include "Core/Time.h"
+#include "Rendering/RenderContext.h"
 #include "Windowing/Window.h"
 #include "Rendering/Vulkan/VulkanInstance.h"
 #include "Rendering/Vulkan/VulkanDevice.h"
@@ -31,6 +32,7 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_VulkanDevice(nullptr),
     m_VulkanSurface(nullptr),
     m_VulkanSwapchain(nullptr),
+    m_RenderContext(nullptr),
     m_RenderFinishedSemaphores(),
     m_TriangleShader(nullptr),
     m_TrianglePipeline(nullptr)
@@ -46,6 +48,8 @@ RenderSystem::~RenderSystem()
 void RenderSystem::Initialize()
 {
     m_VulkanInstance = new VulkanInstance(m_App);
+
+    m_RenderContext = new RenderContext();
 
     std::vector<VulkanPhysicalDevice> physicalDevices = m_VulkanInstance->GetPhysicalDevices();
     std::sort(physicalDevices.begin(), physicalDevices.end(), [](const VulkanPhysicalDevice& a, const VulkanPhysicalDevice& b)
@@ -268,6 +272,7 @@ void RenderSystem::Shutdown()
     delete m_VulkanDevice;
 
     delete m_VulkanInstance;
+    delete m_RenderContext;
 }
 
 void RenderSystem::OnResize(Window* window, int width, int height)

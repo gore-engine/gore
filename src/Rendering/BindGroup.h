@@ -22,11 +22,4 @@ struct BindGroupDesc final
     std::vector<TextureHandle> textures = {};
     std::vector<DynamicBuffer> buffers  = {};
 };
-
-struct BindGroup
-{
-
-};
-
-using BindGroupHandle = Handle<BindGroup>;
 } // namespace gore
