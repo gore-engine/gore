@@ -104,7 +104,7 @@ inline void Quaternion::Conjugate(Quaternion& q) noexcept
     q.m_Q = rtm::quat_conjugate(q.m_Q);
 }
 
-inline Quaternion Quaternion::Inversed() const noexcept
+inline Quaternion Quaternion::Inverse() const noexcept
 {
     Quaternion result;
     result.m_Q = rtm::quat_conjugate(result.m_Q);
@@ -114,7 +114,7 @@ inline Quaternion Quaternion::Inversed() const noexcept
     return result;
 }
 
-inline void Quaternion::Inverse() noexcept
+inline void Quaternion::Invert() noexcept
 {
     m_Q = rtm::quat_conjugate(m_Q);
     m_Q = rtm::vector_div(
@@ -122,7 +122,7 @@ inline void Quaternion::Inverse() noexcept
         rtm::vector_set(static_cast<float>(rtm::quat_length_squared(m_Q))));
 }
 
-inline void Quaternion::Inverse(Quaternion& q) noexcept
+inline void Quaternion::Invert(Quaternion& q) noexcept
 {
 //    if (q.IsNormalized())
 //    {

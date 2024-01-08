@@ -60,9 +60,9 @@ public:
     void Conjugate() noexcept;
     static void Conjugate(Quaternion & q) noexcept;
 
-    [[nodiscard]] Quaternion Inversed() const noexcept;
-    void Inverse() noexcept;
-    static void Inverse(Quaternion & q) noexcept;
+    [[nodiscard]] Quaternion Inverse() const noexcept;
+    void Invert() noexcept;
+    static void Invert(Quaternion & q) noexcept;
 
     [[nodiscard]] float Dot(const Quaternion& Q) const noexcept;
 
