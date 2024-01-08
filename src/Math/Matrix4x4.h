@@ -4,6 +4,7 @@
 
 #include "Export.h"
 
+#include "Utilities/Defines.h"
 #include "Math/Defines.h"
 
 #include "rtm/vector4f.h"
@@ -37,7 +38,11 @@ public:
 
     SIMDValueType m_M;
 
-    Matrix4x4(const rtm::matrix3x4f& F) noexcept;
+    TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV(TFrom, rtm::matrix3x4f)
+    explicit Matrix4x4(TFrom && F) noexcept :
+        m_M(rtm::matrix_cast(std::forward<TFrom>(F)))
+    {
+    }
 
     // clang-format off
     Matrix4x4() noexcept = default;
@@ -88,8 +93,8 @@ public:
     // Matrix operations
     bool Decompose(Vector3 & scale, Quaternion & rotation, Vector3 & translation) noexcept;
 
-    Matrix4x4 Transpose() const noexcept;
-    static Matrix4x4 Transpose(Matrix4x4 & m) noexcept;
+    [[nodiscard]] Matrix4x4 Transpose() const noexcept;
+    static void Transpose(Matrix4x4 & m) noexcept;
 
     Matrix4x4 Invert() const noexcept;
     static Matrix4x4 Invert(Matrix4x4 & m) noexcept;
