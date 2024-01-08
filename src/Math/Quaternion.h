@@ -33,7 +33,7 @@ public:
 
 public:
     SIMDValueType m_Q;
-    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream& os, const Quaternion& q) noexcept;
+    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream & os, const Quaternion& q) noexcept;
 
     Quaternion() noexcept :
         m_Q(Identity)
@@ -45,7 +45,13 @@ public:
     }
 
     Quaternion(const Vector3& v, float scalar) noexcept;
-    explicit Quaternion(const Vector4& v) noexcept;
+
+    TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV(ConvertFromType, rtm::vector4f)
+    explicit Quaternion(ConvertFromType && v) noexcept :
+        m_Q(rtm::vector_to_quat(std::forward<ConvertFromType>(v)))
+    {
+    }
+
     explicit Quaternion(const float* pArray) noexcept;
 
     // Quaternion operations
