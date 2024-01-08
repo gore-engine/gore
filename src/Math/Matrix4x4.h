@@ -38,12 +38,6 @@ public:
 
     SIMDValueType m_M;
 
-    TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV(TFrom, rtm::matrix3x4f)
-    explicit Matrix4x4(TFrom && F) noexcept :
-        m_M(rtm::matrix_cast(std::forward<TFrom>(F)))
-    {
-    }
-
     // clang-format off
     Matrix4x4() noexcept = default;
     Matrix4x4(
@@ -160,6 +154,19 @@ public:
     // Common Values
     static const Matrix4x4 Identity;
 };
+
+TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TFrom, Matrix4x4::SIMDValueType)
+Matrix4x4::Matrix4x4(TFrom&& F) noexcept :
+    m_M(std::forward<SIMDValueType>(F))
+{
+}
+
+TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TFrom, Matrix4x4::SIMDValueType)
+Matrix4x4& Matrix4x4::operator=(TFrom&& F) noexcept
+{
+    m_M = std::forward<SIMDValueType>(F);
+    return *this;
+}
 
 MATHF_MATRIX_BINARY_OPERATOR_DECLARATIONS(Matrix4x4);
 

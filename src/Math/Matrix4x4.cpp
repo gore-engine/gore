@@ -25,11 +25,6 @@ Matrix4x4::operator SIMDValueType() const noexcept
     return m_M;
 }
 
-Matrix4x4::Matrix4x4(gore::Matrix4x4::SIMDValueType F) noexcept :
-    m_M(F)
-{
-}
-
 // Properties
 Vector3 Matrix4x4::GetUp() const noexcept
 {
@@ -101,22 +96,22 @@ Quaternion Matrix4x4::GetRotation() const noexcept
 
 Matrix4x4 Matrix4x4::FromTranslation(const Vector3& position) noexcept
 {
-    return static_cast<Matrix4x4>(rtm::matrix_from_translation(static_cast<Vector4::SIMDValueType>(position.AsPoint())));
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_translation(static_cast<Vector4::SIMDValueType>(position.AsPoint())));
 }
 
 Matrix4x4 Matrix4x4::FromTranslation(float x, float y, float z) noexcept
 {
-    return static_cast<Matrix4x4>(rtm::matrix_from_translation(rtm::vector_set(x, y, z, 1.0f)));
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_translation(rtm::vector_set(x, y, z, 1.0f)));
 }
 
 Matrix4x4 Matrix4x4::FromAxisAngle(const Vector3& axis, float angle) noexcept
 {
-    return static_cast<Matrix4x4>(rtm::matrix3x4f(rtm::matrix_from_quat(rtm::quat_from_axis_angle(static_cast<Vector3::SIMDValueType>(axis), angle))));
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix3x4f(rtm::matrix_from_quat(rtm::quat_from_axis_angle(static_cast<Vector3::SIMDValueType>(axis), angle))));
 }
 
 Matrix4x4 Matrix4x4::FromQuaternion(const Quaternion& quat) noexcept
 {
-    return static_cast<Matrix4x4>(rtm::matrix3x4f(rtm::matrix_from_quat(static_cast<Quaternion::SIMDValueType>(quat))));
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix3x4f(rtm::matrix_from_quat(static_cast<Quaternion::SIMDValueType>(quat))));
 }
 
 Matrix4x4 Matrix4x4::Transpose() const noexcept
@@ -137,11 +132,11 @@ Matrix4x4 Matrix4x4::CreatePerspectiveFieldOfViewLH(float fov, float aspectRatio
     float Width  = Height / aspectRatio;
     float fRange = farPlane / (farPlane - nearPlane);
 
-    return static_cast<Matrix4x4>(rtm::matrix_set(
+    return static_cast<Matrix4x4>(SIMDValueType(rtm::matrix_set(
         rtm::vector_set(Width, 0.0f, 0.0f, 0.0f),
         rtm::vector_set(0.0f, Height, 0.0f, 0.0f),
         rtm::vector_set(0.0f, 0.0f, fRange, 1.0f),
-        rtm::vector_set(0.0f, 0.0f, -fRange * nearPlane, 0.0f)));
+        rtm::vector_set(0.0f, 0.0f, -fRange * nearPlane, 0.0f))));
 }
 
 } // namespace gore
