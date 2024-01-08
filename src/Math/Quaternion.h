@@ -45,13 +45,6 @@ public:
     }
 
     Quaternion(const Vector3& v, float scalar) noexcept;
-
-    TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV(ConvertFromType, rtm::vector4f)
-    explicit Quaternion(ConvertFromType && v) noexcept :
-        m_Q(rtm::vector_to_quat(std::forward<ConvertFromType>(v)))
-    {
-    }
-
     explicit Quaternion(const float* pArray) noexcept;
 
     // Quaternion operations
@@ -113,6 +106,19 @@ Quaternion operator*(const Quaternion& Q1, const Quaternion& Q2) noexcept;
 Quaternion operator*(const Quaternion& Q, float S) noexcept;
 Quaternion operator/(const Quaternion& Q1, const Quaternion& Q2) noexcept;
 Quaternion operator*(float S, const Quaternion& Q) noexcept;
+
+TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TFrom, Quaternion::SIMDValueType)
+Quaternion::Quaternion(TFrom&& F) noexcept :
+    m_Q(std::forward<TFrom>(F))
+{
+}
+
+TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TFrom, Quaternion::SIMDValueType)
+Quaternion& Quaternion::operator=(TFrom&& F) noexcept
+{
+    m_Q = std::forward<TFrom>(F);
+    return *this;
+}
 
 #include "Math/Quaternion.inl"
 

@@ -30,11 +30,6 @@ Quaternion::operator SIMDValueType() const noexcept
     return m_Q;
 }
 
-Quaternion::Quaternion(SIMDValueType F) noexcept :
-    m_Q(F)
-{
-}
-
 void Quaternion::RotateTowards(const Quaternion& target, float maxAngle, Quaternion& result) const noexcept
 {
     using SIMDVector = rtm::vector4f;
@@ -115,7 +110,7 @@ void Quaternion::LookRotation(const Vector3& forward, const Vector3& up, Quatern
     SIMDVector U = quat_mul(q1, Vector3::Up);
 
     Quaternion q2;
-    FromToRotation(Vector3(U), up, q2);
+    FromToRotation(static_cast<Vector3>(U), up, q2);
 
     result.m_Q = quat_mul(q2, q1);
 }
