@@ -90,8 +90,9 @@ public:
     [[nodiscard]] Matrix4x4 Transpose() const noexcept;
     static void Transpose(Matrix4x4 & m) noexcept;
 
-    Matrix4x4 Invert() const noexcept;
-    static Matrix4x4 Invert(Matrix4x4 & m) noexcept;
+    [[nodiscard]] Matrix4x4 Inverse() const noexcept;
+    void Invert()  noexcept;
+    [[nodiscard]] static void Invert(Matrix4x4 & m) noexcept;
 
     float Determinant() const noexcept;
 

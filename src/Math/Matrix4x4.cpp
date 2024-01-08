@@ -124,6 +124,21 @@ void Matrix4x4::Transpose(Matrix4x4& m) noexcept
     m.m_M = matrix_transpose(static_cast<Matrix4x4::SIMDValueType>(m.m_M));
 }
 
+Matrix4x4 Matrix4x4::Inverse() const noexcept
+{
+    return static_cast<Matrix4x4>(matrix_inverse((m_M)));
+}
+
+void Matrix4x4::Invert() noexcept
+{
+    m_M = matrix_inverse((m_M));
+}
+
+void Matrix4x4::Invert(Matrix4x4& m) noexcept
+{
+    m.m_M = matrix_inverse((m.m_M));
+}
+
 Matrix4x4 Matrix4x4::CreatePerspectiveFieldOfViewLH(float fov, float aspectRatio, float nearPlane, float farPlane) noexcept
 {
     float SinFov = sinf(fov / 2);
