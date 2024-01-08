@@ -51,7 +51,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice* device, const VulkanGraphicsPipelin
     VkPushConstantRange pushConstantRange{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
         .offset     = 0,
-        .size       = 4 * sizeof(float),
+        .size       = 4 * 4 * 2 * sizeof(float),
     };
 
     // create temporary pipeline layout

@@ -73,7 +73,7 @@ VulkanInstance::VulkanInstance(App* app) :
 #if defined(VK_EXT_validation_features) && (VK_EXT_VALIDATION_FEATURES_SPEC_VERSION + 0) >= 4
 
     // todo: make this a setting
-    const bool enableShaderPrintf = true;
+    const bool enableShaderPrintf = false;
 
     VkValidationFeatureEnableEXT enabledValidationFeatures[1];
     VkValidationFeatureDisableEXT disabledValidationFeatures[1];
