@@ -13,7 +13,6 @@ enum class GraphicsFormat
     RGBA8_SRGB,
     RGBA8_UNORM,
     RGB8_SRGB,
-    RGB8_UNORM,
 
     // Common Vertex Format
     RGB32_FLOAT, // postion
