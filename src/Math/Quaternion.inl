@@ -69,14 +69,29 @@ inline float Quaternion::LengthSquared() const noexcept
     return static_cast<float>(rtm::quat_length_squared(m_Q));
 }
 
+inline bool Quaternion::IsNormalized() const noexcept
+{
+    return rtm::quat_is_normalized(m_Q);
+}
+
+inline Quaternion Quaternion::Normalized() const noexcept
+{
+    return static_cast<Quaternion>(rtm::quat_normalize(m_Q));
+}
+
 inline void Quaternion::Normalize() noexcept
 {
     m_Q = rtm::quat_normalize(m_Q);
 }
 
-inline void Quaternion::Normalize(Quaternion& result) const noexcept
+inline void Quaternion::Normalize(Quaternion& q) noexcept
 {
-    result.m_Q = rtm::quat_normalize(m_Q);
+    q.m_Q = rtm::quat_normalize(q.m_Q);
+}
+
+inline Quaternion Quaternion::Conjucated() const noexcept
+{
+    return static_cast<Quaternion>(rtm::quat_conjugate(m_Q));
 }
 
 inline void Quaternion::Conjugate() noexcept
@@ -84,27 +99,45 @@ inline void Quaternion::Conjugate() noexcept
     m_Q = rtm::quat_conjugate(m_Q);
 }
 
-inline void Quaternion::Conjugate(Quaternion& result) const noexcept
+inline void Quaternion::Conjugate(Quaternion& q) noexcept
 {
-    result.m_Q = rtm::quat_conjugate(m_Q);
+    q.m_Q = rtm::quat_conjugate(q.m_Q);
 }
 
-inline void Quaternion::Inverse(Quaternion& result) const noexcept
+inline Quaternion Quaternion::Inversed() const noexcept
 {
-    result.m_Q = rtm::quat_conjugate(m_Q);
+    Quaternion result;
+    result.m_Q = rtm::quat_conjugate(result.m_Q);
     result.m_Q = rtm::vector_div(
         result.m_Q,
+        rtm::vector_set(static_cast<float>(rtm::quat_length_squared(result.m_Q))));
+    return result;
+}
+
+inline void Quaternion::Inverse() noexcept
+{
+    m_Q = rtm::quat_conjugate(m_Q);
+    m_Q = rtm::vector_div(
+        m_Q,
         rtm::vector_set(static_cast<float>(rtm::quat_length_squared(m_Q))));
+}
+
+inline void Quaternion::Inverse(Quaternion& q) noexcept
+{
+//    if (q.IsNormalized())
+//    {
+//        q.Conjugate();
+//        return;
+//    }
+    q.m_Q = rtm::quat_conjugate(q.m_Q);
+    q.m_Q = rtm::vector_div(
+        q.m_Q,
+        rtm::vector_set(static_cast<float>(rtm::quat_length_squared(q.m_Q))));
 }
 
 inline float Quaternion::Dot(const Quaternion& q) const noexcept
 {
     return static_cast<float>(rtm::quat_dot(m_Q, q.m_Q));
-}
-
-inline void Quaternion::RotateTowards(const Quaternion& target, float maxAngle) noexcept
-{
-    RotateTowards(target, maxAngle, *this);
 }
 
 // inline Vector3 Quaternion::ToEuler() const noexcept
@@ -135,19 +168,9 @@ inline Quaternion Quaternion::CreateFromYawPitchRoll(const Vector3& angles) noex
 //     throw std::runtime_error("Not implemented");
 // }
 
-inline void Quaternion::Lerp(const Quaternion& q1, const Quaternion& q2, float t, Quaternion& result) noexcept
-{
-    result.m_Q = rtm::quat_lerp(q1.m_Q, q2.m_Q, t);
-}
-
 inline Quaternion Quaternion::Lerp(const Quaternion& q1, const Quaternion& q2, float t) noexcept
 {
     return static_cast<Quaternion>(rtm::quat_lerp(q1.m_Q, q2.m_Q, t));
-}
-
-inline void Quaternion::Slerp(const Quaternion& q1, const Quaternion& q2, float t, Quaternion& result) noexcept
-{
-    result.m_Q = rtm::quat_slerp(q1.m_Q, q2.m_Q, t);
 }
 
 inline Quaternion Quaternion::Slerp(const Quaternion& q1, const Quaternion& q2, float t) noexcept
@@ -155,28 +178,10 @@ inline Quaternion Quaternion::Slerp(const Quaternion& q1, const Quaternion& q2, 
     return static_cast<Quaternion>(rtm::quat_slerp(q1.m_Q, q2.m_Q, t));
 }
 
-inline void Quaternion::Concatenate(const Quaternion& q1, const Quaternion& q2, Quaternion& result) noexcept
-{
-    result.m_Q = rtm::quat_mul(q1.m_Q, q2.m_Q);
-}
 
 inline Quaternion Quaternion::Concatenate(const Quaternion& q1, const Quaternion& q2) noexcept
 {
     return static_cast<Quaternion>(rtm::quat_mul(q1.m_Q, q2.m_Q));
-}
-
-inline Quaternion Quaternion::FromToRotation(const Vector3& fromDir, const Vector3& toDir) noexcept
-{
-    Quaternion result;
-    FromToRotation(fromDir, toDir, result);
-    return result;
-}
-
-inline Quaternion Quaternion::LookRotation(const Vector3& forward, const Vector3& up) noexcept
-{
-    Quaternion result;
-    LookRotation(forward, up, result);
-    return result;
 }
 
 // inline float Quaternion::Angle(const Quaternion& q1, const Quaternion& q2) noexcept

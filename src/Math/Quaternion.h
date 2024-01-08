@@ -51,49 +51,39 @@ public:
     [[nodiscard]] float Length() const noexcept;
     [[nodiscard]] float LengthSquared() const noexcept;
 
+    [[nodiscard]] bool IsNormalized() const noexcept;
+    [[nodiscard]] Quaternion Normalized() const noexcept;
     void Normalize() noexcept;
-    void Normalize(Quaternion & result) const noexcept;
+    static void Normalize(Quaternion & q) noexcept;
 
+    [[nodiscard]] Quaternion Conjucated() const noexcept;
     void Conjugate() noexcept;
-    void Conjugate(Quaternion & result) const noexcept;
+    static void Conjugate(Quaternion & q) noexcept;
 
-    void Inverse(Quaternion & result) const noexcept;
+    [[nodiscard]] Quaternion Inversed() const noexcept;
+    void Inverse() noexcept;
+    static void Inverse(Quaternion & q) noexcept;
 
     [[nodiscard]] float Dot(const Quaternion& Q) const noexcept;
-
-    void RotateTowards(const Quaternion& target, float maxAngle) noexcept;
-    void DECLTYPE RotateTowards(const Quaternion& target, float maxAngle, Quaternion& result) const noexcept;
 
     // Computes rotation about y-axis (y), then x-axis (x), then z-axis (z)
     [[nodiscard]] Vector3 ToEuler() const noexcept;
 
     // Static functions
-    static Quaternion CreateFromAxisAngle(const Vector3& axis, float angle) noexcept;
-
+    [[nodiscard]] static Quaternion CreateFromAxisAngle(const Vector3& axis, float angle) noexcept;
     // Rotates about y-axis (yaw), then x-axis (pitch), then z-axis (roll)
-    static Quaternion CreateFromYawPitchRoll(float yaw, float pitch, float roll) noexcept;
-
+    [[nodiscard]] static Quaternion CreateFromYawPitchRoll(float yaw, float pitch, float roll) noexcept;
     // Rotates about y-axis (angles.y), then x-axis (angles.x), then z-axis (angles.z)
-    static Quaternion CreateFromYawPitchRoll(const Vector3& angles) noexcept;
+    [[nodiscard]] static Quaternion CreateFromYawPitchRoll(const Vector3& angles) noexcept;
+    [[nodiscard]] static Quaternion CreateFromRotationMatrix(const Matrix4x4& M) noexcept;
 
-    static Quaternion CreateFromRotationMatrix(const Matrix4x4& M) noexcept;
+    [[nodiscard]] static Quaternion Lerp(const Quaternion& q1, const Quaternion& q2, float t) noexcept;
+    [[nodiscard]] static Quaternion Slerp(const Quaternion& q1, const Quaternion& q2, float t) noexcept;
+    [[nodiscard]] static Quaternion Concatenate(const Quaternion& q1, const Quaternion& q2) noexcept;
+    [[nodiscard]] static Quaternion FromToRotation(const Vector3& fromDir, const Vector3& toDir) noexcept;
+    [[nodiscard]] static Quaternion LookRotation(const Vector3& forward, const Vector3& up) noexcept;
 
-    static void Lerp(const Quaternion& q1, const Quaternion& q2, float t, Quaternion& result) noexcept;
-    static Quaternion Lerp(const Quaternion& q1, const Quaternion& q2, float t) noexcept;
-
-    static void Slerp(const Quaternion& q1, const Quaternion& q2, float t, Quaternion& result) noexcept;
-    static Quaternion Slerp(const Quaternion& q1, const Quaternion& q2, float t) noexcept;
-
-    static void Concatenate(const Quaternion& q1, const Quaternion& q2, Quaternion& result) noexcept;
-    static Quaternion Concatenate(const Quaternion& q1, const Quaternion& q2) noexcept;
-
-    static void DECLTYPE FromToRotation(const Vector3& fromDir, const Vector3& toDir, Quaternion& result) noexcept;
-    static Quaternion FromToRotation(const Vector3& fromDir, const Vector3& toDir) noexcept;
-
-    static void DECLTYPE LookRotation(const Vector3& forward, const Vector3& up, Quaternion& result) noexcept;
-    static Quaternion LookRotation(const Vector3& forward, const Vector3& up) noexcept;
-
-    static float Angle(const Quaternion& q1, const Quaternion& q2) noexcept;
+    [[nodiscard]] static float Angle(const Quaternion& q1, const Quaternion& q2) noexcept;
 
 public:
     // Common Values
