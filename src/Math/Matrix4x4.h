@@ -91,60 +91,57 @@ public:
     static void Transpose(Matrix4x4 & m) noexcept;
 
     [[nodiscard]] Matrix4x4 Inverse() const noexcept;
-    void Invert()  noexcept;
-    [[nodiscard]] static void Invert(Matrix4x4 & m) noexcept;
+    void Invert() noexcept;
+    static void Invert(Matrix4x4 & m) noexcept;
 
-    float Determinant() const noexcept;
+    [[nodiscard]] float Determinant() const noexcept;
 
-    Vector3 TransformPoint(const Vector3& position) const noexcept;
-    static Vector3 TransformPoint(const Matrix4x4& M, const Vector3& position) noexcept;
-    Vector3 TransformVector(const Vector3& vector) const noexcept;
-    static Vector3 TransformVector(const Matrix4x4& M, const Vector3& vector) noexcept;
+    [[nodiscard]] Vector3 TransformPoint(const Vector3& position) const noexcept;
+    [[nodiscard]] Vector3 TransformVector(const Vector3& vector) const noexcept;
 
-    static void Lerp(const Matrix4x4& M1, const Matrix4x4& M2, float t, Matrix4x4& result) noexcept;
-    static Matrix4x4 Lerp(const Matrix4x4& M1, const Matrix4x4& M2, float t) noexcept;
+    [[nodiscard]] static Matrix4x4 Lerp(const Matrix4x4& M1, const Matrix4x4& M2, float t) noexcept;
 
     // Construct a matrix from a T/R/S
-    static Matrix4x4 FromTranslation(const Vector3& position) noexcept;
-    static Matrix4x4 FromTranslation(float x, float y, float z) noexcept;
+    [[nodiscard]] static Matrix4x4 FromTranslation(const Vector3& position) noexcept;
+    [[nodiscard]] static Matrix4x4 FromTranslation(float x, float y, float z) noexcept;
 
-    static Matrix4x4 FromRotationX(float radians) noexcept;
-    static Matrix4x4 FromRotationY(float radians) noexcept;
-    static Matrix4x4 FromRotationZ(float radians) noexcept;
+    [[nodiscard]] static Matrix4x4 FromRotationX(float radians) noexcept;
+    [[nodiscard]] static Matrix4x4 FromRotationY(float radians) noexcept;
+    [[nodiscard]] static Matrix4x4 FromRotationZ(float radians) noexcept;
 
-    static Matrix4x4 FromAxisAngle(const Vector3& axis, float angle) noexcept;
-    static Matrix4x4 FromQuaternion(const Quaternion& quat) noexcept;
+    [[nodiscard]] static Matrix4x4 FromAxisAngle(const Vector3& axis, float angle) noexcept;
+    [[nodiscard]] static Matrix4x4 FromQuaternion(const Quaternion& quat) noexcept;
     // Rotates about y-axis (yaw), then x-axis (pitch), then z-axis (roll)
-    static Matrix4x4 FromYawPitchRoll(float yaw, float pitch, float roll) noexcept;
+    [[nodiscard]] static Matrix4x4 FromYawPitchRoll(float yaw, float pitch, float roll) noexcept;
     // Rotates about y-axis (angles.y), then x-axis (angles.x), then z-axis (angles.z)
-    static Matrix4x4 FromEulerAngles(const Vector3& angles) noexcept;
+    [[nodiscard]] static Matrix4x4 FromEulerAngles(const Vector3& angles) noexcept;
 
-    static Matrix4x4 FromScale(const Vector3& scales) noexcept;
-    static Matrix4x4 FromScale(float xs, float ys, float zs) noexcept;
-    static Matrix4x4 FromScale(float scale) noexcept;
+    [[nodiscard]] static Matrix4x4 FromScale(const Vector3& scales) noexcept;
+    [[nodiscard]] static Matrix4x4 FromScale(float xs, float ys, float zs) noexcept;
+    [[nodiscard]] static Matrix4x4 FromScale(float scale) noexcept;
 
     // Projection matrices
-    static Matrix4x4 CreatePerspectiveFieldOfViewLH(float fov, float aspectRatio, float nearPlane, float farPlane) noexcept;
-    static Matrix4x4 CreatePerspectiveOffCenter(float left, float right, float bottom, float top, float nearPlane, float farPlane) noexcept;
-    static Matrix4x4 CreateOrthographic(float width, float height, float zNearPlane, float zFarPlane) noexcept;
-    static Matrix4x4 CreateOrthographicOffCenter(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane) noexcept;
+    [[nodiscard]] static Matrix4x4 CreatePerspectiveFieldOfViewLH(float fov, float aspectRatio, float nearPlane, float farPlane) noexcept;
+    [[nodiscard]] static Matrix4x4 CreatePerspectiveOffCenter(float left, float right, float bottom, float top, float nearPlane, float farPlane) noexcept;
+    [[nodiscard]] static Matrix4x4 CreateOrthographic(float width, float height, float zNearPlane, float zFarPlane) noexcept;
+    [[nodiscard]] static Matrix4x4 CreateOrthographicOffCenter(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane) noexcept;
 
-    static Matrix4x4 CreateLookAt(const Vector3& position, const Vector3& target, const Vector3& up) noexcept;
+    [[nodiscard]] static Matrix4x4 CreateLookAt(const Vector3& position, const Vector3& target, const Vector3& up) noexcept;
 
     // Misc
-    static Matrix4x4 CreateWorld(const Vector3& position, const Vector3& forward, const Vector3& up) noexcept;
+    [[nodiscard]] static Matrix4x4 CreateWorld(const Vector3& position, const Vector3& forward, const Vector3& up) noexcept;
 
-    static Matrix4x4 CreateShadow(const Vector3& lightDir, const Plane& plane) noexcept;
+    [[nodiscard]] static Matrix4x4 CreateShadow(const Vector3& lightDir, const Plane& plane) noexcept;
 
-    static Matrix4x4 CreateReflection(const Plane& plane) noexcept;
+    [[nodiscard]] static Matrix4x4 CreateReflection(const Plane& plane) noexcept;
 
-    static Matrix4x4 CreateBillboard(
+    [[nodiscard]] static Matrix4x4 CreateBillboard(
         const Vector3& object,
         const Vector3& cameraPosition,
         const Vector3& cameraUp,
         const Vector3* cameraForward = nullptr) noexcept;
 
-    static Matrix4x4 CreateConstrainedBillboard(
+    [[nodiscard]] static Matrix4x4 CreateConstrainedBillboard(
         const Vector3& object,
         const Vector3& cameraPosition,
         const Vector3& rotateAxis,
