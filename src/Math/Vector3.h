@@ -25,7 +25,7 @@ public:
     float y;
     float z;
 
-    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream& os, const Vector3& v) noexcept;
+    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream & os, const Vector3& v) noexcept;
 
 public:
     MATHF_SIMD_SET_VALUE_TYPE(rtm::vector4f);
@@ -36,7 +36,6 @@ public:
     MATHF_COMMON_UNARY_OPERATOR_DECLARATIONS(Vector3);
     MATHF_VECTOR_COMPARISON_OPERATOR_DECLARATIONS(Vector3);
     MATHF_VECTOR_COMPOUND_ASSIGNMENT_OPERATOR_DECLARATIONS(Vector3);
-
 
     Vector3() noexcept = default;
     constexpr explicit Vector3(float ix) noexcept :
@@ -65,7 +64,7 @@ public:
 
     [[nodiscard]] inline Vector3 Normalized() const noexcept;
     inline void Normalize() noexcept;
-    inline static void Normalize(Vector3& v) noexcept;
+    inline static void Normalize(Vector3 & v) noexcept;
 
     inline void Clamp(const Vector3& vMin, const Vector3& vMax) noexcept;
     [[nodiscard]] inline Vector3 Clamp(const Vector3& input, const Vector3& vMin, const Vector3& vMax) const noexcept;
@@ -106,6 +105,21 @@ public:
 };
 
 MATHF_VECTOR_BINARY_OPERATOR_DECLARATIONS(Vector3);
+
+TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TFrom, Vector3::SIMDValueType)
+Vector3::Vector3(TFrom&& F) noexcept :
+    x(rtm::vector_get_x(std::forward<SIMDValueType>(F))),
+    y(rtm::vector_get_y(std::forward<SIMDValueType>(F))),
+    z(rtm::vector_get_z(std::forward<SIMDValueType>(F)))
+{
+}
+
+TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TFrom, Vector3::SIMDValueType)
+Vector3& Vector3::operator=(TFrom&& F) noexcept
+{
+    rtm::vector_store3(F, reinterpret_cast<float*>(this));
+    return *this;
+}
 
 #include "Vector3.inl"
 
