@@ -103,13 +103,13 @@ void Context::Initialize()
     CreateDevice();
     CreateSurface();
     CreateSwapchain(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+    CreateDepthBuffer();
     LoadShader("sample/cube", "vs", "ps");
     CreateRenderPass();
     CreatePipeline();
     CreateFramebuffers();
     GetQueues();
     CreateCommandPools();
-    CreateDepthBuffer();
 }
 
 struct PushConstant
@@ -180,8 +180,17 @@ void Context::Update()
                                      vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eColorAttachmentOutput, {}, {}, {}, imageMemoryBarriers);
 
-    vk::ClearValue clearValue(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
-    std::vector<vk::ClearValue> clearValues = {clearValue};
+    std::vector<vk::ImageMemoryBarrier> depthImageMemoryBarriers;
+    depthImageMemoryBarriers.emplace_back(vk::AccessFlagBits::eMemoryRead, vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+                                          vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                                          m_GraphicsQueueFamilyIndex, m_GraphicsQueueFamilyIndex,
+                                          m_DepthImage,
+                                          vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1));
+    commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eEarlyFragmentTests, {}, {}, {}, depthImageMemoryBarriers);
+
+    vk::ClearValue clearValueColor(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
+    vk::ClearValue clearValueDepth(vk::ClearDepthStencilValue(1.0f, 0));
+    std::vector<vk::ClearValue> clearValues = {clearValueColor, clearValueDepth};
     vk::RenderPassBeginInfo renderPassBeginInfo(*m_RenderPass, *m_Framebuffers[m_CurrentSwapchainImageIndex], {{0, 0}, m_SurfaceExtent}, clearValues);
     commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
@@ -207,6 +216,14 @@ void Context::Update()
                                      m_SwapchainImages[m_CurrentSwapchainImageIndex],
                                      vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eAllCommands, {}, {}, {}, imageMemoryBarriers2);
+
+    std::vector<vk::ImageMemoryBarrier> depthImageMemoryBarriers2;
+    depthImageMemoryBarriers2.emplace_back(vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::AccessFlagBits::eMemoryRead,
+                                           vk::ImageLayout::eDepthStencilAttachmentOptimal, vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                                           m_GraphicsQueueFamilyIndex, m_GraphicsQueueFamilyIndex,
+                                           m_DepthImage,
+                                           vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1));
+    commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eLateFragmentTests, vk::PipelineStageFlagBits::eAllCommands, {}, {}, {}, depthImageMemoryBarriers2);
 
     commandBuffer.end();
 
@@ -570,208 +587,6 @@ void Context::CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t heig
     LOG(DEBUG, "Created Vulkan swapchain with %d images, size %dx%d\n", m_SwapchainImageCount, m_SurfaceExtent.width, m_SurfaceExtent.height);
 }
 
-void Context::LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint)
-{
-    static const std::filesystem::path kShaderSourceFolder = FileSystem::GetResourceFolder() / "Shaders";
-
-    auto getShaderFile = [&name](vk::ShaderStageFlagBits stage) -> std::filesystem::path
-    {
-        std::filesystem::path path(name);
-        auto shaderPath = kShaderSourceFolder / path.parent_path() / path.filename().stem();
-        shaderPath += std::string(".") + (stage == vk::ShaderStageFlagBits::eVertex ? "vert" : "frag") + ".spv";
-        return shaderPath;
-    };
-
-    std::filesystem::path vertexShaderPath = getShaderFile(vk::ShaderStageFlagBits::eVertex);
-
-    std::vector<char> vertexShaderBinary = FileSystem::ReadAllBinary(vertexShaderPath);
-    if (vertexShaderBinary.empty())
-    {
-        LOG_STREAM(ERROR) << "Failed to load shader: " << vertexShaderPath << std::endl;
-        return;
-    }
-    LOG_STREAM(DEBUG) << "Loaded shader: " << vertexShaderPath << std::endl;
-
-    vk::ShaderModuleCreateInfo vertexShaderCreateInfo({}, vertexShaderBinary.size(), reinterpret_cast<const uint32_t*>(vertexShaderBinary.data()));
-
-    m_CubeVertexShader           = m_Device.createShaderModule(vertexShaderCreateInfo);
-    m_CubeVertexShaderEntryPoint = vertexEntryPoint;
-
-    std::filesystem::path fragmentShaderPath = getShaderFile(vk::ShaderStageFlagBits::eFragment);
-
-    std::vector<char> fragmentShaderBinary = FileSystem::ReadAllBinary(fragmentShaderPath);
-    if (fragmentShaderBinary.empty())
-    {
-        LOG_STREAM(ERROR) << "Failed to load shader: " << fragmentShaderPath << std::endl;
-        return;
-    }
-    LOG_STREAM(DEBUG) << "Loaded shader: " << fragmentShaderPath << std::endl;
-
-    vk::ShaderModuleCreateInfo fragmentShaderCreateInfo({}, fragmentShaderBinary.size(), reinterpret_cast<const uint32_t*>(fragmentShaderBinary.data()));
-
-    m_CubeFragmentShader           = m_Device.createShaderModule(fragmentShaderCreateInfo);
-    m_CubeFragmentShaderEntryPoint = fragmentEntryPoint;
-}
-
-void Context::CreateRenderPass()
-{
-    vk::AttachmentDescription colorAttachment({}, m_SurfaceFormat.format,
-                                              vk::SampleCountFlagBits::e1,
-                                              vk::AttachmentLoadOp::eClear,
-                                              vk::AttachmentStoreOp::eStore,
-                                              vk::AttachmentLoadOp::eDontCare,
-                                              vk::AttachmentStoreOp::eDontCare,
-                                              vk::ImageLayout::eColorAttachmentOptimal,
-                                              vk::ImageLayout::eColorAttachmentOptimal);
-
-    //    vk::AttachmentDescription depthAttachment({}, vk::Format::eD32Sfloat,
-    //                                              vk::SampleCountFlagBits::e1,
-    //                                              vk::AttachmentLoadOp::eLoad,
-    //                                              vk::AttachmentStoreOp::eStore,
-    //                                              vk::AttachmentLoadOp::eLoad,
-    //                                              vk::AttachmentStoreOp::eStore,
-    //                                              vk::ImageLayout::eDepthStencilAttachmentOptimal,
-    //                                              vk::ImageLayout::eDepthStencilAttachmentOptimal);
-
-    std::vector<vk::AttachmentDescription> attachments = {colorAttachment /*, depthAttachment*/};
-
-    vk::AttachmentReference colorAttachmentRef(0, vk::ImageLayout::eColorAttachmentOptimal);
-    //    vk::AttachmentReference depthAttachmentRef(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
-    std::vector<vk::AttachmentReference> inputAttachmentRefs;
-    std::vector<vk::AttachmentReference> colorAttachmentRefs = {colorAttachmentRef};
-    std::vector<vk::AttachmentReference> resolveAttachmentRefs;
-    std::vector<uint32_t> preserveAttachmentRefs;
-
-    vk::SubpassDescription subpassDesc({}, vk::PipelineBindPoint::eGraphics,
-                                       inputAttachmentRefs,
-                                       colorAttachmentRefs,
-                                       resolveAttachmentRefs,
-                                       {}, // depthAttachmentRef,
-                                       preserveAttachmentRefs);
-
-    std::vector<vk::SubpassDescription> subpasses = {subpassDesc};
-    std::vector<vk::SubpassDependency> dependencies;
-
-    vk::RenderPassCreateInfo renderPassCreateInfo({}, attachments, subpasses, dependencies);
-
-    m_RenderPass = m_Device.createRenderPass(renderPassCreateInfo);
-}
-
-void Context::CreatePipeline()
-{
-    // TODO: this is temporary now!
-    vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, 4 * 4 * 2 * sizeof(float));
-    std::vector<vk::PushConstantRange> pushConstantRanges = {pushConstantRange};
-
-    // TODO: change this when we have a working descriptor management system
-    vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, {}, pushConstantRanges);
-
-    m_PipelineLayout = m_Device.createPipelineLayout(pipelineLayoutInfo);
-
-    vk::PipelineShaderStageCreateInfo vertexShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *m_CubeVertexShader, m_CubeVertexShaderEntryPoint.c_str());
-    vk::PipelineShaderStageCreateInfo fragmentShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eFragment, *m_CubeFragmentShader, m_CubeFragmentShaderEntryPoint.c_str());
-    std::vector<vk::PipelineShaderStageCreateInfo> shaderStageCreateInfos = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
-
-    std::vector<vk::DynamicState> dynamicStates = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
-    vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo({}, dynamicStates);
-
-    vk::PipelineVertexInputStateCreateInfo vertexInputInfo({}, {}, {});
-    vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo({}, vk::PrimitiveTopology::eTriangleList, false);
-    vk::PipelineViewportStateCreateInfo viewportStateCreateInfo({}, 1, nullptr, 1, nullptr);
-    vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo({}, false, false, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise, false, 0.0f, 0.0f, 0.0f, 1.0f);
-    vk::PipelineMultisampleStateCreateInfo multisampleStateCreateInfo({}, vk::SampleCountFlagBits::e1, false, 0.0f, nullptr, false, false);
-    vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo({}, false, false, vk::CompareOp::eLess, false, false, {}, {}, 0.0f, 1.0f);
-
-    vk::PipelineColorBlendAttachmentState colorBlendAttachmentState(false,
-                                                                    vk::BlendFactor::eOne,
-                                                                    vk::BlendFactor::eZero,
-                                                                    vk::BlendOp::eAdd,
-                                                                    vk::BlendFactor::eOne,
-                                                                    vk::BlendFactor::eZero,
-                                                                    vk::BlendOp::eAdd,
-                                                                    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-    std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachmentStates = {colorBlendAttachmentState};
-
-    vk::PipelineColorBlendStateCreateInfo colorBlendStateCreateInfo({}, false, vk::LogicOp::eCopy, colorBlendAttachmentStates, {0.0f, 0.0f, 0.0f, 0.0f});
-
-    vk::GraphicsPipelineCreateInfo pipelineCreateInfo({},
-                                                      shaderStageCreateInfos,
-                                                      &vertexInputInfo,
-                                                      &inputAssemblyInfo,
-                                                      nullptr, // tessellation
-                                                      &viewportStateCreateInfo,
-                                                      &rasterizationStateCreateInfo,
-                                                      &multisampleStateCreateInfo,
-                                                      &depthStencilStateCreateInfo,
-                                                      &colorBlendStateCreateInfo,
-                                                      &dynamicStateCreateInfo,
-                                                      *m_PipelineLayout,
-                                                      *m_RenderPass,
-                                                      0,       // subpass
-                                                      nullptr, // basePipelineHandle
-                                                      -1);     // basePipelineIndex
-
-    m_Pipeline = m_Device.createGraphicsPipeline(nullptr, pipelineCreateInfo);
-}
-
-void Context::CreateFramebuffers()
-{
-    m_Framebuffers.clear();
-    m_Framebuffers.reserve(m_SwapchainImageCount);
-
-    for (uint32_t i = 0; i < m_SwapchainImageCount; ++i)
-    {
-        std::vector<vk::ImageView> attachments = {*m_SwapchainImageViews[i]};
-        vk::FramebufferCreateInfo framebufferCreateInfo({}, *m_RenderPass, attachments, m_SurfaceExtent.width, m_SurfaceExtent.height, 1);
-        m_Framebuffers.emplace_back(m_Device.createFramebuffer(framebufferCreateInfo));
-    }
-
-}
-
-void Context::GetQueues()
-{
-    m_GraphicsQueueFamilyIndex = 0;
-    m_PresentQueueFamilyIndex  = 0;
-
-    for (uint32_t i = 0; i < m_QueueFamilyProperties.size(); ++i)
-    {
-        const vk::QueueFamilyProperties& queueFamilyProperty = m_QueueFamilyProperties[i];
-
-        if (queueFamilyProperty.queueFlags & vk::QueueFlagBits::eGraphics)
-        {
-            m_GraphicsQueueFamilyIndex = i;
-            break;
-        }
-    }
-
-    void* nativeWindowHandle = m_App->GetWindow()->GetNativeHandle();
-    for (uint32_t i = m_QueueFamilyProperties.size(); i > 0; --i)
-    {
-        if (QueueFamilyIsPresentable(m_PhysicalDevices[m_PhysicalDeviceIndex], i - 1, nativeWindowHandle))
-        {
-            m_PresentQueueFamilyIndex = i - 1;
-            break;
-        }
-    }
-
-    m_GraphicsQueue = m_Device.getQueue(m_GraphicsQueueFamilyIndex, 0);
-    m_PresentQueue  = m_Device.getQueue(m_PresentQueueFamilyIndex, 0);
-}
-
-void Context::CreateCommandPools()
-{
-    m_CommandPools.reserve(m_SwapchainImageCount);
-    m_CommandBuffers.reserve(m_SwapchainImageCount);
-    vk::CommandPoolCreateInfo commandPoolCreateInfo({}, m_GraphicsQueueFamilyIndex);
-    for (uint32_t i = 0; i < m_SwapchainImageCount; ++i)
-    {
-        m_CommandPools.emplace_back(m_Device.createCommandPool(commandPoolCreateInfo));
-        std::vector<vk::raii::CommandBuffer> buffers = m_Device.allocateCommandBuffers({*m_CommandPools[i], vk::CommandBufferLevel::ePrimary, 1});
-        m_CommandBuffers.emplace_back(nullptr);
-        m_CommandBuffers[i].swap(buffers[0]);
-    }
-}
-
 void Context::CreateDepthBuffer()
 {
     std::vector<vk::Format> candidateFormats = {
@@ -835,6 +650,208 @@ void Context::CreateDepthBuffer()
                                                 {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1});
 
     m_DepthImageView = m_Device.createImageView(imageViewCreateInfo);
+}
+
+void Context::LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint)
+{
+    static const std::filesystem::path kShaderSourceFolder = FileSystem::GetResourceFolder() / "Shaders";
+
+    auto getShaderFile = [&name](vk::ShaderStageFlagBits stage) -> std::filesystem::path
+    {
+        std::filesystem::path path(name);
+        auto shaderPath = kShaderSourceFolder / path.parent_path() / path.filename().stem();
+        shaderPath += std::string(".") + (stage == vk::ShaderStageFlagBits::eVertex ? "vert" : "frag") + ".spv";
+        return shaderPath;
+    };
+
+    std::filesystem::path vertexShaderPath = getShaderFile(vk::ShaderStageFlagBits::eVertex);
+
+    std::vector<char> vertexShaderBinary = FileSystem::ReadAllBinary(vertexShaderPath);
+    if (vertexShaderBinary.empty())
+    {
+        LOG_STREAM(ERROR) << "Failed to load shader: " << vertexShaderPath << std::endl;
+        return;
+    }
+    LOG_STREAM(DEBUG) << "Loaded shader: " << vertexShaderPath << std::endl;
+
+    vk::ShaderModuleCreateInfo vertexShaderCreateInfo({}, vertexShaderBinary.size(), reinterpret_cast<const uint32_t*>(vertexShaderBinary.data()));
+
+    m_CubeVertexShader           = m_Device.createShaderModule(vertexShaderCreateInfo);
+    m_CubeVertexShaderEntryPoint = vertexEntryPoint;
+
+    std::filesystem::path fragmentShaderPath = getShaderFile(vk::ShaderStageFlagBits::eFragment);
+
+    std::vector<char> fragmentShaderBinary = FileSystem::ReadAllBinary(fragmentShaderPath);
+    if (fragmentShaderBinary.empty())
+    {
+        LOG_STREAM(ERROR) << "Failed to load shader: " << fragmentShaderPath << std::endl;
+        return;
+    }
+    LOG_STREAM(DEBUG) << "Loaded shader: " << fragmentShaderPath << std::endl;
+
+    vk::ShaderModuleCreateInfo fragmentShaderCreateInfo({}, fragmentShaderBinary.size(), reinterpret_cast<const uint32_t*>(fragmentShaderBinary.data()));
+
+    m_CubeFragmentShader           = m_Device.createShaderModule(fragmentShaderCreateInfo);
+    m_CubeFragmentShaderEntryPoint = fragmentEntryPoint;
+}
+
+void Context::CreateRenderPass()
+{
+    vk::AttachmentDescription colorAttachment({}, m_SurfaceFormat.format,
+                                              vk::SampleCountFlagBits::e1,
+                                              vk::AttachmentLoadOp::eClear,
+                                              vk::AttachmentStoreOp::eStore,
+                                              vk::AttachmentLoadOp::eDontCare,
+                                              vk::AttachmentStoreOp::eDontCare,
+                                              vk::ImageLayout::eColorAttachmentOptimal,
+                                              vk::ImageLayout::eColorAttachmentOptimal);
+
+    vk::AttachmentDescription depthAttachment({}, vk::Format::eD32Sfloat,
+                                              vk::SampleCountFlagBits::e1,
+                                              vk::AttachmentLoadOp::eClear,
+                                              vk::AttachmentStoreOp::eDontCare,
+                                              vk::AttachmentLoadOp::eDontCare,
+                                              vk::AttachmentStoreOp::eDontCare,
+                                              vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                                              vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+    std::vector<vk::AttachmentDescription> attachments = {colorAttachment, depthAttachment};
+
+    vk::AttachmentReference colorAttachmentRef(0, vk::ImageLayout::eColorAttachmentOptimal);
+    vk::AttachmentReference depthAttachmentRef(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+    std::vector<vk::AttachmentReference> inputAttachmentRefs;
+    std::vector<vk::AttachmentReference> colorAttachmentRefs = {colorAttachmentRef};
+    std::vector<vk::AttachmentReference> resolveAttachmentRefs;
+    std::vector<uint32_t> preserveAttachmentRefs;
+
+    vk::SubpassDescription subpassDesc({}, vk::PipelineBindPoint::eGraphics,
+                                       inputAttachmentRefs,
+                                       colorAttachmentRefs,
+                                       resolveAttachmentRefs,
+                                       &depthAttachmentRef,
+                                       preserveAttachmentRefs);
+
+    std::vector<vk::SubpassDescription> subpasses = {subpassDesc};
+    std::vector<vk::SubpassDependency> dependencies;
+
+    vk::RenderPassCreateInfo renderPassCreateInfo({}, attachments, subpasses, dependencies);
+
+    m_RenderPass = m_Device.createRenderPass(renderPassCreateInfo);
+}
+
+void Context::CreatePipeline()
+{
+    // TODO: this is temporary now!
+    vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, 4 * 4 * 2 * sizeof(float));
+    std::vector<vk::PushConstantRange> pushConstantRanges = {pushConstantRange};
+
+    // TODO: change this when we have a working descriptor management system
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, {}, pushConstantRanges);
+
+    m_PipelineLayout = m_Device.createPipelineLayout(pipelineLayoutInfo);
+
+    vk::PipelineShaderStageCreateInfo vertexShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *m_CubeVertexShader, m_CubeVertexShaderEntryPoint.c_str());
+    vk::PipelineShaderStageCreateInfo fragmentShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eFragment, *m_CubeFragmentShader, m_CubeFragmentShaderEntryPoint.c_str());
+    std::vector<vk::PipelineShaderStageCreateInfo> shaderStageCreateInfos = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
+
+    std::vector<vk::DynamicState> dynamicStates = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
+    vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo({}, dynamicStates);
+
+    vk::PipelineVertexInputStateCreateInfo vertexInputInfo({}, {}, {});
+    vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo({}, vk::PrimitiveTopology::eTriangleList, false);
+    vk::PipelineViewportStateCreateInfo viewportStateCreateInfo({}, 1, nullptr, 1, nullptr);
+    vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo({}, false, false, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise, false, 0.0f, 0.0f, 0.0f, 1.0f);
+    vk::PipelineMultisampleStateCreateInfo multisampleStateCreateInfo({}, vk::SampleCountFlagBits::e1, false, 0.0f, nullptr, false, false);
+    vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo({}, true, true, vk::CompareOp::eLess, false, false, {}, {}, 0.0f, 1.0f);
+
+    vk::PipelineColorBlendAttachmentState colorBlendAttachmentState(false,
+                                                                    vk::BlendFactor::eOne,
+                                                                    vk::BlendFactor::eZero,
+                                                                    vk::BlendOp::eAdd,
+                                                                    vk::BlendFactor::eOne,
+                                                                    vk::BlendFactor::eZero,
+                                                                    vk::BlendOp::eAdd,
+                                                                    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
+    std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachmentStates = {colorBlendAttachmentState};
+
+    vk::PipelineColorBlendStateCreateInfo colorBlendStateCreateInfo({}, false, vk::LogicOp::eCopy, colorBlendAttachmentStates, {0.0f, 0.0f, 0.0f, 0.0f});
+
+    vk::GraphicsPipelineCreateInfo pipelineCreateInfo({},
+                                                      shaderStageCreateInfos,
+                                                      &vertexInputInfo,
+                                                      &inputAssemblyInfo,
+                                                      nullptr, // tessellation
+                                                      &viewportStateCreateInfo,
+                                                      &rasterizationStateCreateInfo,
+                                                      &multisampleStateCreateInfo,
+                                                      &depthStencilStateCreateInfo,
+                                                      &colorBlendStateCreateInfo,
+                                                      &dynamicStateCreateInfo,
+                                                      *m_PipelineLayout,
+                                                      *m_RenderPass,
+                                                      0,       // subpass
+                                                      nullptr, // basePipelineHandle
+                                                      -1);     // basePipelineIndex
+
+    m_Pipeline = m_Device.createGraphicsPipeline(nullptr, pipelineCreateInfo);
+}
+
+void Context::CreateFramebuffers()
+{
+    m_Framebuffers.clear();
+    m_Framebuffers.reserve(m_SwapchainImageCount);
+
+    for (uint32_t i = 0; i < m_SwapchainImageCount; ++i)
+    {
+        std::vector<vk::ImageView> attachments = {*m_SwapchainImageViews[i], *m_DepthImageView};
+        vk::FramebufferCreateInfo framebufferCreateInfo({}, *m_RenderPass, attachments, m_SurfaceExtent.width, m_SurfaceExtent.height, 1);
+        m_Framebuffers.emplace_back(m_Device.createFramebuffer(framebufferCreateInfo));
+    }
+
+}
+
+void Context::GetQueues()
+{
+    m_GraphicsQueueFamilyIndex = 0;
+    m_PresentQueueFamilyIndex  = 0;
+
+    for (uint32_t i = 0; i < m_QueueFamilyProperties.size(); ++i)
+    {
+        const vk::QueueFamilyProperties& queueFamilyProperty = m_QueueFamilyProperties[i];
+
+        if (queueFamilyProperty.queueFlags & vk::QueueFlagBits::eGraphics)
+        {
+            m_GraphicsQueueFamilyIndex = i;
+            break;
+        }
+    }
+
+    void* nativeWindowHandle = m_App->GetWindow()->GetNativeHandle();
+    for (uint32_t i = m_QueueFamilyProperties.size(); i > 0; --i)
+    {
+        if (QueueFamilyIsPresentable(m_PhysicalDevices[m_PhysicalDeviceIndex], i - 1, nativeWindowHandle))
+        {
+            m_PresentQueueFamilyIndex = i - 1;
+            break;
+        }
+    }
+
+    m_GraphicsQueue = m_Device.getQueue(m_GraphicsQueueFamilyIndex, 0);
+    m_PresentQueue  = m_Device.getQueue(m_PresentQueueFamilyIndex, 0);
+}
+
+void Context::CreateCommandPools()
+{
+    m_CommandPools.reserve(m_SwapchainImageCount);
+    m_CommandBuffers.reserve(m_SwapchainImageCount);
+    vk::CommandPoolCreateInfo commandPoolCreateInfo({}, m_GraphicsQueueFamilyIndex);
+    for (uint32_t i = 0; i < m_SwapchainImageCount; ++i)
+    {
+        m_CommandPools.emplace_back(m_Device.createCommandPool(commandPoolCreateInfo));
+        std::vector<vk::raii::CommandBuffer> buffers = m_Device.allocateCommandBuffers({*m_CommandPools[i], vk::CommandBufferLevel::ePrimary, 1});
+        m_CommandBuffers.emplace_back(nullptr);
+        m_CommandBuffers[i].swap(buffers[0]);
+    }
 }
 
 bool Context::HasExtension(VulkanInstanceExtension instanceExtension) const

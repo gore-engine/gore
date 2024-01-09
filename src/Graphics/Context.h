@@ -99,13 +99,13 @@ private:
     void CreateDevice();
     void CreateSurface();
     void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
+    void CreateDepthBuffer();
     void LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint);
     void CreateRenderPass();
     void CreatePipeline();
     void CreateFramebuffers();
     void GetQueues();
     void CreateCommandPools();
-    void CreateDepthBuffer();
 
 private:
     [[nodiscard]] bool HasExtension(VulkanInstanceExtension instanceExtension) const;
