@@ -150,19 +150,6 @@ public:
     static const Matrix4x4 Identity;
 };
 
-TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TFrom, Matrix4x4::SIMDValueType)
-Matrix4x4::Matrix4x4(TFrom&& F) noexcept :
-    m_M(std::forward<SIMDValueType>(F))
-{
-}
-
-TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TFrom, Matrix4x4::SIMDValueType)
-Matrix4x4& Matrix4x4::operator=(TFrom&& F) noexcept
-{
-    m_M = std::forward<SIMDValueType>(F);
-    return *this;
-}
-
 ENGINE_API_FUNC(Matrix4x4, operator*, const Matrix4x4& V1, const Matrix4x4& V2) noexcept;
 
 #include "Matrix4x4.inl"

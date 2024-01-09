@@ -6,10 +6,9 @@
 
 #define MATHF_SIMD_CONVERSION_WITH_VALUE_TYPE_DECLARATIONS(CLASS_NAME) \
     operator SIMDValueType() const noexcept;                           \
-    TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV(TFrom, SIMDValueType)       \
-    explicit CLASS_NAME(TFrom&& V) noexcept;                           \
-    TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV(TFrom, SIMDValueType)       \
-    CLASS_NAME& operator=(TFrom&& V) noexcept;
+    explicit CLASS_NAME(const SIMDValueType& V) noexcept;              \
+    explicit CLASS_NAME(SIMDValueType&& V) noexcept;                   \
+    CLASS_NAME& operator=(const SIMDValueType& V) noexcept;
 
 #define MATHF_COMMON_COMPARISON_OPERATOR_DECLARATIONS(CLASS_NAME) \
     bool operator==(const CLASS_NAME& V) const noexcept;          \
