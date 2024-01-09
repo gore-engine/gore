@@ -10,10 +10,10 @@
 namespace gore
 {
 
-ENGINE_STRUCT(Vector2);
-ENGINE_STRUCT(Vector3);
-ENGINE_STRUCT(Quaternion);
-ENGINE_STRUCT(Matrix4x4);
+struct Vector2;
+struct Vector3;
+struct Quaternion;
+struct Matrix4x4;
 
 ENGINE_STRUCT(Vector4)
 {

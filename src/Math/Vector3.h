@@ -14,9 +14,8 @@
 namespace gore
 {
 
-ENGINE_STRUCT(Vector4);
-ENGINE_STRUCT(Quaternion);
-ENGINE_STRUCT(Matrix4x4);
+struct Vector4;
+struct Quaternion;
 
 ENGINE_STRUCT(Vector3)
 {
