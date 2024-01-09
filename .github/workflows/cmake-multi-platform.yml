@@ -77,7 +77,7 @@ jobs:
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
     - name: Install Vulkan SDK
-      uses: alexkiri/install-vulkan-sdk@v1.1.2
+      uses: humbletim/install-vulkan-sdk@v1.1.2
       with:
         version: latest
         cache: true
