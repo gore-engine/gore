@@ -10,7 +10,6 @@
     "stb",
     "vulkan",
     "vulkan-memory-allocator",
-    "volk",
     "spirv-cross",
     "catch2"
   ]

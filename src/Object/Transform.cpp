@@ -30,16 +30,16 @@ void Transform::SetLocalEulerAngles(const Vector3& eulerAngles)
 
 void Transform::Start()
 {
-    LOG_STREAM(DEBUG) << "Created Transform in GameObject " << GetGameObject()->GetName() << std::endl;
+    // LOG_STREAM(DEBUG) << "Created Transform in GameObject " << GetGameObject()->GetName() << std::endl;
 }
 
 void Transform::Update()
 {
-    this->RotateAroundAxis(Vector3::Up, 0.01f);
-    LOG_STREAM(DEBUG) << "Update Transform in GameObject: " << GetGameObject()->GetName()
-                      << "  Position: " << m_LocalPosition
-                      << "  Rotation: " << m_LocalRotation
-                      << "  Scale: " << m_LocalScale << std::endl;
+    // this->RotateAroundAxis(Vector3::Up, 0.01f);
+    // LOG_STREAM(DEBUG) << "Update Transform in GameObject: " << GetGameObject()->GetName()
+    //                   << "  Position: " << m_LocalPosition
+    //                   << "  Rotation: " << m_LocalRotation
+    //                   << "  Scale: " << m_LocalScale << std::endl;
 }
 
 Vector3 Transform::GetLocalPosition() const

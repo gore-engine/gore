@@ -6,7 +6,7 @@
 #undef None
 #endif
 
-namespace gore
+namespace gore::graphics
 {
 
 enum class VendorID : uint32_t

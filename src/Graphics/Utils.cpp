@@ -1,11 +1,11 @@
 #include "Prefix.h"
 
-#include "RenderUtils.h"
+#include "Utils.h"
 
 #include <sstream>
 #include <iomanip>
 
-namespace gore
+namespace gore::graphics
 {
 
 std::string VendorIDToString(VendorID vendorID)
