@@ -30,6 +30,22 @@ Quaternion::operator SIMDValueType() const noexcept
     return m_Q;
 }
 
+Quaternion::Quaternion(const Quaternion::SIMDValueType& F) noexcept :
+    m_Q(F)
+{
+}
+
+Quaternion::Quaternion(Quaternion::SIMDValueType&& F) noexcept :
+    m_Q(std::move(F))
+{
+}
+
+Quaternion& Quaternion::operator=(const Quaternion::SIMDValueType& F) noexcept
+{
+    m_Q = F;
+    return *this;
+}
+
 Quaternion Quaternion::FromToRotation(const Vector3& fromDir, const Vector3& toDir) noexcept
 {
     // Melax, "The Shortest Arc Quaternion", Game Programming Gems, Charles River Media (2000).

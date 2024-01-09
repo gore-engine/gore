@@ -152,19 +152,6 @@ public:
     static const Matrix4x4 Identity;
 };
 
-TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TFrom, Matrix4x4::SIMDValueType)
-Matrix4x4::Matrix4x4(TFrom&& F) noexcept :
-    m_M(std::forward<SIMDValueType>(F))
-{
-}
-
-TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TFrom, Matrix4x4::SIMDValueType)
-Matrix4x4& Matrix4x4::operator=(TFrom&& F) noexcept
-{
-    m_M = std::forward<SIMDValueType>(F);
-    return *this;
-}
-
 MATHF_MATRIX_BINARY_OPERATOR_DECLARATIONS(Matrix4x4);
 
 } // namespace gore
