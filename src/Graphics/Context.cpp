@@ -109,6 +109,7 @@ void Context::Initialize()
     CreateFramebuffers();
     GetQueues();
     CreateCommandPools();
+    CreateDepthBuffer();
 }
 
 struct PushConstant
@@ -133,8 +134,14 @@ void Context::Update()
         m_Swapchain = nullptr;
         int width, height;
         window->GetSize(&width, &height);
+        if (m_DepthImage != nullptr)
+        {
+            m_DepthImageView = nullptr;
+            vmaDestroyImage(m_VmaAllocator, m_DepthImage, m_DepthImageAllocation);
+        }
         CreateSwapchain(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
         CreateFramebuffers();
+        CreateDepthBuffer();
         return;
     }
 
@@ -217,16 +224,30 @@ void Context::Update()
     {
         m_Device.waitIdle();
         m_Swapchain = nullptr;
+        if (m_DepthImage != nullptr)
+        {
+            m_DepthImageView = nullptr;
+            vmaDestroyImage(m_VmaAllocator, m_DepthImage, m_DepthImageAllocation);
+        }
         int width, height;
         window->GetSize(&width, &height);
         CreateSwapchain(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
         CreateFramebuffers();
+        CreateDepthBuffer();
     }
 }
 
 void Context::Shutdown()
 {
     m_Device.waitIdle();
+
+    if (m_DepthImage != nullptr)
+    {
+        m_DepthImageView = nullptr;
+
+        vmaDestroyImage(m_VmaAllocator, m_DepthImage, m_DepthImageAllocation);
+    }
+
     if (m_VmaAllocator != VK_NULL_HANDLE)
     {
         vmaDestroyAllocator(m_VmaAllocator);
@@ -240,8 +261,14 @@ void Context::OnResize(Window* window, int width, int height)
 
     m_Device.waitIdle();
     m_Swapchain = nullptr;
+    if (m_DepthImage != nullptr)
+    {
+        m_DepthImageView = nullptr;
+        vmaDestroyImage(m_VmaAllocator, m_DepthImage, m_DepthImageAllocation);
+    }
     CreateSwapchain(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     CreateFramebuffers();
+    CreateDepthBuffer();
 }
 
 void Context::CreateInstance()
@@ -743,6 +770,71 @@ void Context::CreateCommandPools()
         m_CommandBuffers.emplace_back(nullptr);
         m_CommandBuffers[i].swap(buffers[0]);
     }
+}
+
+void Context::CreateDepthBuffer()
+{
+    std::vector<vk::Format> candidateFormats = {
+        vk::Format::eD32Sfloat,
+        vk::Format::eD32SfloatS8Uint,
+        vk::Format::eD24UnormS8Uint,
+        vk::Format::eD16UnormS8Uint,
+        vk::Format::eD16Unorm
+    };
+
+    vk::Format depthFormat = vk::Format::eUndefined;
+
+    const vk::raii::PhysicalDevice& physicalDevice = m_PhysicalDevices[m_PhysicalDeviceIndex];
+
+    for (auto& format : candidateFormats)
+    {
+        vk::FormatProperties formatProperties = physicalDevice.getFormatProperties(format);
+        if (formatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
+        {
+            depthFormat = format;
+            break;
+        }
+    }
+
+    bool hasStencil = depthFormat == vk::Format::eD32SfloatS8Uint ||
+                      depthFormat == vk::Format::eD24UnormS8Uint ||
+                      depthFormat == vk::Format::eD16UnormS8Uint;
+
+    vk::ImageCreateInfo imageCreateInfo({}, vk::ImageType::e2D, depthFormat,
+                                        vk::Extent3D(m_SurfaceExtent.width, m_SurfaceExtent.height, 1),
+                                        1, 1,
+                                        vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal,
+                                        vk::ImageUsageFlagBits::eDepthStencilAttachment,
+                                        vk::SharingMode::eExclusive,
+                                        {},
+                                        vk::ImageLayout::eUndefined);
+
+    // TODO: fill in all these fields
+    VmaAllocationCreateInfo allocationCreateInfo{
+        .flags          = 0,
+        .usage          = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+        .requiredFlags  = 0,
+        .preferredFlags = 0,
+        .memoryTypeBits = 0,
+        .pool           = VK_NULL_HANDLE,
+        .pUserData      = nullptr,
+        .priority       = 0
+    };
+
+    VkImage* depthImage = reinterpret_cast<VkImage*>(&m_DepthImage);
+    VkImageCreateInfo* cImageCreateInfo = reinterpret_cast<VkImageCreateInfo*>(&imageCreateInfo);
+    // TODO: allocate memory separately in the future
+    VkResult res = vmaCreateImage(m_VmaAllocator, cImageCreateInfo, &allocationCreateInfo, depthImage, &m_DepthImageAllocation, nullptr);
+    VK_CHECK_RESULT(res);
+
+    vk::ImageViewCreateInfo imageViewCreateInfo({},
+                                                m_DepthImage,
+                                                vk::ImageViewType::e2D,
+                                                depthFormat,
+                                                {},
+                                                {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1});
+
+    m_DepthImageView = m_Device.createImageView(imageViewCreateInfo);
 }
 
 bool Context::HasExtension(VulkanInstanceExtension instanceExtension) const

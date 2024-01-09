@@ -90,7 +90,7 @@ private:
     std::vector<vk::raii::CommandBuffer> m_CommandBuffers;
 
     // Depth buffer
-    vk::raii::Image m_DepthImage;
+    vk::Image m_DepthImage;
     VmaAllocation m_DepthImageAllocation;
     vk::raii::ImageView m_DepthImageView;
 
@@ -105,6 +105,7 @@ private:
     void CreateFramebuffers();
     void GetQueues();
     void CreateCommandPools();
+    void CreateDepthBuffer();
 
 private:
     [[nodiscard]] bool HasExtension(VulkanInstanceExtension instanceExtension) const;
