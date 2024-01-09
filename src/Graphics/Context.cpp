@@ -1,5 +1,6 @@
 #include "Prefix.h"
 
+#define VMA_IMPLEMENTATION
 #include "Context.h"
 
 #include "Rendering/RenderSystem.h"
@@ -45,7 +46,9 @@ Context::Context(RenderSystem* system, App* app) :
     m_PhysicalDevices(),
     m_PhysicalDeviceIndex(-1),
     m_Device(nullptr),
+    m_DeviceApiVersion(0),
     m_EnabledDeviceExtensions(),
+    m_VmaAllocator(VK_NULL_HANDLE),
     // Surface & Swapchain
     m_Surface(nullptr),
     m_Swapchain(nullptr),
@@ -78,7 +81,11 @@ Context::Context(RenderSystem* system, App* app) :
     m_PresentQueueFamilyIndex(0),
     // Command Pool & Command Buffer
     m_CommandPools(),
-    m_CommandBuffers()
+    m_CommandBuffers(),
+    // Depth Buffer
+    m_DepthImage(nullptr),
+    m_DepthImageAllocation(VK_NULL_HANDLE),
+    m_DepthImageView(nullptr)
 {
     CreateInstance();
 }
@@ -220,6 +227,10 @@ void Context::Update()
 void Context::Shutdown()
 {
     m_Device.waitIdle();
+    if (m_VmaAllocator != VK_NULL_HANDLE)
+    {
+        vmaDestroyAllocator(m_VmaAllocator);
+    }
 }
 
 void Context::OnResize(Window* window, int width, int height)
@@ -359,6 +370,7 @@ void Context::CreateDevice()
     // Device
     const vk::raii::PhysicalDevice& physicalDevice = m_PhysicalDevices[m_PhysicalDeviceIndex];
     vk::PhysicalDeviceProperties properties        = physicalDevice.getProperties();
+    m_DeviceApiVersion                             = properties.apiVersion;
 
     // Queue Families
     m_QueueFamilyProperties = physicalDevice.getQueueFamilyProperties();
@@ -393,6 +405,27 @@ void Context::CreateDevice()
     m_Device = physicalDevice.createDevice(deviceCreateInfo);
 
     LOG_STREAM(INFO) << "Created Vulkan device with \"" << properties.deviceName << "\"" << std::endl;
+
+    // Create Vulkan Memory Allocator
+    VmaVulkanFunctions vulkanFunctions{
+        .vkGetInstanceProcAddr = m_Instance.getDispatcher()->vkGetInstanceProcAddr,
+        .vkGetDeviceProcAddr   = m_Device.getDispatcher()->vkGetDeviceProcAddr
+    };
+    VmaAllocatorCreateInfo allocatorCreateInfo{
+        .flags                       = 0,              // TODO: check what flags we can use potentially
+        .physicalDevice              = *physicalDevice,
+        .device                      = *m_Device,
+        .preferredLargeHeapBlockSize = 0,              // TODO: we are using default value here for now
+        .pAllocationCallbacks        = VK_NULL_HANDLE,
+        .pDeviceMemoryCallbacks      = VK_NULL_HANDLE,
+        .pHeapSizeLimit              = VK_NULL_HANDLE, // TODO: this means no limit on all heaps
+        .pVulkanFunctions            = &vulkanFunctions,
+        .instance                    = *m_Instance,
+        .vulkanApiVersion            = std::min(m_ApiVersion, m_DeviceApiVersion)
+    };
+
+    VkResult res = vmaCreateAllocator(&allocatorCreateInfo, &m_VmaAllocator);
+    VK_CHECK_RESULT(res);
 }
 
 void Context::CreateSurface()

@@ -33,6 +33,11 @@
 #include <vulkan/vulkan_structs.hpp>
 #include <vulkan/vulkan_to_string.hpp>
 
+#ifdef VK_NO_PROTOTYPES
+    #define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
+#endif
+#include <vk_mem_alloc.h>
+
 #ifdef ERROR
     #undef ERROR
 #endif

@@ -41,7 +41,10 @@ private:
     std::vector<vk::raii::PhysicalDevice> m_PhysicalDevices;
     int m_PhysicalDeviceIndex;
     vk::raii::Device m_Device;
+    uint32_t m_DeviceApiVersion;
     VulkanDeviceExtensionBitset m_EnabledDeviceExtensions;
+
+    VmaAllocator m_VmaAllocator;
 
     // Surface & Swapchain
     vk::raii::SurfaceKHR m_Surface;
@@ -85,6 +88,11 @@ private:
     // Command Pool & Command Buffer
     std::vector<vk::raii::CommandPool> m_CommandPools;
     std::vector<vk::raii::CommandBuffer> m_CommandBuffers;
+
+    // Depth buffer
+    vk::raii::Image m_DepthImage;
+    VmaAllocation m_DepthImageAllocation;
+    vk::raii::ImageView m_DepthImageView;
 
 private:
     void CreateInstance();
