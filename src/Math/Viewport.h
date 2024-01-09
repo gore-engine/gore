@@ -14,8 +14,8 @@
 namespace gore
 {
 
-ENGINE_STRUCT(Vector3);
-ENGINE_STRUCT(Matrix4x4);
+struct Vector3;
+struct Matrix4x4;
 
 ENGINE_STRUCT(Viewport)
 {

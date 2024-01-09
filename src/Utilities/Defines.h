@@ -39,3 +39,10 @@
     {                                                                                                           \
         return (a & b) == b;                                                                                    \
     }
+
+#define TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV(TEMPLATE_TYPE_NAME, EQUAL_CHECK_REAL_TYPE) \
+    template <typename TEMPLATE_TYPE_NAME,                                                \
+              typename = typename std::enable_if_t<std::is_same_v<std::decay_t<TEMPLATE_TYPE_NAME>, EQUAL_CHECK_REAL_TYPE>>>
+
+#define TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TEMPLATE_TYPE_NAME, EQUAL_CHECK_REAL_TYPE) \
+    template <typename TEMPLATE_TYPE_NAME, typename>
