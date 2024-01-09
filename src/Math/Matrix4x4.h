@@ -31,9 +31,7 @@ public:
 
     SHALLOW_COPYABLE(Matrix4x4);
 
-    MATHF_COMMON_UNARY_OPERATOR_DECLARATIONS(Matrix4x4);
     MATHF_MATRIX_COMPARISON_OPERATOR_DECLARATIONS(Matrix4x4);
-    MATHF_MATRIX_COMPOUND_ASSIGNMENT_OPERATOR_DECLARATIONS(Matrix4x4);
 
     SIMDValueType m_M;
 
@@ -165,6 +163,8 @@ Matrix4x4& Matrix4x4::operator=(TFrom&& F) noexcept
     return *this;
 }
 
-MATHF_MATRIX_BINARY_OPERATOR_DECLARATIONS(Matrix4x4);
+ENGINE_API_FUNC(Matrix4x4, operator*, const Matrix4x4& V1, const Matrix4x4& V2) noexcept;
+
+#include "Matrix4x4.inl"
 
 } // namespace gore
