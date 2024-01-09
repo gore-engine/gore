@@ -6,8 +6,8 @@
 namespace gore
 {
 
-ENGINE_STRUCT(Rect);
-ENGINE_STRUCT(Vector2);
+struct Rect;
+struct Vector2;
 
 ENGINE_STRUCT(Rectangle)
 {

@@ -4,7 +4,7 @@
 
 #include "Prefix.h"
 #include "Export.h"
-#include "Utilities//Defines.h"
+#include "Utilities/Defines.h"
 #include "Math/Defines.h"
 
 #include "rtm/vector4f.h"
@@ -12,10 +12,10 @@
 namespace gore
 {
 
-ENGINE_STRUCT(Vector3);
-ENGINE_STRUCT(Vector4);
-ENGINE_STRUCT(Quaternion);
-ENGINE_STRUCT(Matrix4x4);
+struct Vector3;
+struct Vector4;
+struct Quaternion;
+struct Matrix4x4;
 
 ENGINE_STRUCT(Plane)
 {
