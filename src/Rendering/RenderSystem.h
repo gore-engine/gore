@@ -2,17 +2,15 @@
 
 #include "Core/System.h"
 
-#include "Rendering/Vulkan/VulkanInstance.h"
-#include "Rendering/Vulkan/VulkanDevice.h"
-#include "Rendering/Vulkan/VulkanSurface.h"
-#include "Rendering/Vulkan/VulkanSwapchain.h"
-#include "Rendering/Vulkan/VulkanShader.h"
-#include "Rendering/Vulkan/VulkanPipeline.h"
-
 namespace gore
 {
 
 class Window;
+
+namespace graphics
+{
+class Context;
+}
 
 class RenderSystem final : System
 {
@@ -29,16 +27,7 @@ public:
     void OnResize(Window* window, int width, int height);
 
 private:
-    VulkanInstance* m_VulkanInstance;
-    VulkanDevice* m_VulkanDevice;
-
-    VulkanSurface* m_VulkanSurface;
-    VulkanSwapchain* m_VulkanSwapchain;
-
-    std::vector<VulkanSemaphore*> m_RenderFinishedSemaphores;
-
-    VulkanShader* m_CubeShader;
-    VulkanPipeline* m_CubePipeline;
+    graphics::Context* m_Context;
 };
 
 } // namespace gore

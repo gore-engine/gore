@@ -28,6 +28,7 @@ set(COMMON_SOURCE_FOLDERS
         "Math"
         "Memory"
         "Windowing"
+        "Graphics"
         "Rendering"
         "Scene"
         "Object"
@@ -105,15 +106,11 @@ list(APPEND COMMON_DEFINITIONS "GLFW_INCLUDE_NONE")
 
 # vulkan
 find_package(Vulkan REQUIRED)
-list(APPEND COMMON_LIBRARIES Vulkan::Headers)
+list(APPEND COMMON_INCLUDE_FOLDERS ${Vulkan_INCLUDE_DIRS})
 
 # vulkan memory allocator
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 list(APPEND COMMON_LIBRARIES GPUOpen::VulkanMemoryAllocator)
-
-# volk
-find_package(volk CONFIG REQUIRED)
-list(APPEND COMMON_LIBRARIES volk::volk_headers)
 
 # imgui
 find_package(imgui CONFIG REQUIRED)
