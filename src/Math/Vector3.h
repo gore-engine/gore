@@ -105,21 +105,6 @@ public:
 
 MATHF_VECTOR_BINARY_OPERATOR_DECLARATIONS(Vector3);
 
-TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TFrom, Vector3::SIMDValueType)
-Vector3::Vector3(TFrom&& F) noexcept :
-    x(rtm::vector_get_x(std::forward<SIMDValueType>(F))),
-    y(rtm::vector_get_y(std::forward<SIMDValueType>(F))),
-    z(rtm::vector_get_z(std::forward<SIMDValueType>(F)))
-{
-}
-
-TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TFrom, Vector3::SIMDValueType)
-Vector3& Vector3::operator=(TFrom&& F) noexcept
-{
-    rtm::vector_store3(F, reinterpret_cast<float*>(this));
-    return *this;
-}
-
 #include "Vector3.inl"
 
 } // namespace gore

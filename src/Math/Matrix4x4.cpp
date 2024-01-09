@@ -25,6 +25,22 @@ Matrix4x4::operator SIMDValueType() const noexcept
     return m_M;
 }
 
+Matrix4x4::Matrix4x4(const Matrix4x4::SIMDValueType& F) noexcept :
+    m_M(F)
+{
+}
+
+Matrix4x4::Matrix4x4(Matrix4x4::SIMDValueType&& F) noexcept :
+    m_M(std::move(F))
+{
+}
+
+Matrix4x4& Matrix4x4::operator=(const Matrix4x4::SIMDValueType& F) noexcept
+{
+    m_M = F;
+    return *this;
+}
+
 // Properties
 Vector3 Matrix4x4::GetUp() const noexcept
 {

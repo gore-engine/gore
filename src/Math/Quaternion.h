@@ -95,19 +95,6 @@ Quaternion operator*(const Quaternion& Q, float S) noexcept;
 Quaternion operator/(const Quaternion& Q1, const Quaternion& Q2) noexcept;
 Quaternion operator*(float S, const Quaternion& Q) noexcept;
 
-TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TFrom, Quaternion::SIMDValueType)
-Quaternion::Quaternion(TFrom&& F) noexcept :
-    m_Q(std::forward<TFrom>(F))
-{
-}
-
-TEMPLATE_ENABLE_IF_SAME_TYPE_IGNORE_CV_BEFORE_DEFINITION(TFrom, Quaternion::SIMDValueType)
-Quaternion& Quaternion::operator=(TFrom&& F) noexcept
-{
-    m_Q = std::forward<TFrom>(F);
-    return *this;
-}
-
 #include "Math/Quaternion.inl"
 
 } // namespace gore
