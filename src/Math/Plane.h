@@ -4,7 +4,7 @@
 
 #include "Prefix.h"
 #include "Export.h"
-#include "Utilities//Defines.h"
+#include "Utilities/Defines.h"
 #include "Math/Defines.h"
 
 #include "rtm/vector4f.h"
