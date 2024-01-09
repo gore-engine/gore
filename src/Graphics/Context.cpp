@@ -140,8 +140,8 @@ void Context::Update()
             vmaDestroyImage(m_VmaAllocator, m_DepthImage, m_DepthImageAllocation);
         }
         CreateSwapchain(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
-        CreateFramebuffers();
         CreateDepthBuffer();
+        CreateFramebuffers();
         return;
     }
 
@@ -249,8 +249,8 @@ void Context::Update()
         int width, height;
         window->GetSize(&width, &height);
         CreateSwapchain(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
-        CreateFramebuffers();
         CreateDepthBuffer();
+        CreateFramebuffers();
     }
 }
 
@@ -284,8 +284,8 @@ void Context::OnResize(Window* window, int width, int height)
         vmaDestroyImage(m_VmaAllocator, m_DepthImage, m_DepthImageAllocation);
     }
     CreateSwapchain(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
-    CreateFramebuffers();
     CreateDepthBuffer();
+    CreateFramebuffers();
 }
 
 void Context::CreateInstance()
