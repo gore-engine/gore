@@ -5,6 +5,7 @@
 #include "Rendering/RenderSystem.h"
 #include "Graphics/Utils.h"
 #include "Core/App.h"
+#include "Core/Time.h"
 #include "FileSystem/FileSystem.h"
 #include "Math/Matrix4x4.h"
 #include "Math/Vector3.h"
@@ -135,10 +136,15 @@ void Context::Update()
     result = m_Device.waitForFences({imageAcquiredFence, inFlightFence}, true, UINT64_MAX);
     m_Device.resetFences({inFlightFence});
 
+    float totalTime = GetTotalTime();
+    Matrix4x4 camera = Matrix4x4::FromAxisAngle(Vector3::Right, math::constants::PI_4) *
+                       Matrix4x4::FromTranslation(Vector3::Up * 2.0f);
     PushConstant pushConstant{
 //        .model = Matrix4x4::CreateTranslation(Vector3::Forward * -2.0f) *
 //                 Matrix4x4::CreateFromQuaternion(Quaternion::CreateFromAxisAngle(Vector3::Right, math::constants::PI_4)),
-        .model = Matrix4x4::CreateTranslation(Vector3::Forward * -2.0f),
+        .model = Matrix4x4::FromAxisAngle(Vector3::Up, -totalTime) *
+                 Matrix4x4::FromTranslation(Vector3::Forward * 2.0f) *
+                 camera.Inverse(),
         .proj = Matrix4x4::CreatePerspectiveFieldOfViewLH(math::constants::PI / 3.0f,
                                                           (float)m_SurfaceExtent.width / (float)m_SurfaceExtent.height,
                                                           0.1f, 100.0f)
