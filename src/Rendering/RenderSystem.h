@@ -31,13 +31,7 @@ private:
     gfx::Instance m_Instance;
 
     // Device
-    std::vector<gfx::PhysicalDevice> m_PhysicalDevices;
-    gfx::PhysicalDevice* m_SelectedPhysicalDevice;
-    vk::raii::Device m_Device;
-    uint32_t m_DeviceApiVersion;
-    VulkanDeviceExtensionBitset m_EnabledDeviceExtensions;
-
-    VmaAllocator m_VmaAllocator;
+    gfx::Device m_Device;
 
     // Surface & Swapchain
     vk::raii::SurfaceKHR m_Surface;
@@ -72,7 +66,6 @@ private:
     std::vector<vk::raii::Framebuffer> m_Framebuffers;
 
     // Queue
-    std::vector<vk::QueueFamilyProperties> m_QueueFamilyProperties;
     vk::raii::Queue m_GraphicsQueue;
     uint32_t m_GraphicsQueueFamilyIndex;
     vk::raii::Queue m_PresentQueue;
@@ -88,7 +81,6 @@ private:
     vk::raii::ImageView m_DepthImageView;
 
 private:
-    void CreateDevice();
     void CreateSurface();
     void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
     void CreateDepthBuffer();
@@ -99,8 +91,7 @@ private:
     void GetQueues();
     void CreateCommandPools();
 
-private:
-    [[nodiscard]] bool HasExtension(VulkanDeviceExtension deviceExtension) const;
+    [[nodiscard]] const gfx::PhysicalDevice& GetBestDevice(const std::vector<gfx::PhysicalDevice>& devices) const;
 };
 
 } // namespace gore

@@ -8,6 +8,7 @@
 #include "Windowing/Window.h"
 #include "Core/Log.h"
 
+#include <utility>
 #include <vector>
 #include <iomanip>
 #include <sstream>
@@ -15,17 +16,45 @@
 namespace gore::gfx
 {
 
-PhysicalDevice::PhysicalDevice(const Instance* instance, uint32_t index, const vk::raii::PhysicalDevice& physicalDevice) :
+PhysicalDevice::PhysicalDevice() :
+    m_Instance(nullptr),
+    m_Index(UINT32_MAX),
+    m_PhysicalDevice(nullptr)
+{
+}
+
+PhysicalDevice::PhysicalDevice(const Instance* instance, uint32_t index, vk::raii::PhysicalDevice physicalDevice) :
     m_Instance(instance),
     m_Index(index),
-    m_PhysicalDevice(physicalDevice)
+    m_PhysicalDevice(std::move(physicalDevice))
 {
+}
 
+PhysicalDevice::PhysicalDevice(PhysicalDevice&& other) noexcept :
+    m_Instance(other.m_Instance),
+    m_Index(other.m_Index),
+    m_PhysicalDevice(vk::raii::exchange(other.m_PhysicalDevice, {nullptr}))
+{
+}
+
+PhysicalDevice::PhysicalDevice(const PhysicalDevice& other) :
+    m_Instance(other.m_Instance),
+    m_Index(other.m_Index),
+    m_PhysicalDevice(other.m_PhysicalDevice)
+{
 }
 
 PhysicalDevice::~PhysicalDevice()
 {
+}
 
+PhysicalDevice& PhysicalDevice::operator=(PhysicalDevice&& other) noexcept
+{
+    m_Instance          = other.m_Instance;
+    m_Index             = other.m_Index;
+    m_PhysicalDevice    = vk::raii::exchange(other.m_PhysicalDevice, {nullptr});
+
+    return *this;
 }
 
 int PhysicalDevice::Score() const
@@ -166,6 +195,146 @@ bool PhysicalDevice::QueueFamilyIsPresentable(uint32_t queueFamilyIndex, void* n
 #endif
 
     return false;
+}
+
+Device PhysicalDevice::CreateDevice() const
+{
+    Device device(*this);
+    return device;
+}
+
+Device::Device() :
+    m_Instance(nullptr),
+    m_PhysicalDevice(),
+    m_Device(nullptr),
+    m_DeviceApiVersion(0),
+    m_EnabledDeviceExtensions(),
+    m_VmaAllocator(VK_NULL_HANDLE),
+    m_QueueFamilyProperties()
+{
+}
+
+Device::Device(PhysicalDevice physicalDevice) :
+    m_Instance(nullptr),
+    m_PhysicalDevice(std::move(physicalDevice)),
+    m_Device(nullptr),
+    m_DeviceApiVersion(0),
+    m_EnabledDeviceExtensions(),
+    m_VmaAllocator(VK_NULL_HANDLE),
+    m_QueueFamilyProperties()
+{
+    m_Instance                              = m_PhysicalDevice.m_Instance;
+    const vk::raii::PhysicalDevice& pd      = m_PhysicalDevice.Get();
+
+    vk::PhysicalDeviceProperties properties = pd.getProperties();
+    m_DeviceApiVersion                      = properties.apiVersion;
+
+    // Queue Families
+    m_QueueFamilyProperties = pd.getQueueFamilyProperties();
+
+    std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+    queueCreateInfos.reserve(m_QueueFamilyProperties.size());
+    std::vector<std::vector<float>> queuePriorities;
+    queuePriorities.reserve(m_QueueFamilyProperties.size());
+
+    for (uint32_t i = 0; i < m_QueueFamilyProperties.size(); ++i)
+    {
+        const vk::QueueFamilyProperties& queueFamilyProperty = m_QueueFamilyProperties[i];
+
+        std::vector<float> queuePriority(queueFamilyProperty.queueCount, 1.0f);
+        queuePriorities.push_back(queuePriority);
+
+        vk::DeviceQueueCreateInfo queueCreateInfo({}, i, queuePriorities[i]);
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
+
+    // Features
+    vk::PhysicalDeviceFeatures enabledFeatures = pd.getFeatures();
+
+    // Device extensions
+    std::vector<vk::ExtensionProperties> deviceExtensionProperties = pd.enumerateDeviceExtensionProperties();
+    m_EnabledDeviceExtensions.set();
+    std::vector<const char*> enabledDeviceExtensions = BuildEnabledExtensions<VulkanDeviceExtensionBitset, VulkanDeviceExtension>(deviceExtensionProperties,
+                                                                                                                                  m_EnabledDeviceExtensions);
+
+    // Create
+    vk::DeviceCreateInfo deviceCreateInfo({}, queueCreateInfos, {}, enabledDeviceExtensions, &enabledFeatures);
+    m_Device = pd.createDevice(deviceCreateInfo);
+
+    LOG_STREAM(INFO) << "Created Vulkan device with \"" << properties.deviceName << "\"" << std::endl;
+
+    // Create Vulkan Memory Allocator
+    VmaVulkanFunctions vulkanFunctions{
+        .vkGetInstanceProcAddr = m_Instance->Get().getDispatcher()->vkGetInstanceProcAddr,
+        .vkGetDeviceProcAddr   = m_Device.getDispatcher()->vkGetDeviceProcAddr
+    };
+    VmaAllocatorCreateInfo allocatorCreateInfo{
+        .flags                       = 0,              // TODO: check what flags we can use potentially
+        .physicalDevice              = *pd,
+        .device                      = *m_Device,
+        .preferredLargeHeapBlockSize = 0,              // TODO: we are using default value here for now
+        .pAllocationCallbacks        = VK_NULL_HANDLE,
+        .pDeviceMemoryCallbacks      = VK_NULL_HANDLE,
+        .pHeapSizeLimit              = VK_NULL_HANDLE, // TODO: this means no limit on all heaps
+        .pVulkanFunctions            = &vulkanFunctions,
+        .instance                    = *m_Instance->Get(),
+        .vulkanApiVersion            = std::min(m_Instance->Version(), m_DeviceApiVersion)
+    };
+
+    VkResult res = vmaCreateAllocator(&allocatorCreateInfo, &m_VmaAllocator);
+    VK_CHECK_RESULT(res);
+}
+
+Device::Device(Device&& other) noexcept :
+    m_Instance(other.m_Instance),
+    m_PhysicalDevice(std::move(other.m_PhysicalDevice)),
+    m_Device(vk::raii::exchange(other.m_Device, {nullptr})),
+    m_DeviceApiVersion(other.m_DeviceApiVersion),
+    m_EnabledDeviceExtensions(other.m_EnabledDeviceExtensions),
+    m_VmaAllocator(std::exchange(other.m_VmaAllocator, VK_NULL_HANDLE)),
+    m_QueueFamilyProperties(std::move(other.m_QueueFamilyProperties))
+{
+}
+
+Device::~Device()
+{
+    if (*m_Device != nullptr)
+    {
+        m_Device.waitIdle();
+    }
+
+    if (m_VmaAllocator != VK_NULL_HANDLE)
+    {
+        vmaDestroyAllocator(m_VmaAllocator);
+    }
+}
+
+Device& Device::operator=(Device&& other) noexcept
+{
+    m_Instance                  = other.m_Instance;
+    m_PhysicalDevice            = std::move(other.m_PhysicalDevice);
+    m_Device                    = vk::raii::exchange(other.m_Device, {nullptr});
+    m_DeviceApiVersion          = other.m_DeviceApiVersion;
+    m_EnabledDeviceExtensions   = other.m_EnabledDeviceExtensions;
+    m_VmaAllocator              = std::exchange(other.m_VmaAllocator, VK_NULL_HANDLE);
+    m_QueueFamilyProperties     = std::move(other.m_QueueFamilyProperties);
+
+    return *this;
+}
+
+uint32_t Device::ApiVersion() const
+{
+    return std::min(m_Instance->Version(), m_DeviceApiVersion);
+}
+
+bool Device::HasExtension(VulkanDeviceExtension extension) const
+{
+    return m_EnabledDeviceExtensions.test(static_cast<size_t>(extension));
+}
+
+void Device::WaitIdle()
+{
+    m_Device.waitIdle();
 }
 
 } // namespace gore::gfx

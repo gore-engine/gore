@@ -39,12 +39,7 @@ RenderSystem::RenderSystem(gore::App* app) :
     // Instance
     m_Instance(app),
     // Device
-    m_PhysicalDevices(),
-    m_SelectedPhysicalDevice(nullptr),
-    m_Device(nullptr),
-    m_DeviceApiVersion(0),
-    m_EnabledDeviceExtensions(),
-    m_VmaAllocator(VK_NULL_HANDLE),
+    m_Device(),
     // Surface & Swapchain
     m_Surface(nullptr),
     m_Swapchain(nullptr),
@@ -70,7 +65,6 @@ RenderSystem::RenderSystem(gore::App* app) :
     // Framebuffers
     m_Framebuffers(),
     // Queue
-    m_QueueFamilyProperties(),
     m_GraphicsQueue(nullptr),
     m_GraphicsQueueFamilyIndex(0),
     m_PresentQueue(nullptr),
@@ -97,8 +91,9 @@ void RenderSystem::Initialize()
     int width, height;
     window->GetSize(&width, &height);
 
-    m_Instance.Create();
-    CreateDevice();
+    std::vector<gfx::PhysicalDevice> physicalDevices = m_Instance.GetPhysicalDevices();
+    m_Device = gfx::Device(GetBestDevice(physicalDevices));
+
     CreateSurface();
     CreateSwapchain(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     CreateDepthBuffer();
@@ -121,21 +116,21 @@ void RenderSystem::Update()
     Window* window = m_App->GetWindow();
     
     vk::Fence imageAcquiredFence = *m_ImageAcquiredFences[m_CurrentSwapchainImageIndex];
-    m_Device.resetFences({imageAcquiredFence});
+    m_Device.Get().resetFences({imageAcquiredFence});
 
     auto acquireResult = m_Swapchain.acquireNextImage(UINT64_MAX, nullptr, *m_ImageAcquiredFences[m_CurrentSwapchainImageIndex]);
     vk::Result result = acquireResult.first;
     m_CurrentSwapchainImageIndex = acquireResult.second;
     if (result == vk::Result::eSuboptimalKHR || result == vk::Result::eErrorOutOfDateKHR)
     {
-        m_Device.waitIdle();
+        m_Device.WaitIdle();
         m_Swapchain = nullptr;
         int width, height;
         window->GetSize(&width, &height);
         if (m_DepthImage != nullptr)
         {
             m_DepthImageView = nullptr;
-            vmaDestroyImage(m_VmaAllocator, m_DepthImage, m_DepthImageAllocation);
+            vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
         }
         CreateSwapchain(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
         CreateDepthBuffer();
@@ -145,8 +140,8 @@ void RenderSystem::Update()
 
     vk::Fence inFlightFence = *m_InFlightFences[m_CurrentSwapchainImageIndex];
 
-    result = m_Device.waitForFences({imageAcquiredFence, inFlightFence}, true, UINT64_MAX);
-    m_Device.resetFences({inFlightFence});
+    result = m_Device.Get().waitForFences({imageAcquiredFence, inFlightFence}, true, UINT64_MAX);
+    m_Device.Get().resetFences({inFlightFence});
 
     float totalTime = GetTotalTime();
     Matrix4x4 camera = Matrix4x4::FromAxisAngle(Vector3::Right, math::constants::PI_4) *
@@ -237,12 +232,12 @@ void RenderSystem::Update()
 
     if (result == vk::Result::eSuboptimalKHR || result == vk::Result::eErrorOutOfDateKHR)
     {
-        m_Device.waitIdle();
+        m_Device.WaitIdle();
         m_Swapchain = nullptr;
         if (m_DepthImage != nullptr)
         {
             m_DepthImageView = nullptr;
-            vmaDestroyImage(m_VmaAllocator, m_DepthImage, m_DepthImageAllocation);
+            vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
         }
         int width, height;
         window->GetSize(&width, &height);
@@ -254,18 +249,13 @@ void RenderSystem::Update()
 
 void RenderSystem::Shutdown()
 {
-    m_Device.waitIdle();
+    m_Device.WaitIdle();
     
     if (m_DepthImage != nullptr)
     {
         m_DepthImageView = nullptr;
 
-        vmaDestroyImage(m_VmaAllocator, m_DepthImage, m_DepthImageAllocation);
-    }
-
-    if (m_VmaAllocator != VK_NULL_HANDLE)
-    {
-        vmaDestroyAllocator(m_VmaAllocator);
+        vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
     }
 }
 
@@ -274,103 +264,16 @@ void RenderSystem::OnResize(Window* window, int width, int height)
     if (m_SurfaceExtent.width == static_cast<uint32_t>(width) && m_SurfaceExtent.height == static_cast<uint32_t>(height))
         return;
     
-    m_Device.waitIdle();
+    m_Device.WaitIdle();
     m_Swapchain = nullptr;
     if (m_DepthImage != nullptr)
     {
         m_DepthImageView = nullptr;
-        vmaDestroyImage(m_VmaAllocator, m_DepthImage, m_DepthImageAllocation);
+        vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
     }
     CreateSwapchain(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     CreateDepthBuffer();
     CreateFramebuffers();
-}
-
-void RenderSystem::CreateDevice()
-{
-    // Physical Device
-    m_PhysicalDevices = m_Instance.GetPhysicalDevices();
-
-    int maxScore = -1;
-    int physicalDeviceIndex = -1;
-    for (int i = 0; i < m_PhysicalDevices.size(); ++i)
-    {
-        m_PhysicalDevices[i].Output();
-
-        int score = m_PhysicalDevices[i].Score();
-        if (score >= maxScore)
-        {
-            maxScore            = score;
-            physicalDeviceIndex = i;
-        }
-    }
-
-    if (physicalDeviceIndex < 0)
-    {
-        LOG_STREAM(FATAL) << "No suitable physical device found" << std::endl;
-        return;
-    }
-
-    // Device
-    m_SelectedPhysicalDevice                       = &m_PhysicalDevices[physicalDeviceIndex];
-    const vk::raii::PhysicalDevice& physicalDevice = m_SelectedPhysicalDevice->Get();
-    vk::PhysicalDeviceProperties properties        = physicalDevice.getProperties();
-    m_DeviceApiVersion                             = properties.apiVersion;
-
-    // Queue Families
-    m_QueueFamilyProperties = physicalDevice.getQueueFamilyProperties();
-
-    std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-    queueCreateInfos.reserve(m_QueueFamilyProperties.size());
-    std::vector<std::vector<float>> queuePriorities;
-    queuePriorities.reserve(m_QueueFamilyProperties.size());
-
-    for (uint32_t i = 0; i < m_QueueFamilyProperties.size(); ++i)
-    {
-        const vk::QueueFamilyProperties& queueFamilyProperty = m_QueueFamilyProperties[i];
-
-        std::vector<float> queuePriority(queueFamilyProperty.queueCount, 1.0f);
-        queuePriorities.push_back(queuePriority);
-
-        vk::DeviceQueueCreateInfo queueCreateInfo({}, i, queuePriorities[i]);
-        queueCreateInfos.push_back(queueCreateInfo);
-    }
-
-    // Features
-    vk::PhysicalDeviceFeatures enabledFeatures = physicalDevice.getFeatures();
-
-    // Device extensions
-    std::vector<vk::ExtensionProperties> deviceExtensionProperties = physicalDevice.enumerateDeviceExtensionProperties();
-    m_EnabledDeviceExtensions.set();
-    std::vector<const char*> enabledDeviceExtensions = BuildEnabledExtensions<VulkanDeviceExtensionBitset, VulkanDeviceExtension>(deviceExtensionProperties,
-                                                                                                                                  m_EnabledDeviceExtensions);
-
-    // Create
-    vk::DeviceCreateInfo deviceCreateInfo({}, queueCreateInfos, {}, enabledDeviceExtensions, &enabledFeatures);
-    m_Device = physicalDevice.createDevice(deviceCreateInfo);
-
-    LOG_STREAM(INFO) << "Created Vulkan device with \"" << properties.deviceName << "\"" << std::endl;
-
-    // Create Vulkan Memory Allocator
-    VmaVulkanFunctions vulkanFunctions{
-        .vkGetInstanceProcAddr = m_Instance.Get().getDispatcher()->vkGetInstanceProcAddr,
-        .vkGetDeviceProcAddr   = m_Device.getDispatcher()->vkGetDeviceProcAddr
-    };
-    VmaAllocatorCreateInfo allocatorCreateInfo{
-        .flags                       = 0,              // TODO: check what flags we can use potentially
-        .physicalDevice              = *physicalDevice,
-        .device                      = *m_Device,
-        .preferredLargeHeapBlockSize = 0,              // TODO: we are using default value here for now
-        .pAllocationCallbacks        = VK_NULL_HANDLE,
-        .pDeviceMemoryCallbacks      = VK_NULL_HANDLE,
-        .pHeapSizeLimit              = VK_NULL_HANDLE, // TODO: this means no limit on all heaps
-        .pVulkanFunctions            = &vulkanFunctions,
-        .instance                    = *m_Instance.Get(),
-        .vulkanApiVersion            = std::min(m_Instance.Version(), m_DeviceApiVersion)
-    };
-
-    VkResult res = vmaCreateAllocator(&allocatorCreateInfo, &m_VmaAllocator);
-    VK_CHECK_RESULT(res);
 }
 
 void RenderSystem::CreateSurface()
@@ -409,7 +312,7 @@ void RenderSystem::CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t
     m_ImageAcquiredFences.clear();
     m_InFlightFences.clear();
 
-    const vk::raii::PhysicalDevice& physicalDevice = m_SelectedPhysicalDevice->Get();
+    const vk::raii::PhysicalDevice& physicalDevice = m_Device.GetPhysicalDevice().Get();
 
     vk::SurfaceCapabilitiesKHR surfaceCapabilities               = physicalDevice.getSurfaceCapabilitiesKHR(*m_Surface);
     std::vector<vk::SurfaceFormatKHR> surfaceSupportedFormats    = physicalDevice.getSurfaceFormatsKHR(*m_Surface);
@@ -473,7 +376,7 @@ void RenderSystem::CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t
                                           true,     // clipped
                                           nullptr); // oldSwapchain
 
-    m_Swapchain = m_Device.createSwapchainKHR(createInfo);
+    m_Swapchain = m_Device.Get().createSwapchainKHR(createInfo);
 
     m_SwapchainImages = m_Swapchain.getImages();
 
@@ -485,10 +388,10 @@ void RenderSystem::CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t
     for (uint32_t i = 0; i < m_SwapchainImageCount; ++i)
     {
         vk::ImageViewCreateInfo imageViewCreateInfo({}, m_SwapchainImages[i], vk::ImageViewType::e2D, m_SurfaceFormat.format, {}, {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
-        m_SwapchainImageViews.emplace_back(m_Device.createImageView(imageViewCreateInfo));
-        m_RenderFinishedSemaphores.emplace_back(m_Device.createSemaphore({}));
-        m_ImageAcquiredFences.emplace_back(m_Device.createFence({vk::FenceCreateFlagBits::eSignaled}));
-        m_InFlightFences.emplace_back(m_Device.createFence({vk::FenceCreateFlagBits::eSignaled}));
+        m_SwapchainImageViews.emplace_back(m_Device.Get().createImageView(imageViewCreateInfo));
+        m_RenderFinishedSemaphores.emplace_back(m_Device.Get().createSemaphore({}));
+        m_ImageAcquiredFences.emplace_back(m_Device.Get().createFence({vk::FenceCreateFlagBits::eSignaled}));
+        m_InFlightFences.emplace_back(m_Device.Get().createFence({vk::FenceCreateFlagBits::eSignaled}));
     }
 
     LOG(DEBUG, "Created Vulkan swapchain with %d images, size %dx%d\n", m_SwapchainImageCount, m_SurfaceExtent.width, m_SurfaceExtent.height);
@@ -506,7 +409,7 @@ void RenderSystem::CreateDepthBuffer()
 
     vk::Format depthFormat = vk::Format::eUndefined;
 
-    const vk::raii::PhysicalDevice& physicalDevice = m_SelectedPhysicalDevice->Get();
+    const vk::raii::PhysicalDevice& physicalDevice = m_Device.GetPhysicalDevice().Get();
 
     for (auto& format : candidateFormats)
     {
@@ -546,7 +449,7 @@ void RenderSystem::CreateDepthBuffer()
     VkImage* depthImage = reinterpret_cast<VkImage*>(&m_DepthImage);
     VkImageCreateInfo* cImageCreateInfo = reinterpret_cast<VkImageCreateInfo*>(&imageCreateInfo);
     // TODO: allocate memory separately in the future
-    VkResult res = vmaCreateImage(m_VmaAllocator, cImageCreateInfo, &allocationCreateInfo, depthImage, &m_DepthImageAllocation, nullptr);
+    VkResult res = vmaCreateImage(m_Device.GetVmaAllocator(), cImageCreateInfo, &allocationCreateInfo, depthImage, &m_DepthImageAllocation, nullptr);
     VK_CHECK_RESULT(res);
 
     vk::ImageViewCreateInfo imageViewCreateInfo({},
@@ -556,7 +459,7 @@ void RenderSystem::CreateDepthBuffer()
                                                 {},
                                                 {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1});
 
-    m_DepthImageView = m_Device.createImageView(imageViewCreateInfo);
+    m_DepthImageView = m_Device.Get().createImageView(imageViewCreateInfo);
 }
 
 void RenderSystem::LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint)
@@ -583,7 +486,7 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
 
     vk::ShaderModuleCreateInfo vertexShaderCreateInfo({}, vertexShaderBinary.size(), reinterpret_cast<const uint32_t*>(vertexShaderBinary.data()));
 
-    m_CubeVertexShader           = m_Device.createShaderModule(vertexShaderCreateInfo);
+    m_CubeVertexShader           = m_Device.Get().createShaderModule(vertexShaderCreateInfo);
     m_CubeVertexShaderEntryPoint = vertexEntryPoint;
 
     std::filesystem::path fragmentShaderPath = getShaderFile(vk::ShaderStageFlagBits::eFragment);
@@ -598,7 +501,7 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
 
     vk::ShaderModuleCreateInfo fragmentShaderCreateInfo({}, fragmentShaderBinary.size(), reinterpret_cast<const uint32_t*>(fragmentShaderBinary.data()));
 
-    m_CubeFragmentShader           = m_Device.createShaderModule(fragmentShaderCreateInfo);
+    m_CubeFragmentShader           = m_Device.Get().createShaderModule(fragmentShaderCreateInfo);
     m_CubeFragmentShaderEntryPoint = fragmentEntryPoint;
 }
 
@@ -643,7 +546,7 @@ void RenderSystem::CreateRenderPass()
 
     vk::RenderPassCreateInfo renderPassCreateInfo({}, attachments, subpasses, dependencies);
 
-    m_RenderPass = m_Device.createRenderPass(renderPassCreateInfo);
+    m_RenderPass = m_Device.Get().createRenderPass(renderPassCreateInfo);
 }
 
 void RenderSystem::CreatePipeline()
@@ -655,7 +558,7 @@ void RenderSystem::CreatePipeline()
     // TODO: change this when we have a working descriptor management system
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, {}, pushConstantRanges);
 
-    m_PipelineLayout = m_Device.createPipelineLayout(pipelineLayoutInfo);
+    m_PipelineLayout = m_Device.Get().createPipelineLayout(pipelineLayoutInfo);
 
     vk::PipelineShaderStageCreateInfo vertexShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *m_CubeVertexShader, m_CubeVertexShaderEntryPoint.c_str());
     vk::PipelineShaderStageCreateInfo fragmentShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eFragment, *m_CubeFragmentShader, m_CubeFragmentShaderEntryPoint.c_str());
@@ -700,7 +603,7 @@ void RenderSystem::CreatePipeline()
                                                       nullptr, // basePipelineHandle
                                                       -1);     // basePipelineIndex
 
-    m_Pipeline = m_Device.createGraphicsPipeline(nullptr, pipelineCreateInfo);
+    m_Pipeline = m_Device.Get().createGraphicsPipeline(nullptr, pipelineCreateInfo);
 }
 
 void RenderSystem::CreateFramebuffers()
@@ -712,7 +615,7 @@ void RenderSystem::CreateFramebuffers()
     {
         std::vector<vk::ImageView> attachments = {*m_SwapchainImageViews[i], *m_DepthImageView};
         vk::FramebufferCreateInfo framebufferCreateInfo({}, *m_RenderPass, attachments, m_SurfaceExtent.width, m_SurfaceExtent.height, 1);
-        m_Framebuffers.emplace_back(m_Device.createFramebuffer(framebufferCreateInfo));
+        m_Framebuffers.emplace_back(m_Device.Get().createFramebuffer(framebufferCreateInfo));
     }
 
 }
@@ -722,9 +625,11 @@ void RenderSystem::GetQueues()
     m_GraphicsQueueFamilyIndex = 0;
     m_PresentQueueFamilyIndex  = 0;
 
-    for (uint32_t i = 0; i < m_QueueFamilyProperties.size(); ++i)
+    std::vector<vk::QueueFamilyProperties> queueFamilyProperties = m_Device.GetQueueFamilyProperties();
+
+    for (uint32_t i = 0; i < queueFamilyProperties.size(); ++i)
     {
-        const vk::QueueFamilyProperties& queueFamilyProperty = m_QueueFamilyProperties[i];
+        const vk::QueueFamilyProperties& queueFamilyProperty = queueFamilyProperties[i];
 
         if (queueFamilyProperty.queueFlags & vk::QueueFlagBits::eGraphics)
         {
@@ -734,17 +639,17 @@ void RenderSystem::GetQueues()
     }
 
     void* nativeWindowHandle = m_App->GetWindow()->GetNativeHandle();
-    for (uint32_t i = m_QueueFamilyProperties.size(); i > 0; --i)
+    for (uint32_t i = queueFamilyProperties.size(); i > 0; --i)
     {
-        if (m_SelectedPhysicalDevice->QueueFamilyIsPresentable(i - 1, nativeWindowHandle))
+        if (m_Device.GetPhysicalDevice().QueueFamilyIsPresentable(i - 1, nativeWindowHandle))
         {
             m_PresentQueueFamilyIndex = i - 1;
             break;
         }
     }
 
-    m_GraphicsQueue = m_Device.getQueue(m_GraphicsQueueFamilyIndex, 0);
-    m_PresentQueue  = m_Device.getQueue(m_PresentQueueFamilyIndex, 0);
+    m_GraphicsQueue = m_Device.Get().getQueue(m_GraphicsQueueFamilyIndex, 0);
+    m_PresentQueue  = m_Device.Get().getQueue(m_PresentQueueFamilyIndex, 0);
 }
 
 void RenderSystem::CreateCommandPools()
@@ -754,16 +659,36 @@ void RenderSystem::CreateCommandPools()
     vk::CommandPoolCreateInfo commandPoolCreateInfo({}, m_GraphicsQueueFamilyIndex);
     for (uint32_t i = 0; i < m_SwapchainImageCount; ++i)
     {
-        m_CommandPools.emplace_back(m_Device.createCommandPool(commandPoolCreateInfo));
-        std::vector<vk::raii::CommandBuffer> buffers = m_Device.allocateCommandBuffers({*m_CommandPools[i], vk::CommandBufferLevel::ePrimary, 1});
+        m_CommandPools.emplace_back(m_Device.Get().createCommandPool(commandPoolCreateInfo));
+        std::vector<vk::raii::CommandBuffer> buffers = m_Device.Get().allocateCommandBuffers({*m_CommandPools[i], vk::CommandBufferLevel::ePrimary, 1});
         m_CommandBuffers.emplace_back(nullptr);
         m_CommandBuffers[i].swap(buffers[0]);
     }
 }
 
-bool RenderSystem::HasExtension(VulkanDeviceExtension deviceExtension) const
+const gfx::PhysicalDevice& RenderSystem::GetBestDevice(const std::vector<gfx::PhysicalDevice>& devices) const
 {
-    return m_EnabledDeviceExtensions.test(static_cast<size_t>(deviceExtension));
+    int maxScore = -1;
+    int physicalDeviceIndex = -1;
+    for (int i = 0; i < devices.size(); ++i)
+    {
+        devices[i].Output();
+
+        int score = devices[i].Score();
+        if (score >= maxScore)
+        {
+            maxScore            = score;
+            physicalDeviceIndex = i;
+        }
+    }
+
+    if (physicalDeviceIndex < 0)
+    {
+        LOG_STREAM(FATAL) << "No suitable physical device found" << std::endl;
+        return devices[0];
+    }
+
+    return devices[physicalDeviceIndex];
 }
 
 } // namespace gore

@@ -9,8 +9,9 @@
 namespace gore::gfx
 {
 
-Instance::Instance(App* app) :
-    m_App(app),
+
+Instance::Instance() :
+    m_App(nullptr),
     m_Context(),
     m_ApiVersion(0),
     m_Instance(nullptr),
@@ -18,11 +19,12 @@ Instance::Instance(App* app) :
 {
 }
 
-Instance::~Instance()
-{
-}
-
-void Instance::Create()
+Instance::Instance(App* app) :
+    m_App(app),
+    m_Context(),
+    m_ApiVersion(0),
+    m_Instance(nullptr),
+    m_ValidationEnabled(false)
 {
     // Layers
     std::vector<vk::LayerProperties> layerProperties = m_Context.enumerateInstanceLayerProperties();
@@ -120,11 +122,18 @@ void Instance::Create()
                      << VK_API_VERSION_PATCH(m_ApiVersion) << std::endl;
 }
 
-void Instance::Destroy()
+Instance::Instance(Instance&& other) noexcept :
+    m_App(other.m_App),
+    m_Context(vk::raii::exchange(other.m_Context, {})),
+    m_ApiVersion(other.m_ApiVersion),
+    m_Instance(vk::raii::exchange(other.m_Instance, {nullptr})),
+    m_EnabledInstanceExtensions(other.m_EnabledInstanceExtensions),
+    m_ValidationEnabled(other.m_ValidationEnabled)
 {
-    m_ValidationEnabled = false;
-    m_Instance = nullptr;
-    m_ApiVersion = 0;
+}
+
+Instance::~Instance()
+{
 }
 
 bool Instance::HasExtension(VulkanInstanceExtension extension) const

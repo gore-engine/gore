@@ -20,13 +20,10 @@ class PhysicalDevice;
 class Instance
 {
 public:
+    Instance();
     explicit Instance(App* app);
+    Instance(Instance&& other) noexcept;
     ~Instance();
-
-    NON_COPYABLE(Instance);
-
-    void Create();
-    void Destroy();
 
     [[nodiscard]] const vk::raii::Instance& Get() const { return m_Instance; }
     [[nodiscard]] App* GetApp() const { return m_App; }
