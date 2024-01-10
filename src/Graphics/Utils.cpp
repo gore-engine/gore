@@ -1,11 +1,11 @@
 #include "Prefix.h"
 
-#include "RenderUtils.h"
+#include "Utils.h"
 
 #include <sstream>
 #include <iomanip>
 
-namespace gore
+namespace gore::gfx
 {
 
 std::string VendorIDToString(VendorID vendorID)
@@ -48,4 +48,4 @@ std::string VendorIDToString(VendorID vendorID)
     return ss.str();
 }
 
-}
+} // namespace gore::gfx
