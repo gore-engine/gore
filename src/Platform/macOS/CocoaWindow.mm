@@ -23,6 +23,11 @@ void Window::CreateNativeHandle()
     NSWindow* window = glfwGetCocoaWindow(m_Window);
     [window.contentView setWantsLayer:YES];
     [window.contentView setLayer:w->layer];
+
+    GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+    float xscale, yscale;
+    glfwGetMonitorContentScale(primaryMonitor, &xscale, &yscale);
+    w->layer.contentsScale = xscale;
 }
 
 void Window::DestroyNativeHandle()
