@@ -3,10 +3,10 @@
 #include <string>
 
 #ifdef None // X11 defines this
-#undef None
+    #undef None
 #endif
 
-namespace gore::graphics
+namespace gore::gfx
 {
 
 enum class VendorID : uint32_t
@@ -26,4 +26,4 @@ enum class VendorID : uint32_t
 
 std::string VendorIDToString(VendorID vendorID);
 
-} // namespace gore
+} // namespace gore::gfx

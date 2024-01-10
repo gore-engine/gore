@@ -5,7 +5,7 @@
 #include <sstream>
 #include <iomanip>
 
-namespace gore::graphics
+namespace gore::gfx
 {
 
 std::string VendorIDToString(VendorID vendorID)
@@ -48,4 +48,4 @@ std::string VendorIDToString(VendorID vendorID)
     return ss.str();
 }
 
-}
+} // namespace gore::gfx
