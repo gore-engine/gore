@@ -548,6 +548,12 @@ void Context::CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t heig
                                         surfaceCapabilities.maxImageExtent.height);
     uint32_t layers        = std::min(1u, surfaceCapabilities.maxImageArrayLayers); // TODO: Require layers
 
+    if (surfaceCapabilities.maxImageCount < surfaceCapabilities.minImageCount)
+    {
+        // fix for some drivers
+        std::swap(surfaceCapabilities.maxImageCount, surfaceCapabilities.minImageCount);
+    }
+
     m_SwapchainImageCount = std::clamp(imageCount,
                                        surfaceCapabilities.minImageCount,
                                        surfaceCapabilities.maxImageCount);
