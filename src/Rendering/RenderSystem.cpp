@@ -40,7 +40,7 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_Instance(app),
     // Device
     m_PhysicalDevices(),
-    m_PhysicalDeviceIndex(-1),
+    m_SelectedPhysicalDevice(nullptr),
     m_Device(nullptr),
     m_DeviceApiVersion(0),
     m_EnabledDeviceExtensions(),
@@ -289,30 +289,31 @@ void RenderSystem::OnResize(Window* window, int width, int height)
 void RenderSystem::CreateDevice()
 {
     // Physical Device
-    m_PhysicalDevices = m_Instance.Get().enumeratePhysicalDevices();
+    m_PhysicalDevices = m_Instance.GetPhysicalDevices();
 
     int maxScore = -1;
+    int physicalDeviceIndex = -1;
     for (int i = 0; i < m_PhysicalDevices.size(); ++i)
     {
-        const vk::raii::PhysicalDevice& physicalDevice = m_PhysicalDevices[i];
-        Output(i, physicalDevice);
+        m_PhysicalDevices[i].Output();
 
-        int score = GetScore(i, physicalDevice);
+        int score = m_PhysicalDevices[i].Score();
         if (score >= maxScore)
         {
-            maxScore              = score;
-            m_PhysicalDeviceIndex = i;
+            maxScore            = score;
+            physicalDeviceIndex = i;
         }
     }
 
-    if (m_PhysicalDeviceIndex < 0)
+    if (physicalDeviceIndex < 0)
     {
         LOG_STREAM(FATAL) << "No suitable physical device found" << std::endl;
         return;
     }
 
     // Device
-    const vk::raii::PhysicalDevice& physicalDevice = m_PhysicalDevices[m_PhysicalDeviceIndex];
+    m_SelectedPhysicalDevice                       = &m_PhysicalDevices[physicalDeviceIndex];
+    const vk::raii::PhysicalDevice& physicalDevice = m_SelectedPhysicalDevice->Get();
     vk::PhysicalDeviceProperties properties        = physicalDevice.getProperties();
     m_DeviceApiVersion                             = properties.apiVersion;
 
@@ -408,7 +409,7 @@ void RenderSystem::CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t
     m_ImageAcquiredFences.clear();
     m_InFlightFences.clear();
 
-    const vk::raii::PhysicalDevice& physicalDevice = m_PhysicalDevices[m_PhysicalDeviceIndex];
+    const vk::raii::PhysicalDevice& physicalDevice = m_SelectedPhysicalDevice->Get();
 
     vk::SurfaceCapabilitiesKHR surfaceCapabilities               = physicalDevice.getSurfaceCapabilitiesKHR(*m_Surface);
     std::vector<vk::SurfaceFormatKHR> surfaceSupportedFormats    = physicalDevice.getSurfaceFormatsKHR(*m_Surface);
@@ -505,7 +506,7 @@ void RenderSystem::CreateDepthBuffer()
 
     vk::Format depthFormat = vk::Format::eUndefined;
 
-    const vk::raii::PhysicalDevice& physicalDevice = m_PhysicalDevices[m_PhysicalDeviceIndex];
+    const vk::raii::PhysicalDevice& physicalDevice = m_SelectedPhysicalDevice->Get();
 
     for (auto& format : candidateFormats)
     {
@@ -735,7 +736,7 @@ void RenderSystem::GetQueues()
     void* nativeWindowHandle = m_App->GetWindow()->GetNativeHandle();
     for (uint32_t i = m_QueueFamilyProperties.size(); i > 0; --i)
     {
-        if (QueueFamilyIsPresentable(m_PhysicalDevices[m_PhysicalDeviceIndex], i - 1, nativeWindowHandle))
+        if (m_SelectedPhysicalDevice->QueueFamilyIsPresentable(i - 1, nativeWindowHandle))
         {
             m_PresentQueueFamilyIndex = i - 1;
             break;
@@ -763,153 +764,6 @@ void RenderSystem::CreateCommandPools()
 bool RenderSystem::HasExtension(VulkanDeviceExtension deviceExtension) const
 {
     return m_EnabledDeviceExtensions.test(static_cast<size_t>(deviceExtension));
-}
-
-int RenderSystem::GetScore(int index, const vk::raii::PhysicalDevice& physicalDevice) const
-{
-    vk::PhysicalDeviceProperties properties = physicalDevice.getProperties();
-    int score                               = 0;
-
-    // TODO: more criteria
-
-    // score by device type
-    switch (properties.deviceType)
-    {
-        case vk::PhysicalDeviceType::eDiscreteGpu:
-            score += 1000;
-            break;
-        case vk::PhysicalDeviceType::eIntegratedGpu:
-            score += 500;
-            break;
-        case vk::PhysicalDeviceType::eVirtualGpu:
-            score += 250;
-            break;
-        case vk::PhysicalDeviceType::eCpu:
-            score += 100;
-            break;
-        default:
-            break;
-    }
-
-    // score by index, smaller index is better
-    score -= index;
-
-    return score;
-}
-
-std::string GetHumanReadableDeviceSize(vk::DeviceSize size)
-{
-    std::stringstream result;
-    const float kKB = 1024.0f;
-    const float kMB = kKB * 1024.0f;
-    const float kGB = kMB * 1024.0f;
-
-    const auto sizef = static_cast<float>(size);
-
-    if (sizef < kKB)
-        result << size << " Bytes";
-    else if (sizef < kMB)
-        result << std::fixed << std::setprecision(1) << sizef / kKB << " KB";
-    else if (sizef < kGB)
-        result << std::fixed << std::setprecision(1) << sizef / kMB << " MB";
-    else
-        result << std::fixed << std::setprecision(1) << sizef / kGB << " GB";
-
-    return result.str();
-}
-
-void RenderSystem::Output(int index, const vk::raii::PhysicalDevice& physicalDevice) const
-{
-    vk::PhysicalDeviceProperties properties = physicalDevice.getProperties();
-    LOG_STREAM(INFO) << "Adapter #" << index << ": \"" << properties.deviceName << "\"" << std::endl;
-
-#ifdef ENGINE_DEBUG
-    vk::PhysicalDeviceMemoryProperties memoryProperties          = physicalDevice.getMemoryProperties();
-    std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
-
-    std::vector<bool> queueFamilySupportsPresent;
-    queueFamilySupportsPresent.resize(queueFamilyProperties.size());
-    for (size_t i = 0; i < queueFamilyProperties.size(); ++i)
-    {
-        queueFamilySupportsPresent[i] = QueueFamilyIsPresentable(physicalDevice, static_cast<uint32_t>(i), m_App->GetWindow()->GetNativeHandle());
-    }
-
-    auto logStream = LOG_STREAM(DEBUG);
-    {
-        std::string vendorString = VendorIDToString(static_cast<gfx::VendorID>(properties.vendorID));
-        logStream << "    Vendor ID: 0x" << std::hex << std::setw(4) << std::setfill('0') << properties.vendorID << " [" << vendorString << "]" << std::endl;
-    }
-    logStream << "    Device ID: 0x" << std::hex << std::setw(4) << std::setfill('0') << properties.deviceID << std::endl;
-    logStream << "    Device Type: " << to_string(properties.deviceType) << std::endl;
-    logStream << "    Device driver API Version: " << std::resetiosflags(std::ios_base::basefield)
-              << VK_API_VERSION_MAJOR(properties.apiVersion) << "."
-              << VK_API_VERSION_MINOR(properties.apiVersion) << "."
-              << VK_API_VERSION_PATCH(properties.apiVersion) << std::endl;
-
-    // Queue Families
-    logStream << "    Queue Families:" << std::endl;
-    for (uint32_t i = 0; i < queueFamilyProperties.size(); ++i)
-    {
-        const vk::QueueFamilyProperties& queueFamilyProperty = queueFamilyProperties[i];
-        logStream << "        #" << i << ": Queue Count: " << queueFamilyProperty.queueCount << std::endl;
-        logStream << "            Queue Flags: " << to_string(queueFamilyProperty.queueFlags) << std::endl;
-        logStream << "            Presentable: " << (queueFamilySupportsPresent[i] ? "Yes" : "No") << std::endl;
-        logStream << "            Timestamp Valid Bits: " << queueFamilyProperty.timestampValidBits << std::endl;
-        logStream << "            Min Image Transfer Granularity: ("
-                  << queueFamilyProperty.minImageTransferGranularity.width << ", "
-                  << queueFamilyProperty.minImageTransferGranularity.height << ", "
-                  << queueFamilyProperty.minImageTransferGranularity.depth << ")" << std::endl;
-    }
-
-    // Memory Heaps
-    logStream << "    Memory Heaps:" << std::endl;
-    for (uint32_t i = 0; i < memoryProperties.memoryHeapCount; ++i)
-    {
-        const vk::MemoryHeap& memoryHeap = memoryProperties.memoryHeaps[i];
-        logStream << "        #" << i << ": " << GetHumanReadableDeviceSize(memoryHeap.size) << (memoryHeap.flags & vk::MemoryHeapFlagBits::eDeviceLocal ? ", Device Local" : "") << std::endl;
-    }
-
-    // Memory Types
-    logStream << "    Memory Types:" << std::endl;
-    for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i)
-    {
-        const vk::MemoryType& memoryType = memoryProperties.memoryTypes[i];
-        logStream << "        #" << i << ": Heap #" << memoryType.heapIndex << ", " << to_string(memoryType.propertyFlags) << std::endl;
-    }
-#endif
-}
-
-bool RenderSystem::QueueFamilyIsPresentable(const vk::raii::PhysicalDevice& physicalDevice,
-                                       uint32_t queueFamilyIndex,
-                                       void* nativeWindowHandle) const
-{
-#ifdef VK_KHR_win32_surface
-    if (m_Instance.HasExtension(VulkanInstanceExtension::kVK_KHR_win32_surface))
-    {
-        vk::Bool32 presentSupport = physicalDevice.getWin32PresentationSupportKHR(queueFamilyIndex);
-        return presentSupport == VK_TRUE;
-    }
-#endif
-
-#ifdef VK_KHR_xlib_surface
-    if (m_Instance.HasExtension(VulkanInstanceExtension::kVK_KHR_xlib_surface))
-    {
-        auto* x11Window           = static_cast<X11Window*>(nativeWindowHandle);
-        vk::Bool32 presentSupport = physicalDevice.getXlibPresentationSupportKHR(queueFamilyIndex, *x11Window->display, x11Window->visualID);
-        return presentSupport == VK_TRUE;
-    }
-#endif
-
-#ifdef VK_EXT_metal_surface
-    return m_Instance.HasExtension(VulkanInstanceExtension::kVK_EXT_metal_surface);
-#endif
-
-    return false;
-}
-
-bool RenderSystem::QueueFamilyIsPresentable(uint32_t queueFamilyIndex, void* nativeWindowHandle) const
-{
-    return QueueFamilyIsPresentable(m_PhysicalDevices[m_PhysicalDeviceIndex], queueFamilyIndex, nativeWindowHandle);
 }
 
 } // namespace gore

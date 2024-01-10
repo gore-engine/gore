@@ -31,8 +31,8 @@ private:
     gfx::Instance m_Instance;
 
     // Device
-    std::vector<vk::raii::PhysicalDevice> m_PhysicalDevices;
-    int m_PhysicalDeviceIndex;
+    std::vector<gfx::PhysicalDevice> m_PhysicalDevices;
+    gfx::PhysicalDevice* m_SelectedPhysicalDevice;
     vk::raii::Device m_Device;
     uint32_t m_DeviceApiVersion;
     VulkanDeviceExtensionBitset m_EnabledDeviceExtensions;
@@ -101,12 +101,6 @@ private:
 
 private:
     [[nodiscard]] bool HasExtension(VulkanDeviceExtension deviceExtension) const;
-    [[nodiscard]] int GetScore(int index, const vk::raii::PhysicalDevice& physicalDevice) const;
-    void Output(int index, const vk::raii::PhysicalDevice& physicalDevice) const;
-    [[nodiscard]] bool QueueFamilyIsPresentable(const vk::raii::PhysicalDevice& physicalDevice,
-                                                uint32_t queueFamilyIndex,
-                                                void* nativeWindowHandle) const;
-    [[nodiscard]] bool QueueFamilyIsPresentable(uint32_t queueFamilyIndex, void* nativeWindowHandle) const;
 };
 
 } // namespace gore

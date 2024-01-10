@@ -2,6 +2,9 @@
 
 #define VMA_IMPLEMENTATION
 #include "Instance.h"
+#include "Device.h"
+
+#include <vector>
 
 namespace gore::gfx
 {
@@ -127,6 +130,20 @@ void Instance::Destroy()
 bool Instance::HasExtension(VulkanInstanceExtension extension) const
 {
     return m_EnabledInstanceExtensions.test(static_cast<size_t>(extension));
+}
+
+std::vector<PhysicalDevice> Instance::GetPhysicalDevices() const
+{
+    std::vector<vk::raii::PhysicalDevice> physicalDevices = m_Instance.enumeratePhysicalDevices();
+
+    std::vector<PhysicalDevice> result;
+
+    for (int i = 0; i < physicalDevices.size(); ++i)
+    {
+        result.emplace_back(this, i, physicalDevices[i]);
+    }
+
+    return result;
 }
 
 } // namespace gore::gfx

@@ -29,9 +29,12 @@ public:
     void Destroy();
 
     [[nodiscard]] const vk::raii::Instance& Get() const { return m_Instance; }
+    [[nodiscard]] App* GetApp() const { return m_App; }
     [[nodiscard]] uint32_t Version() const { return m_ApiVersion; }
 
     [[nodiscard]] bool HasExtension(VulkanInstanceExtension extension) const;
+
+    [[nodiscard]] std::vector<PhysicalDevice> GetPhysicalDevices() const;
 
 private:
     App* m_App;
