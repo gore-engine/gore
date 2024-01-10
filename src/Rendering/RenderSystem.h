@@ -2,6 +2,8 @@
 
 #include "Core/System.h"
 
+#include "Graphics/Graphics.h"
+
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 
@@ -26,10 +28,7 @@ public:
 
 private:
     // Instance
-    vk::raii::Context m_Context;
-    uint32_t m_ApiVersion;
-    vk::raii::Instance m_Instance;
-    VulkanInstanceExtensionBitset m_EnabledInstanceExtensions;
+    gfx::Instance m_Instance;
 
     // Device
     std::vector<vk::raii::PhysicalDevice> m_PhysicalDevices;
@@ -89,7 +88,6 @@ private:
     vk::raii::ImageView m_DepthImageView;
 
 private:
-    void CreateInstance();
     void CreateDevice();
     void CreateSurface();
     void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
@@ -102,7 +100,6 @@ private:
     void CreateCommandPools();
 
 private:
-    [[nodiscard]] bool HasExtension(VulkanInstanceExtension instanceExtension) const;
     [[nodiscard]] bool HasExtension(VulkanDeviceExtension deviceExtension) const;
     [[nodiscard]] int GetScore(int index, const vk::raii::PhysicalDevice& physicalDevice) const;
     void Output(int index, const vk::raii::PhysicalDevice& physicalDevice) const;
