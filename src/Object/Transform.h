@@ -43,6 +43,9 @@ public:
     void RotateAroundPoint(const Vector3& point, const Vector3& axis, float angle);
 
     [[nodiscard]] Matrix4x4 GetLocalToWorldMatrix() const;
+    [[nodiscard]] Matrix4x4 GetLocalToWorldMatrixIgnoreScale() const;
+    [[nodiscard]] Matrix4x4 GetWorldToLocalMatrix() const;
+    [[nodiscard]] Matrix4x4 GetWorldToLocalMatrixIgnoreScale() const;
 
 private:
     Vector3 m_LocalPosition;
