@@ -2,6 +2,14 @@
 
 #include "Object/Component.h"
 
+#ifdef near
+#undef near
+#endif
+
+#ifdef far
+#undef far
+#endif
+
 namespace gore
 {
 
@@ -23,14 +31,14 @@ public:
     [[nodiscard]] Matrix4x4 GetViewProjectionMatrix() const;
 
     // properties
-    [[nodiscard]] float GetFOV() const;
-    void SetFOV(float fov);
-    [[nodiscard]] float GetNear() const;
-    void SetNear(float near);
-    [[nodiscard]] float GetFar() const;
-    void SetFar(float far);
-    [[nodiscard]] ProjectionType GetProjectionType() const;
-    void SetProjectionType(ProjectionType projectionType);
+    [[nodiscard]] float GetFOV() const { return m_FOV; }
+    void SetFOV(float fov) { m_FOV = fov; }
+    [[nodiscard]] float GetNear() const { return m_Near; }
+    void SetNear(float near) { m_Near = near; }
+    [[nodiscard]] float GetFar() const { return m_Far; }
+    void SetFar(float far) { m_Far = far; }
+    [[nodiscard]] ProjectionType GetProjectionType() const { return m_ProjectionType; }
+    void SetProjectionType(ProjectionType projectionType) { m_ProjectionType = projectionType; }
 
 public:
     NON_COPYABLE(Camera);
@@ -58,7 +66,5 @@ private:
     float m_Far;
     ProjectionType m_ProjectionType;
 };
-
-#include "Camera.inl"
 
 } // namespace gore

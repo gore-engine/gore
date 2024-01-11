@@ -37,6 +37,8 @@ public:
 
     GameObject* FindObject(const std::string& name);
 
+    [[nodiscard]] const std::vector<GameObject*>& GetGameObjects() const { return m_GameObjects; }
+
     void SetAsActive();
     static Scene* GetActiveScene();
 
