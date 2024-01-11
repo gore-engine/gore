@@ -225,7 +225,16 @@ bool Swapchain::Present(const std::vector<vk::Semaphore>& waitSemaphores, const 
 
     vk::PresentInfoKHR presentInfo(waitSemaphores, *m_Swapchain, m_CurrentImageIndex);
 
-    vk::Result res = presentQueue.presentKHR(presentInfo);
+    vk::Result res = vk::Result::eSuccess;
+
+    try
+    {
+        res = presentQueue.presentKHR(presentInfo);
+    }
+    catch (vk::OutOfDateKHRError& e)
+    {
+        res = vk::Result::eErrorOutOfDateKHR;
+    }
 
     if (NeedRecreate(res))
     {

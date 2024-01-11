@@ -9,6 +9,13 @@
 #include "Core/App.h"
 #include "Windowing/Window.h"
 #include "Core/Log.h"
+#if PLATFORM_WIN
+    #include "Platform/Windows/Win32Window.h"
+#elif PLATFORM_LINUX
+    #include "Platform/Linux/X11Window.h"
+#elif PLATFORM_MACOS
+    #include "Platform/macOS/CocoaWindow.h"
+#endif
 
 #include <utility>
 #include <vector>
