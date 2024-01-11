@@ -5,15 +5,13 @@
 
 #include <vector>
 
-namespace gore
-{
-
-namespace gfx
+namespace gore::gfx
 {
 
 class Instance;
 class Device;
 class Swapchain;
+class CommandPool;
 
 class PhysicalDevice
 {
@@ -66,6 +64,7 @@ public:
     void WaitIdle() const;
 
     [[nodiscard]] Swapchain CreateSwapchain(void* nativeWindowHandle, uint32_t imageCount, uint32_t width, uint32_t height) const;
+    [[nodiscard]] CommandPool CreateCommandPool(uint32_t queueFamilyIndex) const;
 
 private:
     const Instance* m_Instance;
@@ -80,5 +79,4 @@ private:
     std::vector<vk::QueueFamilyProperties> m_QueueFamilyProperties;
 };
 
-} // namespace gfx
-} // namespace gore
+} // namespace gore::gfx

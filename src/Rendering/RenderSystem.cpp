@@ -53,8 +53,7 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_PresentQueue(nullptr),
     m_PresentQueueFamilyIndex(0),
     // Command Pool & Command Buffer
-    m_CommandPools(),
-    m_CommandBuffers(),
+    m_CommandPool(),
     // Synchronization
     m_RenderFinishedSemaphores(),
     m_InFlightFences(),
@@ -81,13 +80,16 @@ void RenderSystem::Initialize()
     m_Device = gfx::Device(GetBestDevice(physicalDevices));
 
     m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), 3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+
     CreateDepthBuffer();
     LoadShader("sample/cube", "vs", "ps");
     CreateRenderPass();
     CreatePipeline();
     CreateFramebuffers();
     GetQueues();
-    CreateCommandPools();
+
+    m_CommandPool = m_Device.CreateCommandPool(m_GraphicsQueueFamilyIndex);
+
     CreateSynchronization();
 }
 
@@ -124,10 +126,9 @@ void RenderSystem::Update()
                                                           0.1f, 100.0f)
     };
 
-    vk::raii::CommandPool& commandPool = m_CommandPools[currentSwapchainImageIndex];
-    commandPool.reset({});
+    m_CommandPool.Reset(currentSwapchainImageIndex);
 
-    vk::raii::CommandBuffer& commandBuffer = m_CommandBuffers[currentSwapchainImageIndex];
+    const vk::raii::CommandBuffer& commandBuffer = m_CommandPool.GetCommandBuffer(currentSwapchainImageIndex);
 
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     commandBuffer.begin(beginInfo);
@@ -500,21 +501,6 @@ void RenderSystem::GetQueues()
 
     m_GraphicsQueue = m_Device.Get().getQueue(m_GraphicsQueueFamilyIndex, 0);
     m_PresentQueue  = m_Device.Get().getQueue(m_PresentQueueFamilyIndex, 0);
-}
-
-void RenderSystem::CreateCommandPools()
-{
-    uint32_t swapchainImageCount = m_Swapchain.GetImageCount();
-    m_CommandPools.reserve(swapchainImageCount);
-    m_CommandBuffers.reserve(swapchainImageCount);
-    vk::CommandPoolCreateInfo commandPoolCreateInfo({}, m_GraphicsQueueFamilyIndex);
-    for (uint32_t i = 0; i < swapchainImageCount; ++i)
-    {
-        m_CommandPools.emplace_back(m_Device.Get().createCommandPool(commandPoolCreateInfo));
-        std::vector<vk::raii::CommandBuffer> buffers = m_Device.Get().allocateCommandBuffers({*m_CommandPools[i], vk::CommandBufferLevel::ePrimary, 1});
-        m_CommandBuffers.emplace_back(nullptr);
-        m_CommandBuffers[i].swap(buffers[0]);
-    }
 }
 
 const gfx::PhysicalDevice& RenderSystem::GetBestDevice(const std::vector<gfx::PhysicalDevice>& devices) const

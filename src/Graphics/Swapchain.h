@@ -3,9 +3,7 @@
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 
-namespace gore
-{
-namespace gfx
+namespace gore::gfx
 {
 
 class Device;
@@ -54,5 +52,4 @@ private:
     bool NeedRecreate(vk::Result res);
 };
 
-} // namespace gfx
-} // namespace gore
+} // namespace gore::gfx
