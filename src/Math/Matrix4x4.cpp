@@ -110,6 +110,16 @@ Quaternion Matrix4x4::GetRotation() const noexcept
     return static_cast<Quaternion>(quat_from_matrix(rtm::matrix3x4f(rtm::matrix_cast(m_M))));
 }
 
+Matrix4x4 Matrix4x4::FromTRS(const Vector3& translation, const Quaternion& rotation, const Vector3& scale) noexcept
+{
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qvv(static_cast<Quaternion::SIMDValueType>(rotation), static_cast<Vector3::SIMDValueType>(translation), static_cast<Vector3::SIMDValueType>(scale)));
+}
+
+Matrix4x4 Matrix4x4::FromTRNoScale(const Vector3& translation, const Quaternion& rotation) noexcept
+{
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qv(static_cast<Quaternion::SIMDValueType>(rotation), static_cast<Vector3::SIMDValueType>(translation)));
+}
+
 Matrix4x4 Matrix4x4::FromTranslation(const Vector3& position) noexcept
 {
     return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_translation(static_cast<Vector4::SIMDValueType>(position.AsPoint())));

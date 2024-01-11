@@ -99,6 +99,9 @@ public:
     [[nodiscard]] static Matrix4x4 Lerp(const Matrix4x4& M1, const Matrix4x4& M2, float t) noexcept;
 
     // Construct a matrix from a T/R/S
+    [[nodiscard]] static Matrix4x4 FromTRS(const Vector3& translation, const Quaternion& rotation, const Vector3& scale) noexcept;
+    [[nodiscard]] static Matrix4x4 FromTRNoScale(const Vector3& translation, const Quaternion& rotation) noexcept;
+
     [[nodiscard]] static Matrix4x4 FromTranslation(const Vector3& position) noexcept;
     [[nodiscard]] static Matrix4x4 FromTranslation(float x, float y, float z) noexcept;
 
