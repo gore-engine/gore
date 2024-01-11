@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Utilities/Defines.h"
-
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 

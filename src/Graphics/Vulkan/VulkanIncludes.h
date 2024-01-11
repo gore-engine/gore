@@ -50,12 +50,12 @@
 
 #else
 
-    #define VK_CHECK_RESULT(x)                                                                                    \
-        do {                                                                                                      \
-            if (x < 0)                                                                                            \
-            {                                                                                                     \
-                LOG_STREAM(ERROR) << "Vulkan error " << ::vk::to_string(static_cast<vk::Result>(x)) << std::endl; \
-            }                                                                                                     \
+    #define VK_CHECK_RESULT(x)                                                                                      \
+        do {                                                                                                        \
+            if (static_cast<int>(x) < 0)                                                                            \
+            {                                                                                                       \
+                LOG_STREAM(ERROR) << "Vulkan error " << ::vk::to_string(static_cast<::vk::Result>(x)) << std::endl; \
+            }                                                                                                       \
         } while (0)
 
 #endif

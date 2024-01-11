@@ -34,20 +34,7 @@ private:
     gfx::Device m_Device;
 
     // Surface & Swapchain
-    vk::raii::SurfaceKHR m_Surface;
-    vk::raii::SwapchainKHR m_Swapchain;
-    vk::SurfaceFormatKHR m_SurfaceFormat;
-    vk::Extent2D m_SurfaceExtent;
-
-    uint32_t m_SwapchainImageCount;
-
-    std::vector<vk::Image> m_SwapchainImages;
-    std::vector<vk::raii::ImageView> m_SwapchainImageViews;
-    std::vector<vk::raii::Semaphore> m_RenderFinishedSemaphores;
-    std::vector<vk::raii::Fence> m_ImageAcquiredFences;
-    std::vector<vk::raii::Fence> m_InFlightFences;
-
-    uint32_t m_CurrentSwapchainImageIndex;
+    gfx::Swapchain m_Swapchain;
 
     // Shader
     vk::raii::ShaderModule m_CubeVertexShader;
@@ -75,14 +62,16 @@ private:
     std::vector<vk::raii::CommandPool> m_CommandPools;
     std::vector<vk::raii::CommandBuffer> m_CommandBuffers;
 
+    // Synchronization
+    std::vector<vk::raii::Semaphore> m_RenderFinishedSemaphores;
+    std::vector<vk::raii::Fence> m_InFlightFences;
+
     // Depth buffer
     vk::Image m_DepthImage;
     VmaAllocation m_DepthImageAllocation;
     vk::raii::ImageView m_DepthImageView;
 
 private:
-    void CreateSurface();
-    void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
     void CreateDepthBuffer();
     void LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint);
     void CreateRenderPass();
@@ -90,6 +79,7 @@ private:
     void CreateFramebuffers();
     void GetQueues();
     void CreateCommandPools();
+    void CreateSynchronization();
 
     [[nodiscard]] const gfx::PhysicalDevice& GetBestDevice(const std::vector<gfx::PhysicalDevice>& devices) const;
 };

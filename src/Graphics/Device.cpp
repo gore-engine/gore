@@ -2,6 +2,7 @@
 
 #include "Device.h"
 #include "Instance.h"
+#include "Swapchain.h"
 #include "Utils.h"
 
 #include "Core/App.h"
@@ -332,9 +333,14 @@ bool Device::HasExtension(VulkanDeviceExtension extension) const
     return m_EnabledDeviceExtensions.test(static_cast<size_t>(extension));
 }
 
-void Device::WaitIdle()
+void Device::WaitIdle() const
 {
     m_Device.waitIdle();
+}
+
+Swapchain Device::CreateSwapchain(void* nativeWindowHandle, uint32_t imageCount, uint32_t width, uint32_t height) const
+{
+    return gfx::Swapchain(*this, nativeWindowHandle, imageCount, width, height);
 }
 
 } // namespace gore::gfx

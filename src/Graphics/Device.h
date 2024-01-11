@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Utilities/Defines.h"
-
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 
@@ -15,6 +13,7 @@ namespace gfx
 
 class Instance;
 class Device;
+class Swapchain;
 
 class PhysicalDevice
 {
@@ -55,15 +54,18 @@ public:
 
     Device& operator=(Device&& other) noexcept;
 
-    [[nodiscard]] const vk::raii::Device& Get() { return m_Device; }
+    [[nodiscard]] const vk::raii::Device& Get() const { return m_Device; }
     [[nodiscard]] const PhysicalDevice& GetPhysicalDevice() const { return m_PhysicalDevice; }
+    [[nodiscard]] const Instance* GetInstance() const { return m_Instance; }
     [[nodiscard]] VmaAllocator GetVmaAllocator() const { return m_VmaAllocator; }
     [[nodiscard]] const std::vector<vk::QueueFamilyProperties>& GetQueueFamilyProperties() const { return m_QueueFamilyProperties; }
     [[nodiscard]] uint32_t ApiVersion() const;
 
     [[nodiscard]] bool HasExtension(VulkanDeviceExtension extension) const;
 
-    void WaitIdle();
+    void WaitIdle() const;
+
+    [[nodiscard]] Swapchain CreateSwapchain(void* nativeWindowHandle, uint32_t imageCount, uint32_t width, uint32_t height) const;
 
 private:
     const Instance* m_Instance;

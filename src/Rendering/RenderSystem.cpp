@@ -11,13 +11,6 @@
 #include "Math/Quaternion.h"
 #include "Math/Constants.h"
 #include "Windowing/Window.h"
-#if PLATFORM_WIN
-    #include "Platform/Windows/Win32Window.h"
-#elif PLATFORM_LINUX
-    #include "Platform/Linux/X11Window.h"
-#elif PLATFORM_MACOS
-    #include "Platform/macOS/CocoaWindow.h"
-#endif
 
 #include <vector>
 #include <string>
@@ -41,17 +34,7 @@ RenderSystem::RenderSystem(gore::App* app) :
     // Device
     m_Device(),
     // Surface & Swapchain
-    m_Surface(nullptr),
-    m_Swapchain(nullptr),
-    m_SurfaceFormat(),
-    m_SurfaceExtent(),
-    m_SwapchainImageCount(0),
-    m_SwapchainImages(),
-    m_SwapchainImageViews(),
-    m_RenderFinishedSemaphores(),
-    m_ImageAcquiredFences(),
-    m_InFlightFences(),
-    m_CurrentSwapchainImageIndex(0),
+    m_Swapchain(),
     // Shader
     m_CubeVertexShader(nullptr),
     m_CubeVertexShaderEntryPoint(),
@@ -72,6 +55,9 @@ RenderSystem::RenderSystem(gore::App* app) :
     // Command Pool & Command Buffer
     m_CommandPools(),
     m_CommandBuffers(),
+    // Synchronization
+    m_RenderFinishedSemaphores(),
+    m_InFlightFences(),
     // Depth Buffer
     m_DepthImage(nullptr),
     m_DepthImageAllocation(VK_NULL_HANDLE),
@@ -94,8 +80,7 @@ void RenderSystem::Initialize()
     std::vector<gfx::PhysicalDevice> physicalDevices = m_Instance.GetPhysicalDevices();
     m_Device = gfx::Device(GetBestDevice(physicalDevices));
 
-    CreateSurface();
-    CreateSwapchain(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+    m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), 3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     CreateDepthBuffer();
     LoadShader("sample/cube", "vs", "ps");
     CreateRenderPass();
@@ -103,6 +88,7 @@ void RenderSystem::Initialize()
     CreateFramebuffers();
     GetQueues();
     CreateCommandPools();
+    CreateSynchronization();
 }
 
 struct PushConstant
@@ -114,33 +100,14 @@ struct PushConstant
 void RenderSystem::Update()
 {
     Window* window = m_App->GetWindow();
-    
-    vk::Fence imageAcquiredFence = *m_ImageAcquiredFences[m_CurrentSwapchainImageIndex];
-    m_Device.Get().resetFences({imageAcquiredFence});
 
-    auto acquireResult = m_Swapchain.acquireNextImage(UINT64_MAX, nullptr, *m_ImageAcquiredFences[m_CurrentSwapchainImageIndex]);
-    vk::Result result = acquireResult.first;
-    m_CurrentSwapchainImageIndex = acquireResult.second;
-    if (result == vk::Result::eSuboptimalKHR || result == vk::Result::eErrorOutOfDateKHR)
-    {
-        m_Device.WaitIdle();
-        m_Swapchain = nullptr;
-        int width, height;
-        window->GetSize(&width, &height);
-        if (m_DepthImage != nullptr)
-        {
-            m_DepthImageView = nullptr;
-            vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
-        }
-        CreateSwapchain(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
-        CreateDepthBuffer();
-        CreateFramebuffers();
-        return;
-    }
+    uint32_t currentSwapchainImageIndex = m_Swapchain.GetCurrentImageIndex();
+    vk::Extent2D surfaceExtent = m_Swapchain.GetExtent();
+    const std::vector<vk::Image>& swapchainImages = m_Swapchain.GetImages();
 
-    vk::Fence inFlightFence = *m_InFlightFences[m_CurrentSwapchainImageIndex];
+    vk::Fence inFlightFence = *m_InFlightFences[currentSwapchainImageIndex];
 
-    result = m_Device.Get().waitForFences({imageAcquiredFence, inFlightFence}, true, UINT64_MAX);
+    vk::Result result = m_Device.Get().waitForFences({inFlightFence}, true, UINT64_MAX);
     m_Device.Get().resetFences({inFlightFence});
 
     float totalTime = GetTotalTime();
@@ -153,14 +120,14 @@ void RenderSystem::Update()
                  Matrix4x4::FromTranslation(Vector3::Forward * 2.0f) *
                  camera.Inverse(),
         .proj = Matrix4x4::CreatePerspectiveFieldOfViewLH(math::constants::PI / 3.0f,
-                                                          (float)m_SurfaceExtent.width / (float)m_SurfaceExtent.height,
+                                                          (float)surfaceExtent.width / (float)surfaceExtent.height,
                                                           0.1f, 100.0f)
     };
 
-    vk::raii::CommandPool& commandPool = m_CommandPools[m_CurrentSwapchainImageIndex];
+    vk::raii::CommandPool& commandPool = m_CommandPools[currentSwapchainImageIndex];
     commandPool.reset({});
 
-    vk::raii::CommandBuffer& commandBuffer = m_CommandBuffers[m_CurrentSwapchainImageIndex];
+    vk::raii::CommandBuffer& commandBuffer = m_CommandBuffers[currentSwapchainImageIndex];
 
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     commandBuffer.begin(beginInfo);
@@ -168,8 +135,7 @@ void RenderSystem::Update()
     std::vector<vk::ImageMemoryBarrier> imageMemoryBarriers;
     imageMemoryBarriers.emplace_back(vk::AccessFlagBits::eMemoryRead, vk::AccessFlagBits::eColorAttachmentWrite,
                                      vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal,
-                                     m_GraphicsQueueFamilyIndex, m_GraphicsQueueFamilyIndex,
-                                     m_SwapchainImages[m_CurrentSwapchainImageIndex],
+                                     m_GraphicsQueueFamilyIndex, m_GraphicsQueueFamilyIndex, swapchainImages[currentSwapchainImageIndex],
                                      vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eColorAttachmentOutput, {}, {}, {}, imageMemoryBarriers);
 
@@ -184,15 +150,15 @@ void RenderSystem::Update()
     vk::ClearValue clearValueColor(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
     vk::ClearValue clearValueDepth(vk::ClearDepthStencilValue(1.0f, 0));
     std::vector<vk::ClearValue> clearValues = {clearValueColor, clearValueDepth};
-    vk::RenderPassBeginInfo renderPassBeginInfo(*m_RenderPass, *m_Framebuffers[m_CurrentSwapchainImageIndex], {{0, 0}, m_SurfaceExtent}, clearValues);
+    vk::RenderPassBeginInfo renderPassBeginInfo(*m_RenderPass, *m_Framebuffers[currentSwapchainImageIndex], {{0, 0}, surfaceExtent}, clearValues);
     commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_Pipeline);
 
-    vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(m_SurfaceExtent.width), static_cast<float>(m_SurfaceExtent.height), 0.0f, 1.0f);
+    vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(surfaceExtent.width), static_cast<float>(surfaceExtent.height), 0.0f, 1.0f);
     commandBuffer.setViewport(0, {viewport});
 
-    vk::Rect2D scissor({0, 0}, m_SurfaceExtent);
+    vk::Rect2D scissor({0, 0}, surfaceExtent);
     commandBuffer.setScissor(0, {scissor});
 
     std::array<PushConstant, 1> pushConstantData = {pushConstant};
@@ -205,8 +171,7 @@ void RenderSystem::Update()
     std::vector<vk::ImageMemoryBarrier> imageMemoryBarriers2;
     imageMemoryBarriers2.emplace_back(vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eMemoryRead,
                                       vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR,
-                                      m_GraphicsQueueFamilyIndex, m_GraphicsQueueFamilyIndex,
-                                      m_SwapchainImages[m_CurrentSwapchainImageIndex],
+                                      m_GraphicsQueueFamilyIndex, m_GraphicsQueueFamilyIndex, swapchainImages[currentSwapchainImageIndex],
                                       vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eAllCommands, {}, {}, {}, imageMemoryBarriers2);
 
@@ -223,17 +188,14 @@ void RenderSystem::Update()
     std::vector<vk::Semaphore> waitSemaphores = {};
     std::vector<vk::PipelineStageFlags> waitStages = {};
     std::vector<vk::CommandBuffer> submitCommandBuffers = {*commandBuffer};
-    std::vector<vk::Semaphore> renderFinishedSemaphores = {*m_RenderFinishedSemaphores[m_CurrentSwapchainImageIndex]};
+    std::vector<vk::Semaphore> renderFinishedSemaphores = {*m_RenderFinishedSemaphores[currentSwapchainImageIndex]};
     vk::SubmitInfo submitInfo(waitSemaphores, waitStages, submitCommandBuffers, renderFinishedSemaphores);
     m_GraphicsQueue.submit({submitInfo}, inFlightFence);
 
-    vk::PresentInfoKHR presentInfo(renderFinishedSemaphores, *m_Swapchain, m_CurrentSwapchainImageIndex);
-    result = m_PresentQueue.presentKHR(presentInfo);
+    bool recreated = m_Swapchain.Present(renderFinishedSemaphores, m_PresentQueue);
 
-    if (result == vk::Result::eSuboptimalKHR || result == vk::Result::eErrorOutOfDateKHR)
+    if (recreated)
     {
-        m_Device.WaitIdle();
-        m_Swapchain = nullptr;
         if (m_DepthImage != nullptr)
         {
             m_DepthImageView = nullptr;
@@ -241,9 +203,9 @@ void RenderSystem::Update()
         }
         int width, height;
         window->GetSize(&width, &height);
-        CreateSwapchain(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
         CreateDepthBuffer();
         CreateFramebuffers();
+        CreateSynchronization();
     }
 }
 
@@ -261,140 +223,20 @@ void RenderSystem::Shutdown()
 
 void RenderSystem::OnResize(Window* window, int width, int height)
 {
-    if (m_SurfaceExtent.width == static_cast<uint32_t>(width) && m_SurfaceExtent.height == static_cast<uint32_t>(height))
+    vk::Extent2D surfaceExtent = m_Swapchain.GetExtent();
+    if (surfaceExtent.width == static_cast<uint32_t>(width) && surfaceExtent.height == static_cast<uint32_t>(height))
         return;
     
     m_Device.WaitIdle();
-    m_Swapchain = nullptr;
     if (m_DepthImage != nullptr)
     {
         m_DepthImageView = nullptr;
         vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
     }
-    CreateSwapchain(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+
+    m_Swapchain.Recreate(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     CreateDepthBuffer();
     CreateFramebuffers();
-}
-
-void RenderSystem::CreateSurface()
-{
-    void* nativeWindowHandle = m_App->GetWindow()->GetNativeHandle();
-#ifdef VK_KHR_win32_surface
-
-    Win32Window* win32Window = reinterpret_cast<Win32Window*>(nativeWindowHandle);
-    vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo({}, win32Window->hInstance, win32Window->hWnd);
-    m_Surface = m_Instance.Get().createWin32SurfaceKHR(surfaceCreateInfo);
-
-#elif VK_KHR_xlib_surface
-
-    X11Window* x11Window = reinterpret_cast<X11Window*>(nativeWindowHandle);
-    vk::XlibSurfaceCreateInfoKHR surfaceCreateInfo({}, x11Window->display, x11Window->window);
-    m_Surface = m_Instance.Get().createXlibSurfaceKHR(surfaceCreateInfo);
-
-#elif VK_EXT_metal_surface
-
-    CocoaWindow* cocoaWindow = reinterpret_cast<CocoaWindow*>(nativeWindowHandle);
-    vk::MetalSurfaceCreateInfoEXT surfaceCreateInfo({}, cocoaWindow->layer);
-    m_Surface = m_Instance.Get().createMetalSurfaceEXT(surfaceCreateInfo);
-
-#else
-    #error "No supported surface extension available"
-#endif
-
-    LOG(DEBUG, "Created Vulkan surface\n");
-}
-
-void RenderSystem::CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height)
-{
-    m_SwapchainImages.clear();
-    m_SwapchainImageViews.clear();
-    m_RenderFinishedSemaphores.clear();
-    m_ImageAcquiredFences.clear();
-    m_InFlightFences.clear();
-
-    const vk::raii::PhysicalDevice& physicalDevice = m_Device.GetPhysicalDevice().Get();
-
-    vk::SurfaceCapabilitiesKHR surfaceCapabilities               = physicalDevice.getSurfaceCapabilitiesKHR(*m_Surface);
-    std::vector<vk::SurfaceFormatKHR> surfaceSupportedFormats    = physicalDevice.getSurfaceFormatsKHR(*m_Surface);
-    std::vector<vk::PresentModeKHR> surfaceSupportedPresentModes = physicalDevice.getSurfacePresentModesKHR(*m_Surface);
-
-    if (surfaceSupportedFormats.empty() || surfaceSupportedPresentModes.empty())
-    {
-        LOG(ERROR, "Physical device does not support swapchain\n");
-        return;
-    }
-
-    m_SurfaceFormat = surfaceSupportedFormats[0];
-    for (const auto& format : surfaceSupportedFormats)
-    {
-        if (format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
-        {
-            m_SurfaceFormat = format;
-            break;
-        }
-    }
-
-    vk::PresentModeKHR surfacePresentMode = vk::PresentModeKHR::eFifo;
-    for (const auto& presentMode : surfaceSupportedPresentModes)
-    {
-        if (presentMode == vk::PresentModeKHR::eMailbox)
-        {
-            surfacePresentMode = presentMode;
-            break;
-        }
-    }
-
-    m_SurfaceExtent.width  = std::clamp(width,
-                                       surfaceCapabilities.minImageExtent.width,
-                                       surfaceCapabilities.maxImageExtent.width);
-    m_SurfaceExtent.height = std::clamp(height,
-                                        surfaceCapabilities.minImageExtent.height,
-                                        surfaceCapabilities.maxImageExtent.height);
-    uint32_t layers        = std::min(1u, surfaceCapabilities.maxImageArrayLayers); // TODO: Require layers
-
-    if (surfaceCapabilities.maxImageCount < surfaceCapabilities.minImageCount)
-    {
-        // fix for some drivers
-        std::swap(surfaceCapabilities.maxImageCount, surfaceCapabilities.minImageCount);
-    }
-
-    m_SwapchainImageCount = std::clamp(imageCount,
-                                       surfaceCapabilities.minImageCount,
-                                       surfaceCapabilities.maxImageCount);
-
-    m_CurrentSwapchainImageIndex = 0;
-
-    vk::SwapchainCreateInfoKHR createInfo({}, *m_Surface, m_SwapchainImageCount,
-                                          m_SurfaceFormat.format, m_SurfaceFormat.colorSpace,
-                                          m_SurfaceExtent, layers,
-                                          vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc, // TODO: Check supported usage and maybe get this from user?
-                                          vk::SharingMode::eExclusive,
-                                          {}, // queueFamilies
-                                          surfaceCapabilities.currentTransform,
-                                          vk::CompositeAlphaFlagBitsKHR::eOpaque,
-                                          surfacePresentMode,
-                                          true,     // clipped
-                                          nullptr); // oldSwapchain
-
-    m_Swapchain = m_Device.Get().createSwapchainKHR(createInfo);
-
-    m_SwapchainImages = m_Swapchain.getImages();
-
-    m_SwapchainImageViews.reserve(m_SwapchainImageCount);
-    m_RenderFinishedSemaphores.reserve(m_SwapchainImageCount);
-    m_ImageAcquiredFences.reserve(m_SwapchainImageCount);
-    m_InFlightFences.reserve(m_SwapchainImageCount);
-
-    for (uint32_t i = 0; i < m_SwapchainImageCount; ++i)
-    {
-        vk::ImageViewCreateInfo imageViewCreateInfo({}, m_SwapchainImages[i], vk::ImageViewType::e2D, m_SurfaceFormat.format, {}, {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
-        m_SwapchainImageViews.emplace_back(m_Device.Get().createImageView(imageViewCreateInfo));
-        m_RenderFinishedSemaphores.emplace_back(m_Device.Get().createSemaphore({}));
-        m_ImageAcquiredFences.emplace_back(m_Device.Get().createFence({vk::FenceCreateFlagBits::eSignaled}));
-        m_InFlightFences.emplace_back(m_Device.Get().createFence({vk::FenceCreateFlagBits::eSignaled}));
-    }
-
-    LOG(DEBUG, "Created Vulkan swapchain with %d images, size %dx%d\n", m_SwapchainImageCount, m_SurfaceExtent.width, m_SurfaceExtent.height);
 }
 
 void RenderSystem::CreateDepthBuffer()
@@ -425,8 +267,10 @@ void RenderSystem::CreateDepthBuffer()
                       depthFormat == vk::Format::eD24UnormS8Uint ||
                       depthFormat == vk::Format::eD16UnormS8Uint;
 
+    vk::Extent2D swapchainExtent = m_Swapchain.GetExtent();
+
     vk::ImageCreateInfo imageCreateInfo({}, vk::ImageType::e2D, depthFormat,
-                                        vk::Extent3D(m_SurfaceExtent.width, m_SurfaceExtent.height, 1),
+                                        vk::Extent3D(swapchainExtent.width, swapchainExtent.height, 1),
                                         1, 1,
                                         vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal,
                                         vk::ImageUsageFlagBits::eDepthStencilAttachment,
@@ -507,7 +351,9 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
 
 void RenderSystem::CreateRenderPass()
 {
-    vk::AttachmentDescription colorAttachment({}, m_SurfaceFormat.format,
+    vk::SurfaceFormatKHR surfaceFormat = m_Swapchain.GetFormat();
+
+    vk::AttachmentDescription colorAttachment({}, surfaceFormat.format,
                                               vk::SampleCountFlagBits::e1,
                                               vk::AttachmentLoadOp::eClear,
                                               vk::AttachmentStoreOp::eStore,
@@ -608,13 +454,17 @@ void RenderSystem::CreatePipeline()
 
 void RenderSystem::CreateFramebuffers()
 {
-    m_Framebuffers.clear();
-    m_Framebuffers.reserve(m_SwapchainImageCount);
+    uint32_t swapchainImageCount                                = m_Swapchain.GetImageCount();
+    vk::Extent2D swapchainExtent                                = m_Swapchain.GetExtent();
+    const std::vector<vk::raii::ImageView>& swapchainImageViews = m_Swapchain.GetImageViews();
 
-    for (uint32_t i = 0; i < m_SwapchainImageCount; ++i)
+    m_Framebuffers.clear();
+    m_Framebuffers.reserve(swapchainImageCount);
+
+    for (uint32_t i = 0; i < swapchainImageCount; ++i)
     {
-        std::vector<vk::ImageView> attachments = {*m_SwapchainImageViews[i], *m_DepthImageView};
-        vk::FramebufferCreateInfo framebufferCreateInfo({}, *m_RenderPass, attachments, m_SurfaceExtent.width, m_SurfaceExtent.height, 1);
+        std::vector<vk::ImageView> attachments = {*swapchainImageViews[i], *m_DepthImageView};
+        vk::FramebufferCreateInfo framebufferCreateInfo({}, *m_RenderPass, attachments, swapchainExtent.width, swapchainExtent.height, 1);
         m_Framebuffers.emplace_back(m_Device.Get().createFramebuffer(framebufferCreateInfo));
     }
 
@@ -654,10 +504,11 @@ void RenderSystem::GetQueues()
 
 void RenderSystem::CreateCommandPools()
 {
-    m_CommandPools.reserve(m_SwapchainImageCount);
-    m_CommandBuffers.reserve(m_SwapchainImageCount);
+    uint32_t swapchainImageCount = m_Swapchain.GetImageCount();
+    m_CommandPools.reserve(swapchainImageCount);
+    m_CommandBuffers.reserve(swapchainImageCount);
     vk::CommandPoolCreateInfo commandPoolCreateInfo({}, m_GraphicsQueueFamilyIndex);
-    for (uint32_t i = 0; i < m_SwapchainImageCount; ++i)
+    for (uint32_t i = 0; i < swapchainImageCount; ++i)
     {
         m_CommandPools.emplace_back(m_Device.Get().createCommandPool(commandPoolCreateInfo));
         std::vector<vk::raii::CommandBuffer> buffers = m_Device.Get().allocateCommandBuffers({*m_CommandPools[i], vk::CommandBufferLevel::ePrimary, 1});
@@ -689,6 +540,21 @@ const gfx::PhysicalDevice& RenderSystem::GetBestDevice(const std::vector<gfx::Ph
     }
 
     return devices[physicalDeviceIndex];
+}
+
+void RenderSystem::CreateSynchronization()
+{
+    m_RenderFinishedSemaphores.clear();
+    m_InFlightFences.clear();
+
+    uint32_t imageCount = m_Swapchain.GetImageCount();
+    m_RenderFinishedSemaphores.reserve(imageCount);
+    m_InFlightFences.reserve(imageCount);
+    for (uint32_t i = 0; i < imageCount; ++i)
+    {
+        m_RenderFinishedSemaphores.emplace_back(m_Device.Get().createSemaphore({}));
+        m_InFlightFences.emplace_back(m_Device.Get().createFence({vk::FenceCreateFlagBits::eSignaled}));
+    }
 }
 
 } // namespace gore
