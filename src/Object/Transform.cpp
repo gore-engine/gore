@@ -4,6 +4,8 @@
 #include "Math/Quaternion.h"
 
 #include "rtm/matrix3x4f.h"
+#include "rtm/qvf.h"
+#include "rtm/qvvf.h"
 
 namespace gore
 {
@@ -63,14 +65,29 @@ Quaternion Transform::GetLocalRotation() const
 //    return m_LocalRotation.ToEuler();
 //}
 
+void Transform::RotateAroundAxis(const Vector3& axis, float angle)
+{
+    m_LocalRotation = m_LocalRotation * Quaternion::CreateFromAxisAngle(axis, angle);
+}
+
 Matrix4x4 Transform::GetLocalToWorldMatrix() const
 {
     return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qvv(m_LocalPosition, m_LocalRotation, m_LocalScale));
 }
 
-void Transform::RotateAroundAxis(const Vector3& axis, float angle)
+Matrix4x4 Transform::GetLocalToWorldMatrixIgnoreScale() const
 {
-    m_LocalRotation = m_LocalRotation * Quaternion::CreateFromAxisAngle(axis, angle);
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qv(m_LocalRotation, m_LocalPosition));
+}
+
+Matrix4x4 Transform::GetWorldToLocalMatrix() const
+{
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qvv(rtm::qvv_inverse(rtm::qvvf{.rotation = m_LocalRotation, .translation = m_LocalPosition, .scale = m_LocalScale})));
+}
+
+Matrix4x4 Transform::GetWorldToLocalMatrixIgnoreScale() const
+{
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qv(rtm::qv_inverse(rtm::qvf{.rotation = m_LocalRotation, .translation = m_LocalPosition})));
 }
 
 } // namespace gore
