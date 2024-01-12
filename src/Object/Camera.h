@@ -1,14 +1,7 @@
 #pragma once
 
+#include "Math/Constants.h"
 #include "Object/Component.h"
-
-#ifdef near
-#undef near
-#endif
-
-#ifdef far
-#undef far
-#endif
 
 namespace gore
 {
@@ -30,40 +23,54 @@ public:
     [[nodiscard]] Matrix4x4 GetViewMatrix() const;
     [[nodiscard]] Matrix4x4 GetViewProjectionMatrix() const;
 
+    // clang-format off
     // properties
-    [[nodiscard]] float GetFOV() const { return m_FOV; }
-    void SetFOV(float fov) { m_FOV = fov; }
-    [[nodiscard]] float GetNear() const { return m_Near; }
-    void SetNear(float near) { m_Near = near; }
-    [[nodiscard]] float GetFar() const { return m_Far; }
-    void SetFar(float far) { m_Far = far; }
+    [[nodiscard]] float GetPerspectiveFOV() const { return m_PerspectiveFOV; }
+    void SetFOV(float fov) { m_PerspectiveFOV = fov; }
+    [[nodiscard]] float GetPerspectiveAspectRatio() const { return m_PerspectiveAspectRatio; }
+    void SetAspectRatio(float aspectRatio) { m_PerspectiveAspectRatio = aspectRatio; }
+
+    [[nodiscard]] float GetOrthographicWidth() const { return m_OrthographicViewWidth; }
+    void SetOrthographicWidth(float width) { m_OrthographicViewWidth = width; }
+    [[nodiscard]] float GetOrthographicHeight() const { return m_OrthographicViewHeight; }
+    void SetOrthographicHeight(float height) { m_OrthographicViewHeight = height; }
+
+    // okay lets avoid using near/far because of macros defined in windows.h
+    [[nodiscard]] float GetZMin() const { return m_ZMin; }
+    void SetNear(float zMin) { m_ZMin = zMin; }
+    [[nodiscard]] float GetZMax() const { return m_ZMax; }
+    void SetZMax(float zMax) { m_ZMax = zMax; }
+
     [[nodiscard]] ProjectionType GetProjectionType() const { return m_ProjectionType; }
     void SetProjectionType(ProjectionType projectionType) { m_ProjectionType = projectionType; }
+    // clang-format on
 
 public:
     NON_COPYABLE(Camera);
 
-    explicit Camera(GameObject * gameObject, ProjectionType projectionType = ProjectionType::Perspective, float fov = 60.0f, float AspectRatio = 16.0f / 9.0f, float near = 0.1f, float far = 1000.0f) :
-        Component(gameObject),
-        m_FOV(fov),
-        m_AspectRatio(AspectRatio),
-        m_Near(near),
-        m_Far(far),
-        m_ProjectionType(projectionType)
-
-    {
-    }
-
+    Camera() = delete;
+    explicit Camera(GameObject * gameObject) noexcept;
     ~Camera() override = default;
 
     void Start() override;
     void Update() override;
 
+public:
+    static const float DefaultPerspectiveFOV;
+    static const float DefaultPerspectiveAspectRatio;
+    static const float DefaultOrthographicViewWidth;
+    static const float DefaultOrthographicViewHeight;
+    static const float DefaultZMin;
+    static const float DefaultZMax;
+    static const ProjectionType DefaultProjectionType;
+
 private:
-    float m_FOV;
-    float m_AspectRatio;
-    float m_Near;
-    float m_Far;
+    float m_PerspectiveFOV;
+    float m_PerspectiveAspectRatio;
+    float m_OrthographicViewWidth;
+    float m_OrthographicViewHeight;
+    float m_ZMin;
+    float m_ZMax;
     ProjectionType m_ProjectionType;
 };
 
