@@ -39,6 +39,26 @@ private:
     vk::raii::Instance m_Instance;
     VulkanInstanceExtensionBitset m_EnabledInstanceExtensions;
     bool m_ValidationEnabled;
+
+    // debug report
+    vk::raii::DebugReportCallbackEXT m_DebugReportCallback;
+    static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
+        VkDebugReportFlagsEXT flags,
+        VkDebugReportObjectTypeEXT objType,
+        uint64_t obj,
+        size_t location,
+        int32_t code,
+        const char* layerPrefix,
+        const char* msg,
+        void* userData);
+
+    // debug utils
+    vk::raii::DebugUtilsMessengerEXT m_DebugUtilsMessenger;
+    static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
+        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData);
 };
 
 } // namespace gfx

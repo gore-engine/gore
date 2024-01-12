@@ -59,8 +59,7 @@ private:
     uint32_t m_PresentQueueFamilyIndex;
 
     // Command Pool & Command Buffer
-    std::vector<vk::raii::CommandPool> m_CommandPools;
-    std::vector<vk::raii::CommandBuffer> m_CommandBuffers;
+    gfx::CommandPool m_CommandPool;
 
     // Synchronization
     std::vector<vk::raii::Semaphore> m_RenderFinishedSemaphores;
@@ -78,7 +77,6 @@ private:
     void CreatePipeline();
     void CreateFramebuffers();
     void GetQueues();
-    void CreateCommandPools();
     void CreateSynchronization();
 
     [[nodiscard]] const gfx::PhysicalDevice& GetBestDevice(const std::vector<gfx::PhysicalDevice>& devices) const;
