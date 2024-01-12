@@ -74,6 +74,4 @@ private:
     ProjectionType m_ProjectionType;
 };
 
-#include "Camera.inl"
-
 } // namespace gore
