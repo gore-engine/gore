@@ -150,7 +150,7 @@ void RenderSystem::Update()
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eEarlyFragmentTests, {}, {}, {}, depthImageMemoryBarriers);
 
     vk::ClearValue clearValueColor(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
-    vk::ClearValue clearValueDepth(vk::ClearDepthStencilValue(1.0f, 0));
+    vk::ClearValue clearValueDepth(vk::ClearDepthStencilValue(0.0f, 0));
     std::vector<vk::ClearValue> clearValues = {clearValueColor, clearValueDepth};
     vk::RenderPassBeginInfo renderPassBeginInfo(*m_RenderPass, *m_Framebuffers[currentSwapchainImageIndex], {{0, 0}, surfaceExtent}, clearValues);
     commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
@@ -443,7 +443,7 @@ void RenderSystem::CreatePipeline()
     vk::PipelineViewportStateCreateInfo viewportStateCreateInfo({}, 1, nullptr, 1, nullptr);
     vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo({}, false, false, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise, false, 0.0f, 0.0f, 0.0f, 1.0f);
     vk::PipelineMultisampleStateCreateInfo multisampleStateCreateInfo({}, vk::SampleCountFlagBits::e1, false, 0.0f, nullptr, false, false);
-    vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo({}, true, true, vk::CompareOp::eLess, false, false, {}, {}, 0.0f, 1.0f);
+    vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo({}, true, true, vk::CompareOp::eGreaterOrEqual, false, false, {}, {}, 0.0f, 1.0f);
 
     vk::PipelineColorBlendAttachmentState colorBlendAttachmentState(false,
                                                                     vk::BlendFactor::eOne,
