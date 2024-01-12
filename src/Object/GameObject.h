@@ -37,7 +37,7 @@ public:
     template <>
     Component::SelfOrDerivedTypePointer<Transform> AddComponent<Transform>();
     template <>
-    Component::SelfOrDerivedTypePointer<Transform> AddComponent<Transform>(Transform* inpTransform);
+    Component::SelfOrDerivedTypePointer<Transform> AddComponent<Transform>(Transform * inpTransform);
 #endif // !COMPILER_GCC
 
 
@@ -63,8 +63,8 @@ private:
 
     std::vector<Component*> m_Components;
 
-    public:
-    const Transform* transform;
+public:
+    Transform* transform;
 };
 
 #if COMPILER_GCC
@@ -75,7 +75,7 @@ Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent(Transfor
 
 template <>
 Component::SelfOrDerivedTypeNoReturnValue<Transform> GameObject::RemoveComponent<Transform>() noexcept(false);
-#endif  // COMPILER_GCC
+#endif // COMPILER_GCC
 
 template <typename T>
 Component::SelfOrDerivedTypePointer<T> GameObject::AddComponent()

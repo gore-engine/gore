@@ -110,6 +110,16 @@ Quaternion Matrix4x4::GetRotation() const noexcept
     return static_cast<Quaternion>(quat_from_matrix(rtm::matrix3x4f(rtm::matrix_cast(m_M))));
 }
 
+Matrix4x4 Matrix4x4::FromTRS(const Vector3& translation, const Quaternion& rotation, const Vector3& scale) noexcept
+{
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qvv(static_cast<Quaternion::SIMDValueType>(rotation), static_cast<Vector3::SIMDValueType>(translation), static_cast<Vector3::SIMDValueType>(scale)));
+}
+
+Matrix4x4 Matrix4x4::FromTRNoScale(const Vector3& translation, const Quaternion& rotation) noexcept
+{
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qv(static_cast<Quaternion::SIMDValueType>(rotation), static_cast<Vector3::SIMDValueType>(translation)));
+}
+
 Matrix4x4 Matrix4x4::FromTranslation(const Vector3& position) noexcept
 {
     return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_translation(static_cast<Vector4::SIMDValueType>(position.AsPoint())));
@@ -168,6 +178,16 @@ Matrix4x4 Matrix4x4::CreatePerspectiveFieldOfViewLH(float fov, float aspectRatio
         rtm::vector_set(0.0f, Height, 0.0f, 0.0f),
         rtm::vector_set(0.0f, 0.0f, fRange, 1.0f),
         rtm::vector_set(0.0f, 0.0f, -fRange * nearPlane, 0.0f))));
+}
+Matrix4x4 Matrix4x4::CreateOrthographicLH(float width, float height, float zNearPlane, float zFarPlane) noexcept
+{
+    float fRange = 1.0f / (zFarPlane - zNearPlane);
+
+    return static_cast<Matrix4x4>(rtm::matrix_set(
+        rtm::vector_set(2.0f / width, 0.0f, 0.0f, 0.0f),
+        rtm::vector_set(0.0f, 2.0f / height, 0.0f, 0.0f),
+        rtm::vector_set(0.0f, 0.0f, fRange, 0.0f),
+        rtm::vector_set(0.0f, 0.0f, -fRange * zNearPlane, 1.0f)));
 }
 
 } // namespace gore
