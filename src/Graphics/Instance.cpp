@@ -299,7 +299,16 @@ VkBool32 Instance::DebugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBi
     auto logStream = Logger::Default().StartStream(logLevel, __FILE__, __LINE__);
 
     logStream << "Vulkan " << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes)) << ": "
-              << pCallbackData->pMessage << " <" << pCallbackData->pMessageIdName << ">" << std::endl;
+              << pCallbackData->pMessage;
+
+    if (pCallbackData->pMessageIdName)
+    {
+        logStream << " <" << pCallbackData->pMessageIdName << ">" << std::endl;
+    }
+    else
+    {
+        logStream << std::endl;
+    }
 
     if (pCallbackData->objectCount > 0)
     {

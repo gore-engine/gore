@@ -79,7 +79,7 @@ public:
     {
         static_assert(VulkanRAIIType<VkRAIIObjectType>, "<object> must be a Vulkan RAII type.");
 #ifdef ENGINE_DEBUG
-        auto vkObject = static_cast<VkRAIIObjectType::CType>(*object);
+        auto vkObject = static_cast<typename VkRAIIObjectType::CType>(*object);
         SetName(reinterpret_cast<uint64_t>(vkObject), VkRAIIObjectType::objectType, name);
 #endif
     }
