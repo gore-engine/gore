@@ -28,9 +28,7 @@ void TestComponent::Update()
 
     gore::Transform* transform = m_GameObject->GetComponent<gore::Transform>();
 
-    gore::Quaternion rot = transform->GetLocalRotation();
-    rot = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Up, totalTime);
-    transform->SetLocalRotation(rot);
+    transform->RotateAroundAxis(gore::Vector3::Up, deltaTime);
 
-    // m_GameObject->GetComponent<gore::Transform>()->RotateAroundAxis(gore::Vector3::Up, deltaTime);
+    LOG_STREAM(DEBUG) << "TestComponent position:" << transform->GetLocalPosition() << " Quaternion: " << transform->GetLocalRotation() << std::endl;
 }

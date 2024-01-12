@@ -31,13 +31,15 @@ void SampleApp::Initialize()
 
     scene = new gore::Scene("MainScene");
 
-    gore::GameObject* camera = scene->NewObject();
-    camera->SetName("MainCamera");
-    camera->AddComponent<gore::Camera>();
+    gore::GameObject* cameraGameObject = scene->NewObject();
+    cameraGameObject->SetName("MainCamera");
+    gore::Camera* camera = cameraGameObject->AddComponent<gore::Camera>();
+    // by default the camera is perspective
+    camera->SetProjectionType(gore::Camera::ProjectionType::Perspective);
 
-    gore::Transform* cameraTransform = camera->GetComponent<gore::Transform>();
+    gore::Transform* cameraTransform = cameraGameObject->GetComponent<gore::Transform>();
     cameraTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
-    cameraTransform->SetLocalPosition((gore::Vector3::Backward + gore::Vector3::Up) * 2.0f);
+    cameraTransform->SetLocalPosition((gore::Vector3::Backward + gore::Vector3::Up) * 1.5f);
 
     gore::GameObject* gameObject = scene->NewObject();
     gameObject->SetName("TestObject");
