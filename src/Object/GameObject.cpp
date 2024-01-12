@@ -17,7 +17,7 @@ GameObject::GameObject(std::string name, Scene* scene) :
     m_Components()
 {
     AddComponent<Transform>();
-    transform = reinterpret_cast<const Transform*>(m_Components[0]);
+    transform = reinterpret_cast<Transform*>(m_Components[0]);
 }
 
 GameObject::~GameObject()
