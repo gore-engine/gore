@@ -99,6 +99,9 @@ public:
     [[nodiscard]] static Matrix4x4 Lerp(const Matrix4x4& M1, const Matrix4x4& M2, float t) noexcept;
 
     // Construct a matrix from a T/R/S
+    [[nodiscard]] static Matrix4x4 FromTRS(const Vector3& translation, const Quaternion& rotation, const Vector3& scale) noexcept;
+    [[nodiscard]] static Matrix4x4 FromTRNoScale(const Vector3& translation, const Quaternion& rotation) noexcept;
+
     [[nodiscard]] static Matrix4x4 FromTranslation(const Vector3& position) noexcept;
     [[nodiscard]] static Matrix4x4 FromTranslation(float x, float y, float z) noexcept;
 
@@ -119,9 +122,9 @@ public:
 
     // Projection matrices
     [[nodiscard]] static Matrix4x4 CreatePerspectiveFieldOfViewLH(float fov, float aspectRatio, float nearPlane, float farPlane) noexcept;
-    [[nodiscard]] static Matrix4x4 CreatePerspectiveOffCenter(float left, float right, float bottom, float top, float nearPlane, float farPlane) noexcept;
-    [[nodiscard]] static Matrix4x4 CreateOrthographic(float width, float height, float zNearPlane, float zFarPlane) noexcept;
-    [[nodiscard]] static Matrix4x4 CreateOrthographicOffCenter(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane) noexcept;
+//    [[nodiscard]] static Matrix4x4 CreatePerspectiveOffCenterLH(float left, float right, float bottom, float top, float nearPlane, float farPlane) noexcept;
+    [[nodiscard]] static Matrix4x4 CreateOrthographicLH(float width, float height, float zNearPlane, float zFarPlane) noexcept;
+//    [[nodiscard]] static Matrix4x4 CreateOrthographicOffCenterLH(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane) noexcept;
 
     [[nodiscard]] static Matrix4x4 CreateLookAt(const Vector3& position, const Vector3& target, const Vector3& up) noexcept;
 

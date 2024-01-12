@@ -23,6 +23,7 @@ static const int vertIndex[36] =
 struct PushConstant
 {
     float4x4 m;
+    float4x4 v;
     float4x4 p;
 };
 
@@ -38,8 +39,8 @@ struct VertOut
 VertOut vs(int vertID : SV_VertexID)
 {
     VertOut vertOut;
-     float4 objVertPos = float4(vertPos[vertIndex[vertID]], 1.0f);
-    vertOut.pos = mul(mvpPushConst.p, mul(mvpPushConst.m, objVertPos));
+    float4 objVertPos = float4(vertPos[vertIndex[vertID]], 1.0f);
+    vertOut.pos = mul(mvpPushConst.p, mul(mvpPushConst.v, mul(mvpPushConst.m, objVertPos)));
     vertOut.pos.y *= -1.0f;
     vertOut.color = objVertPos.xyz + 0.5f;
     return vertOut;

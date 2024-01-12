@@ -11,6 +11,9 @@
 #include "Math/Quaternion.h"
 #include "Math/Constants.h"
 #include "Windowing/Window.h"
+#include "Scene/Scene.h"
+#include "Object/Camera.h"
+#include "Object/GameObject.h"
 
 #include <vector>
 #include <string>
@@ -95,13 +98,22 @@ void RenderSystem::Initialize()
 
 struct PushConstant
 {
-    Matrix4x4 model;
-    Matrix4x4 proj;
+    Matrix4x4 m;
+    Matrix4x4 v;
+    Matrix4x4 p;
 };
 
 void RenderSystem::Update()
 {
     Window* window = m_App->GetWindow();
+
+    Camera* camera = nullptr;
+    for (auto& gameObject : Scene::GetActiveScene()->GetGameObjects())
+    {
+        camera = gameObject->GetComponent<Camera>();
+        if (camera != nullptr)
+            break;
+    }
 
     uint32_t currentSwapchainImageIndex = m_Swapchain.GetCurrentImageIndex();
     vk::Extent2D surfaceExtent = m_Swapchain.GetExtent();
@@ -111,20 +123,6 @@ void RenderSystem::Update()
 
     vk::Result result = m_Device.Get().waitForFences({inFlightFence}, true, UINT64_MAX);
     m_Device.Get().resetFences({inFlightFence});
-
-    float totalTime = GetTotalTime();
-    Matrix4x4 camera = Matrix4x4::FromAxisAngle(Vector3::Right, math::constants::PI_4) *
-                       Matrix4x4::FromTranslation(Vector3::Up * 2.0f);
-    PushConstant pushConstant{
-        //        .model = Matrix4x4::CreateTranslation(Vector3::Forward * -2.0f) *
-        //                 Matrix4x4::CreateFromQuaternion(Quaternion::CreateFromAxisAngle(Vector3::Right, math::constants::PI_4)),
-        .model = Matrix4x4::FromAxisAngle(Vector3::Up, -totalTime) *
-                 Matrix4x4::FromTranslation(Vector3::Forward * 2.0f) *
-                 camera.Inverse(),
-        .proj = Matrix4x4::CreatePerspectiveFieldOfViewLH(math::constants::PI / 3.0f,
-                                                          (float)surfaceExtent.width / (float)surfaceExtent.height,
-                                                          0.1f, 100.0f)
-    };
 
     m_CommandPool.Reset(currentSwapchainImageIndex);
 
@@ -162,10 +160,22 @@ void RenderSystem::Update()
     vk::Rect2D scissor({0, 0}, surfaceExtent);
     commandBuffer.setScissor(0, {scissor});
 
-    std::array<PushConstant, 1> pushConstantData = {pushConstant};
-    commandBuffer.pushConstants<PushConstant>(*m_PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, pushConstantData);
+    for (auto& gameObject : Scene::GetActiveScene()->GetGameObjects())
+    {
+        if (gameObject == camera->GetGameObject())
+            continue;
 
-    commandBuffer.draw(36, 1, 0, 0);
+        PushConstant pushConstant
+        {
+            .m = gameObject->transform->GetLocalToWorldMatrix(),
+            .v = camera->GetViewMatrix(),
+            .p = camera->GetProjectionMatrix()
+        };
+        std::array<PushConstant, 1> pushConstantData = {pushConstant};
+        commandBuffer.pushConstants<PushConstant>(*m_PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, pushConstantData);
+
+        commandBuffer.draw(36, 1, 0, 0);
+    }
 
     commandBuffer.endRenderPass();
 
@@ -399,7 +409,7 @@ void RenderSystem::CreateRenderPass()
 void RenderSystem::CreatePipeline()
 {
     // TODO: this is temporary now!
-    vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, 4 * 4 * 2 * sizeof(float));
+    vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstant));
     std::vector<vk::PushConstantRange> pushConstantRanges = {pushConstantRange};
 
     // TODO: change this when we have a working descriptor management system
