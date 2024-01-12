@@ -28,7 +28,7 @@ jobs:
           windows-latest,
           macos-latest
         ]
-        build_type: [Debug, Release]
+        build_type: [Debug, RelWithDebInfo, MinSizeRel, Release]
         c_compiler: [
           gcc, 
           clang,
