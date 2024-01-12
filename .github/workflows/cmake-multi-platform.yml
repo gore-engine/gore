@@ -77,15 +77,12 @@ jobs:
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
     - name: Install Vulkan SDK
-      uses: jakoch/install-vulkan-sdk-action@v1.0.0
+      uses: humbletim/install-vulkan-sdk@v1.1.1
       with:
-        # You can set the Vulkan SDK version to download.
-        # Defaults to latest version, if version not set.
-        vulkan_version: latest
-        optional_components: com.lunarg.vulkan.vma
-        install_runtime: true
+        version: latest
         cache: true
-        stripdown: true
+        quiet: true
+  
     
     - name: Install Clang-17 for C++20 support
       if: matrix.os == 'ubuntu-latest' && matrix.c_compiler == 'clang-17'
