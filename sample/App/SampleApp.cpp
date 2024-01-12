@@ -29,6 +29,16 @@ void SampleApp::Initialize()
 
     scene = new gore::Scene("MainScene");
 
+    gore::GameObject* cameraGameObject = scene->NewObject();
+    cameraGameObject->SetName("MainCamera");
+    gore::Camera* camera = cameraGameObject->AddComponent<gore::Camera>();
+    // by default the camera is perspective
+    camera->SetProjectionType(gore::Camera::ProjectionType::Perspective);
+
+    gore::Transform* cameraTransform = cameraGameObject->GetComponent<gore::Transform>();
+    cameraTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
+    cameraTransform->SetLocalPosition((gore::Vector3::Backward + gore::Vector3::Up) * 1.5f);
+
     gore::GameObject* gameObject = scene->NewObject();
     gameObject->SetName("TestObject");
     // This is a NO-OP because the GameObject automatically creates a Transform component when it is created.
