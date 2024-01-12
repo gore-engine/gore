@@ -10,6 +10,7 @@
 #include "Scene/Scene.h"
 #include "Object/GameObject.h"
 #include "Object/Transform.h"
+#include "Object/Camera.h"
 #include "Core/Log.h"
 
 #include "Scripts/TestComponent.h"
