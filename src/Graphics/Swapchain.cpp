@@ -180,9 +180,13 @@ void Swapchain::CreateSwapchain()
 
     for (uint32_t i = 0; i < m_ImageCount; ++i)
     {
+        m_Device->SetName(*reinterpret_cast<uint64_t*>(&m_SwapchainImages[i]), vk::Image::objectType, "Swapchain Image " + std::to_string(i));
         vk::ImageViewCreateInfo imageViewCreateInfo({}, m_SwapchainImages[i], vk::ImageViewType::e2D, m_Format.format, {}, {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
         m_SwapchainImageViews.emplace_back(m_Device->Get().createImageView(imageViewCreateInfo));
         m_ImageAcquiredFences.emplace_back(m_Device->Get().createFence({vk::FenceCreateFlagBits::eSignaled}));
+
+        m_Device->SetName(m_SwapchainImageViews[i], "Swapchain Image View " + std::to_string(i));
+        m_Device->SetName(m_ImageAcquiredFences[i], "Swapchain Image Acquired Fence " + std::to_string(i));
     }
 
     LOG(DEBUG, "Created Vulkan swapchain with %d images, size %dx%d\n", m_ImageCount, m_Extent.width, m_Extent.height);

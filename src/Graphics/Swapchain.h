@@ -12,7 +12,7 @@ class Swapchain
 {
 public:
     Swapchain();
-    explicit Swapchain(const Device& device, void* nativeWindowHandle, uint32_t imageCount, uint32_t width, uint32_t height);
+    Swapchain(const Device& device, void* nativeWindowHandle, uint32_t imageCount, uint32_t width, uint32_t height);
     Swapchain(Swapchain&& other) noexcept;
     ~Swapchain();
 
