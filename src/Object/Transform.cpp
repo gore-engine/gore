@@ -67,12 +67,14 @@ Quaternion Transform::GetLocalRotation() const
 
 void Transform::RotateAroundAxis(const Vector3& axis, float angle)
 {
-    m_LocalRotation = m_LocalRotation * Quaternion::CreateFromAxisAngle(axis, angle);
+    auto q = Quaternion::CreateFromAxisAngle(axis, angle);
+    m_LocalRotation = q * m_LocalRotation;
+    m_LocalPosition = static_cast<Vector3>(rtm::quat_mul_vector3(static_cast<Vector3::SIMDValueType>(m_LocalPosition), q)) + m_LocalPosition;
 }
 
 Matrix4x4 Transform::GetLocalToWorldMatrix() const
 {
-    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qvv(m_LocalPosition, m_LocalRotation, m_LocalScale));
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qvv(m_LocalRotation, m_LocalPosition, m_LocalScale));
 }
 
 Matrix4x4 Transform::GetLocalToWorldMatrixIgnoreScale() const
