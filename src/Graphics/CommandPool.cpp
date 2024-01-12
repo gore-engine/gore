@@ -124,8 +124,6 @@ CommandPool::Pool::Pool(CommandPool::Pool&& other) noexcept :
 
 CommandPool::Pool::~Pool()
 {
-    if (commandBuffers.empty())
-        return;
 }
 
 } // namespace gore::gfx
