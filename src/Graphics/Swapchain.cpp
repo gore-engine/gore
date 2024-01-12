@@ -50,8 +50,8 @@ Swapchain::Swapchain(const Device& device, void* nativeWindowHandle, uint32_t im
 Swapchain::Swapchain(Swapchain&& other) noexcept :
     m_Device(other.m_Device),
     m_NativeWindowHandle(other.m_NativeWindowHandle),
-    m_Surface(vk::raii::exchange(other.m_Surface, {nullptr})),
-    m_Swapchain(vk::raii::exchange(other.m_Swapchain, {nullptr})),
+    m_Surface(std::move(other.m_Surface)),
+    m_Swapchain(std::move(other.m_Swapchain)),
     m_Format(other.m_Format),
     m_Extent(other.m_Extent),
     m_ImageCount(other.m_ImageCount),
@@ -203,6 +203,16 @@ void Swapchain::CreateSwapchain()
 
 void Swapchain::Clear()
 {
+    // it seems vkDeviceWaitIdle is somewhat buggy on some drivers
+    std::vector<vk::Fence> fences;
+    fences.reserve(m_ImageAcquiredFences.size());
+    for (const auto& fence : m_ImageAcquiredFences)
+    {
+        fences.emplace_back(*fence);
+    }
+    vk::Result res = m_Device->Get().waitForFences(fences, true, UINT64_MAX);
+    VK_CHECK_RESULT(res);
+
     m_Device->WaitIdle();
 
     m_SwapchainImages.clear();
@@ -258,10 +268,12 @@ bool Swapchain::Present(const std::vector<vk::Semaphore>& waitSemaphores, const 
         Recreate(m_ImageCount, m_Extent.width, m_Extent.height);
         recreated = true;
     }
-
-    // this could potentially hurt performance
-    res = m_Device->Get().waitForFences({imageAcquiredFence}, true, UINT64_MAX);
-    VK_CHECK_RESULT(res);
+    else
+    {
+        // this could potentially hurt performance
+        res = m_Device->Get().waitForFences({imageAcquiredFence}, true, UINT64_MAX);
+        VK_CHECK_RESULT(res);
+    }
 
     return recreated;
 }

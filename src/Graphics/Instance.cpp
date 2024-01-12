@@ -317,12 +317,10 @@ VkBool32 Instance::DebugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBi
         {
             if (i != 0)
                 logStream << "             ";
-            logStream << "[" << vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType))
-                      << "] (0x" << std::hex << pCallbackData->pObjects[i].objectHandle << std::dec << ")";
             if (pCallbackData->pObjects[i].pObjectName)
-                logStream << " " << pCallbackData->pObjects[i].pObjectName << std::endl;
-            else
-                logStream << std::endl;
+                logStream << "\"" << pCallbackData->pObjects[i].pObjectName << "\" ";
+            logStream << "[" << vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType))
+                      << "] (0x" << std::hex << pCallbackData->pObjects[i].objectHandle << std::dec << ")" << std::endl;
         }
     }
 
