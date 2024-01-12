@@ -356,4 +356,32 @@ CommandPool Device::CreateCommandPool(uint32_t queueFamilyIndex) const
     return gfx::CommandPool(*this, queueFamilyIndex);
 }
 
+void Device::SetName(uint64_t objectHandle, vk::ObjectType objectType, const std::string& name) const
+{
+#ifdef ENGINE_DEBUG
+
+    bool hasDebugUtils = false;
+    bool hasDebugReport = false;
+
+#if defined(VK_EXT_debug_utils)
+    hasDebugUtils = m_Instance->HasExtension(VulkanInstanceExtension::kVK_EXT_debug_utils);
+#endif
+
+#if defined(VK_EXT_debug_marker)
+    hasDebugReport = HasExtension(VulkanDeviceExtension::kVK_EXT_debug_marker);
+#endif
+
+    if (hasDebugUtils)
+    {
+        vk::DebugUtilsObjectNameInfoEXT nameInfoUtils(objectType, objectHandle, name.c_str());
+        m_Device.setDebugUtilsObjectNameEXT(nameInfoUtils);
+    }
+    else if (hasDebugReport)
+    {
+        vk::DebugMarkerObjectNameInfoEXT nameInfoMarker(debugReportObjectType(objectType), objectHandle, name.c_str());
+        m_Device.debugMarkerSetObjectNameEXT(nameInfoMarker);
+    }
+#endif
+}
+
 } // namespace gore::gfx

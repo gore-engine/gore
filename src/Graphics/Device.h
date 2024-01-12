@@ -4,9 +4,17 @@
 #include "Graphics/Vulkan/VulkanExtensions.h"
 
 #include <vector>
+#include <type_traits>
 
 namespace gore::gfx
 {
+
+template <typename T>
+concept VulkanRAIIType = requires {
+    typename T::CType;
+    typename T::CppType;
+    { T::objectType } -> std::same_as<const vk::ObjectType&>;
+};
 
 class Instance;
 class Device;
@@ -65,6 +73,17 @@ public:
 
     [[nodiscard]] Swapchain CreateSwapchain(void* nativeWindowHandle, uint32_t imageCount, uint32_t width, uint32_t height) const;
     [[nodiscard]] CommandPool CreateCommandPool(uint32_t queueFamilyIndex) const;
+
+    template<typename VkRAIIObjectType>
+    void SetName(const VkRAIIObjectType& object, const std::string& name) const
+    {
+        static_assert(VulkanRAIIType<VkRAIIObjectType>, "<object> must be a Vulkan RAII type.");
+#ifdef ENGINE_DEBUG
+        auto vkObject = static_cast<VkRAIIObjectType::CType>(*object);
+        SetName(reinterpret_cast<uint64_t>(vkObject), VkRAIIObjectType::objectType, name);
+#endif
+    }
+    void SetName(uint64_t objectHandle, vk::ObjectType objectType, const std::string& name) const;
 
 private:
     const Instance* m_Instance;

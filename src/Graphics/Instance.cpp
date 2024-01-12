@@ -7,6 +7,7 @@
 #include "Core/Log.h"
 
 #include <vector>
+#include <cstdlib>
 
 namespace gore::gfx
 {
@@ -35,23 +36,28 @@ Instance::Instance(App* app) :
     // Layers
     std::vector<vk::LayerProperties> layerProperties = m_Context.enumerateInstanceLayerProperties();
 
+    const std::string validationLayerName("VK_LAYER_KHRONOS_validation");
+    // const std::string renderDocLayerName("VK_LAYER_RENDERDOC_Capture");
+
     std::vector<const char*> requestedLayers = {
 #if ENGINE_DEBUG
-        "VK_LAYER_KHRONOS_validation",
+        validationLayerName.c_str(),
 #endif
     };
 
     m_ValidationEnabled = false;
     std::vector<const char*> enabledLayers;
-    for (const auto& requestedLayer : requestedLayers)
+    for (const auto& layerProperty : layerProperties)
     {
-        auto it = std::find_if(layerProperties.begin(), layerProperties.end(), [&requestedLayer](const vk::LayerProperties& layer)
-                               { return strcmp(layer.layerName, requestedLayer) == 0; });
+        auto it = std::find_if(requestedLayers.begin(), requestedLayers.end(), [&layerProperty](const char* layerName)
+                               { return strcmp(layerName, layerProperty.layerName) == 0; });
 
-        if (it != layerProperties.end())
+        std::string layerName(&*layerProperty.layerName.begin());
+
+        if (it != requestedLayers.end())
         {
-            enabledLayers.push_back(it->layerName);
-            m_ValidationEnabled = m_ValidationEnabled || strcmp(it->layerName, "VK_LAYER_KHRONOS_validation") == 0;
+            enabledLayers.push_back(*it);
+            m_ValidationEnabled = m_ValidationEnabled || layerName == validationLayerName;
         }
     }
 

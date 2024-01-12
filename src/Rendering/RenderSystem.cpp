@@ -83,6 +83,7 @@ void RenderSystem::Initialize()
     m_Device = gfx::Device(GetBestDevice(physicalDevices));
 
     m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), 3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+    m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
 
     CreateDepthBuffer();
     LoadShader("sample/cube", "vs", "ps");
@@ -92,6 +93,9 @@ void RenderSystem::Initialize()
     GetQueues();
 
     m_CommandPool = m_Device.CreateCommandPool(m_GraphicsQueueFamilyIndex);
+    m_Device.SetName(m_CommandPool.Get(0), "CommandPool 0");
+    m_Device.SetName(m_CommandPool.Get(1), "CommandPool 1");
+    m_Device.SetName(m_CommandPool.Get(2), "CommandPool 2");
 
     CreateSynchronization();
 }
@@ -217,6 +221,8 @@ void RenderSystem::Update()
         CreateDepthBuffer();
         CreateFramebuffers();
         CreateSynchronization();
+
+        m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
     }
 }
 
@@ -307,6 +313,8 @@ void RenderSystem::CreateDepthBuffer()
     VkResult res = vmaCreateImage(m_Device.GetVmaAllocator(), cImageCreateInfo, &allocationCreateInfo, depthImage, &m_DepthImageAllocation, nullptr);
     VK_CHECK_RESULT(res);
 
+    m_Device.SetName(reinterpret_cast<uint64_t>(*depthImage), vk::ObjectType::eImage, "Depth Buffer");
+
     vk::ImageViewCreateInfo imageViewCreateInfo({},
                                                 m_DepthImage,
                                                 vk::ImageViewType::e2D,
@@ -315,6 +323,8 @@ void RenderSystem::CreateDepthBuffer()
                                                 {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1});
 
     m_DepthImageView = m_Device.Get().createImageView(imageViewCreateInfo);
+
+    m_Device.SetName(m_DepthImageView, "Depth Buffer ImageView");
 }
 
 void RenderSystem::LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint)
@@ -344,6 +354,8 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
     m_CubeVertexShader           = m_Device.Get().createShaderModule(vertexShaderCreateInfo);
     m_CubeVertexShaderEntryPoint = vertexEntryPoint;
 
+    m_Device.SetName(m_CubeVertexShader, "Cube Vertex Shader");
+
     std::filesystem::path fragmentShaderPath = getShaderFile(vk::ShaderStageFlagBits::eFragment);
 
     std::vector<char> fragmentShaderBinary = FileSystem::ReadAllBinary(fragmentShaderPath);
@@ -358,6 +370,8 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
 
     m_CubeFragmentShader           = m_Device.Get().createShaderModule(fragmentShaderCreateInfo);
     m_CubeFragmentShaderEntryPoint = fragmentEntryPoint;
+
+    m_Device.SetName(m_CubeFragmentShader, "Cube Fragment Shader");
 }
 
 void RenderSystem::CreateRenderPass()
@@ -404,6 +418,8 @@ void RenderSystem::CreateRenderPass()
     vk::RenderPassCreateInfo renderPassCreateInfo({}, attachments, subpasses, dependencies);
 
     m_RenderPass = m_Device.Get().createRenderPass(renderPassCreateInfo);
+
+    m_Device.SetName(m_RenderPass, "Cube Color Pass");
 }
 
 void RenderSystem::CreatePipeline()
@@ -461,6 +477,8 @@ void RenderSystem::CreatePipeline()
                                                       -1);     // basePipelineIndex
 
     m_Pipeline = m_Device.Get().createGraphicsPipeline(nullptr, pipelineCreateInfo);
+
+    m_Device.SetName(m_Pipeline, "Cube Pipeline");
 }
 
 void RenderSystem::CreateFramebuffers()
@@ -477,6 +495,8 @@ void RenderSystem::CreateFramebuffers()
         std::vector<vk::ImageView> attachments = {*swapchainImageViews[i], *m_DepthImageView};
         vk::FramebufferCreateInfo framebufferCreateInfo({}, *m_RenderPass, attachments, swapchainExtent.width, swapchainExtent.height, 1);
         m_Framebuffers.emplace_back(m_Device.Get().createFramebuffer(framebufferCreateInfo));
+
+        m_Device.SetName(m_Framebuffers[i], "Cube Framebuffer " + std::to_string(i));
     }
 
 }
@@ -511,6 +531,9 @@ void RenderSystem::GetQueues()
 
     m_GraphicsQueue = m_Device.Get().getQueue(m_GraphicsQueueFamilyIndex, 0);
     m_PresentQueue  = m_Device.Get().getQueue(m_PresentQueueFamilyIndex, 0);
+
+    m_Device.SetName(m_GraphicsQueue, "Graphics Queue");
+    m_Device.SetName(m_PresentQueue, "Present Queue");
 }
 
 const gfx::PhysicalDevice& RenderSystem::GetBestDevice(const std::vector<gfx::PhysicalDevice>& devices) const
@@ -550,6 +573,9 @@ void RenderSystem::CreateSynchronization()
     {
         m_RenderFinishedSemaphores.emplace_back(m_Device.Get().createSemaphore({}));
         m_InFlightFences.emplace_back(m_Device.Get().createFence({vk::FenceCreateFlagBits::eSignaled}));
+
+        m_Device.SetName(m_RenderFinishedSemaphores[i], "Render Finished Semaphore " + std::to_string(i));
+        m_Device.SetName(m_InFlightFences[i], "In Flight Fence " + std::to_string(i));
     }
 }
 
