@@ -29,7 +29,7 @@ Matrix4x4 Camera::GetProjectionMatrix() const
 {
     return m_ProjectionType == ProjectionType::Perspective ?
                Matrix4x4::CreatePerspectiveFieldOfViewLH(m_PerspectiveFOV, m_AspectRatio, m_Near, m_Far) :
-               Matrix4x4::CreateOrthographicLH(DefaultOrthographicSize * DefaultAspectRatio, DefaultOrthographicSize, m_Near, m_Far);
+               Matrix4x4::CreateOrthographicLH(m_OrthographicSize * m_AspectRatio, m_OrthographicSize, m_Near, m_Far);
 }
 
 Matrix4x4 Camera::GetViewMatrix() const
