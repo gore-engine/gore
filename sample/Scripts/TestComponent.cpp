@@ -28,5 +28,5 @@ void TestComponent::Update()
 
     transform->RotateAroundAxis(gore::Vector3::Up, deltaTime);
 
-    LOG_STREAM(DEBUG) << "TestComponent position:" << transform->GetLocalPosition() << " Quaternion: " << transform->GetLocalRotation() << std::endl;
+    // LOG_STREAM(DEBUG) << "TestComponent position:" << transform->GetLocalPosition() << " Quaternion: " << transform->GetLocalRotation() << std::endl;
 }

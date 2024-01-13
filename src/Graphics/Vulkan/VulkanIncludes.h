@@ -38,10 +38,6 @@
 #endif
 #include <vk_mem_alloc.h>
 
-#ifdef ERROR
-    #undef ERROR
-#endif
-
 #if !ENGINE_DEBUG
 
     #define VK_CHECK_RESULT(x) \
