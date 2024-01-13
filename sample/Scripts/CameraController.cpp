@@ -39,6 +39,8 @@ void CameraController::Update()
     gore::Vector3 right = transform->GetLocalToWorldMatrix().GetRight();
     gore::Vector3 up    = gore::Vector3::Up;
 
+    right = up.Cross(front).Normalized();
+
     if (m_Keyboard->KeyState(gore::KeyCode::W))
         transform->SetLocalPosition(transform->GetLocalPosition() + front * deltaTime * speed);
     if (m_Keyboard->KeyState(gore::KeyCode::S))
@@ -59,28 +61,36 @@ void CameraController::Update()
 
     if (mouseRight)
     {
-        float mouseSensitivity = 0.001f;
-        m_Yaw += m_Mouse->GetDelta(gore::MouseMovementCode::X) * mouseSensitivity;
-        m_Pitch += m_Mouse->GetDelta(gore::MouseMovementCode::Y) * mouseSensitivity;
-
-        if (m_Pitch > gore::math::constants::PI_3 * 2.0f)
-            m_Pitch = gore::math::constants::PI_3 * 2.0f;
-
-        if (m_Pitch < -gore::math::constants::PI_3 * 2.0f)
-            m_Pitch = -gore::math::constants::PI_3 * 2.0f;
-
-        if (m_Yaw > gore::math::constants::PI)
-            m_Yaw -= gore::math::constants::PI * 2.0f;
-
-        if (m_Yaw < -gore::math::constants::PI)
-            m_Yaw += gore::math::constants::PI * 2.0f;
-
-        // Considering what we really want, we should use extrinsic rotations (i.e. global rotation axes)
-        gore::Quaternion yawRotation   = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Up, m_Yaw);
-        gore::Quaternion pitchRotation = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Right, m_Pitch);
-
-        transform->SetLocalRotation(yawRotation * pitchRotation);
-
-        LOG_STREAM(DEBUG) << "Yaw: " << m_Yaw << " Pitch: " << m_Pitch << std::endl;
+        float mouseSensitivity = 1.0f;
+        m_Yaw += m_Mouse->GetDelta(gore::MouseMovementCode::X) * mouseSensitivity * deltaTime;
+        m_Pitch += m_Mouse->GetDelta(gore::MouseMovementCode::Y) * mouseSensitivity * deltaTime;
     }
+
+    if (m_Keyboard->KeyState(gore::KeyCode::Right))
+        m_Yaw += deltaTime;
+    if (m_Keyboard->KeyState(gore::KeyCode::Left))
+        m_Yaw -= deltaTime;
+
+    if (m_Keyboard->KeyState(gore::KeyCode::Down))
+        m_Pitch += deltaTime;
+    if (m_Keyboard->KeyState(gore::KeyCode::Up))
+        m_Pitch -= deltaTime;
+
+    if (m_Pitch > gore::math::constants::PI_3)
+        m_Pitch = gore::math::constants::PI_3;
+
+    if (m_Pitch < -gore::math::constants::PI_3)
+        m_Pitch = -gore::math::constants::PI_3;
+
+    if (m_Yaw > gore::math::constants::PI)
+        m_Yaw -= gore::math::constants::PI * 2.0f;
+
+    if (m_Yaw < -gore::math::constants::PI)
+        m_Yaw += gore::math::constants::PI * 2.0f;
+
+
+    gore::Quaternion pitchRotation = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Right, m_Pitch);
+    gore::Quaternion yawRotation   = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Up, m_Yaw);
+
+    transform->SetLocalRotation(pitchRotation * yawRotation);
 }
