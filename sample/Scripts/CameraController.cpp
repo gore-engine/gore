@@ -1,8 +1,10 @@
 #include "TestComponent.h"
 #include "Object/GameObject.h"
+#include "Object/Camera.h"
 #include "Core/Log.h"
 #include "Core/Time.h"
 #include "Math/Constants.h"
+#include "Input/InputSystem.h"
 
 #include "CameraController.h"
 
@@ -23,8 +25,19 @@ CameraController::~CameraController()
 void CameraController::Start()
 {
     const gore::InputSystem* inputSystem = gore::InputSystem::Get();
-    m_Keyboard                           = inputSystem->GetKeyboard();
-    m_Mouse                              = inputSystem->GetMouse();
+
+    m_Keyboard = inputSystem->GetKeyboard();
+    m_Mouse    = inputSystem->GetMouse();
+
+    m_ActionMoveHorizontal = m_Keyboard->RegisterAction("MoveHorizontal", gore::KeyCode::D, gore::KeyCode::A);
+    m_ActionMoveVertical   = m_Keyboard->RegisterAction("MoveVertical", gore::KeyCode::W, gore::KeyCode::S);
+    m_ActionMoveUpDown     = m_Keyboard->RegisterAction("MoveUpDown", gore::KeyCode::E, gore::KeyCode::Q);
+
+    m_ActionAllowRotation = m_Mouse->RegisterAction("AllowRotation", gore::MouseButtonCode::Right);
+
+    m_ActionRotateHorizontal = m_Mouse->RegisterAction("RotateHorizontal", gore::MouseMovementCode::X);
+    m_ActionRotateVertical   = m_Mouse->RegisterAction("RotateVertical", gore::MouseMovementCode::Y);
+    m_ActionZoom             = m_Mouse->RegisterAction("Zoom", gore::MouseMovementCode::ScrollY);
 }
 
 void CameraController::Update()
@@ -42,29 +55,23 @@ void CameraController::Update()
 
     right = up.Cross(front).Normalized();
 
-    if (m_Keyboard->KeyState(gore::KeyCode::W))
-        transform->SetLocalPosition(transform->GetLocalPosition() + front * deltaTime * speed);
-    if (m_Keyboard->KeyState(gore::KeyCode::S))
-        transform->SetLocalPosition(transform->GetLocalPosition() - front * deltaTime * speed);
+    float speedModifier = 1.0f;
+    if (m_Keyboard->KeyState(gore::KeyCode::LeftShift))
+        speedModifier = 5.0f;
 
-    if (m_Keyboard->KeyState(gore::KeyCode::A))
-        transform->SetLocalPosition(transform->GetLocalPosition() - right * deltaTime * speed);
-    if (m_Keyboard->KeyState(gore::KeyCode::D))
-        transform->SetLocalPosition(transform->GetLocalPosition() + right * deltaTime * speed);
+    transform->SetLocalPosition(transform->GetLocalPosition() +
+                                deltaTime * speed * speedModifier * (m_ActionMoveHorizontal->Value() * right +
+                                                                     m_ActionMoveVertical->Value() * front +
+                                                                     m_ActionMoveUpDown->Value() * up));
 
-    if (m_Keyboard->KeyState(gore::KeyCode::Q))
-        transform->SetLocalPosition(transform->GetLocalPosition() - up * deltaTime * speed);
-    if (m_Keyboard->KeyState(gore::KeyCode::E))
-        transform->SetLocalPosition(transform->GetLocalPosition() + up * deltaTime * speed);
-
-    bool mouseRight = m_Mouse->ButtonState(gore::MouseButtonCode::Right);
+    bool mouseRight = m_ActionAllowRotation->Held();
     m_Mouse->SetCursorShow(!mouseRight);
 
-    if (mouseRight)
+    if (m_ActionAllowRotation->Held())
     {
         float mouseSensitivity = 0.001f;
-        m_Yaw += m_Mouse->GetDelta(gore::MouseMovementCode::X) * mouseSensitivity;
-        m_Pitch += m_Mouse->GetDelta(gore::MouseMovementCode::Y) * mouseSensitivity;
+        m_Yaw += m_ActionRotateHorizontal->Delta() * mouseSensitivity;
+        m_Pitch += m_ActionRotateVertical->Delta() * mouseSensitivity;
     }
 
     if (m_Keyboard->KeyState(gore::KeyCode::R))
@@ -94,5 +101,14 @@ void CameraController::Update()
 
     transform->SetLocalRotation(yawRotation * pitchRotation * rollRotation);
 
-//    transform->SetLocalRotation(gore::Quaternion::CreateFromYawPitchRoll(m_Yaw, m_Roll, -m_Pitch));
+    //    transform->SetLocalRotation(gore::Quaternion::CreateFromYawPitchRoll(m_Yaw, m_Roll, -m_Pitch));
+
+    gore::Camera* camera = m_GameObject->GetComponent<gore::Camera>();
+    float fov = camera->GetPerspectiveFOV();
+    fov += m_ActionZoom->Delta() * -0.1f;
+    if (fov < 0.1f)
+        fov = 0.1f;
+    if (fov > gore::math::constants::PI - 0.1f)
+        fov = gore::math::constants::PI - 0.1f;
+    camera->SetFOV(fov);
 }

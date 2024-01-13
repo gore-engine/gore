@@ -13,8 +13,18 @@ public:
     void Update() override;
 
 private:
-    const gore::Keyboard* m_Keyboard;
-    const gore::Mouse* m_Mouse;
+    gore::Keyboard* m_Keyboard;
+    gore::Mouse* m_Mouse;
+
+    gore::InputAction* m_ActionMoveHorizontal;
+    gore::InputAction* m_ActionMoveVertical;
+    gore::InputAction* m_ActionMoveUpDown;
+
+    gore::InputAction* m_ActionAllowRotation;
+
+    gore::InputAction* m_ActionRotateHorizontal;
+    gore::InputAction* m_ActionRotateVertical;
+    gore::InputAction* m_ActionZoom;
 
     float m_Yaw;
     float m_Pitch;
