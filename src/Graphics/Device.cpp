@@ -3,6 +3,7 @@
 #include "Device.h"
 #include "Instance.h"
 #include "Swapchain.h"
+#include "CommandPool.h"
 #include "Utils.h"
 
 #include "Core/App.h"
@@ -41,7 +42,7 @@ PhysicalDevice::PhysicalDevice(const Instance* instance, uint32_t index, vk::rai
 PhysicalDevice::PhysicalDevice(PhysicalDevice&& other) noexcept :
     m_Instance(other.m_Instance),
     m_Index(other.m_Index),
-    m_PhysicalDevice(vk::raii::exchange(other.m_PhysicalDevice, {nullptr}))
+    m_PhysicalDevice(std::move(other.m_PhysicalDevice))
 {
 }
 
@@ -60,7 +61,7 @@ PhysicalDevice& PhysicalDevice::operator=(PhysicalDevice&& other) noexcept
 {
     m_Instance          = other.m_Instance;
     m_Index             = other.m_Index;
-    m_PhysicalDevice    = vk::raii::exchange(other.m_PhysicalDevice, {nullptr});
+    m_PhysicalDevice    = std::move(other.m_PhysicalDevice);
 
     return *this;
 }
@@ -269,6 +270,8 @@ Device::Device(PhysicalDevice physicalDevice) :
     vk::DeviceCreateInfo deviceCreateInfo({}, queueCreateInfos, {}, enabledDeviceExtensions, &enabledFeatures);
     m_Device = pd.createDevice(deviceCreateInfo);
 
+    SetName(m_Device, properties.deviceName);
+
     LOG_STREAM(INFO) << "Created Vulkan device with \"" << properties.deviceName << "\"" << std::endl;
 
     // Create Vulkan Memory Allocator
@@ -296,7 +299,7 @@ Device::Device(PhysicalDevice physicalDevice) :
 Device::Device(Device&& other) noexcept :
     m_Instance(other.m_Instance),
     m_PhysicalDevice(std::move(other.m_PhysicalDevice)),
-    m_Device(vk::raii::exchange(other.m_Device, {nullptr})),
+    m_Device(std::move(other.m_Device)),
     m_DeviceApiVersion(other.m_DeviceApiVersion),
     m_EnabledDeviceExtensions(other.m_EnabledDeviceExtensions),
     m_VmaAllocator(std::exchange(other.m_VmaAllocator, VK_NULL_HANDLE)),
@@ -321,7 +324,7 @@ Device& Device::operator=(Device&& other) noexcept
 {
     m_Instance                  = other.m_Instance;
     m_PhysicalDevice            = std::move(other.m_PhysicalDevice);
-    m_Device                    = vk::raii::exchange(other.m_Device, {nullptr});
+    m_Device                    = std::move(other.m_Device);
     m_DeviceApiVersion          = other.m_DeviceApiVersion;
     m_EnabledDeviceExtensions   = other.m_EnabledDeviceExtensions;
     m_VmaAllocator              = std::exchange(other.m_VmaAllocator, VK_NULL_HANDLE);
@@ -348,6 +351,39 @@ void Device::WaitIdle() const
 Swapchain Device::CreateSwapchain(void* nativeWindowHandle, uint32_t imageCount, uint32_t width, uint32_t height) const
 {
     return gfx::Swapchain(*this, nativeWindowHandle, imageCount, width, height);
+}
+
+CommandPool Device::CreateCommandPool(uint32_t queueFamilyIndex) const
+{
+    return gfx::CommandPool(*this, queueFamilyIndex);
+}
+
+void Device::SetName(uint64_t objectHandle, vk::ObjectType objectType, const std::string& name) const
+{
+#ifdef ENGINE_DEBUG
+
+    bool hasDebugUtils = false;
+    bool hasDebugReport = false;
+
+#if defined(VK_EXT_debug_utils)
+    hasDebugUtils = m_Instance->HasExtension(VulkanInstanceExtension::kVK_EXT_debug_utils);
+#endif
+
+#if defined(VK_EXT_debug_marker)
+    hasDebugReport = HasExtension(VulkanDeviceExtension::kVK_EXT_debug_marker);
+#endif
+
+    if (hasDebugUtils)
+    {
+        vk::DebugUtilsObjectNameInfoEXT nameInfoUtils(objectType, objectHandle, name.c_str());
+        m_Device.setDebugUtilsObjectNameEXT(nameInfoUtils);
+    }
+    else if (hasDebugReport)
+    {
+        vk::DebugMarkerObjectNameInfoEXT nameInfoMarker(debugReportObjectType(objectType), objectHandle, name.c_str());
+        m_Device.debugMarkerSetObjectNameEXT(nameInfoMarker);
+    }
+#endif
 }
 
 } // namespace gore::gfx

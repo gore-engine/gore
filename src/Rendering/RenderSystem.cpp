@@ -56,8 +56,7 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_PresentQueue(nullptr),
     m_PresentQueueFamilyIndex(0),
     // Command Pool & Command Buffer
-    m_CommandPools(),
-    m_CommandBuffers(),
+    m_CommandPool(),
     // Synchronization
     m_RenderFinishedSemaphores(),
     m_InFlightFences(),
@@ -84,21 +83,27 @@ void RenderSystem::Initialize()
     m_Device = gfx::Device(GetBestDevice(physicalDevices));
 
     m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), 3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+    m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
+
     CreateDepthBuffer();
     LoadShader("sample/cube", "vs", "ps");
     CreateRenderPass();
     CreatePipeline();
     CreateFramebuffers();
     GetQueues();
-    CreateCommandPools();
+
+    m_CommandPool = m_Device.CreateCommandPool(m_GraphicsQueueFamilyIndex);
+    m_Device.SetName(m_CommandPool.Get(0), "CommandPool 0");
+    m_Device.SetName(m_CommandPool.Get(1), "CommandPool 1");
+    m_Device.SetName(m_CommandPool.Get(2), "CommandPool 2");
+
     CreateSynchronization();
 }
 
 struct PushConstant
 {
     Matrix4x4 m;
-    Matrix4x4 v;
-    Matrix4x4 p;
+    Matrix4x4 vp;
 };
 
 void RenderSystem::Update()
@@ -122,10 +127,9 @@ void RenderSystem::Update()
     vk::Result result = m_Device.Get().waitForFences({inFlightFence}, true, UINT64_MAX);
     m_Device.Get().resetFences({inFlightFence});
 
-    vk::raii::CommandPool& commandPool = m_CommandPools[currentSwapchainImageIndex];
-    commandPool.reset({});
+    m_CommandPool.Reset(currentSwapchainImageIndex);
 
-    vk::raii::CommandBuffer& commandBuffer = m_CommandBuffers[currentSwapchainImageIndex];
+    const vk::raii::CommandBuffer& commandBuffer = m_CommandPool.GetCommandBuffer(currentSwapchainImageIndex);
 
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     commandBuffer.begin(beginInfo);
@@ -146,7 +150,7 @@ void RenderSystem::Update()
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eEarlyFragmentTests, {}, {}, {}, depthImageMemoryBarriers);
 
     vk::ClearValue clearValueColor(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
-    vk::ClearValue clearValueDepth(vk::ClearDepthStencilValue(1.0f, 0));
+    vk::ClearValue clearValueDepth(vk::ClearDepthStencilValue(0.0f, 0));
     std::vector<vk::ClearValue> clearValues = {clearValueColor, clearValueDepth};
     vk::RenderPassBeginInfo renderPassBeginInfo(*m_RenderPass, *m_Framebuffers[currentSwapchainImageIndex], {{0, 0}, surfaceExtent}, clearValues);
     commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
@@ -167,8 +171,7 @@ void RenderSystem::Update()
         PushConstant pushConstant
         {
             .m = gameObject->transform->GetLocalToWorldMatrix(),
-            .v = camera->GetViewMatrix(),
-            .p = camera->GetProjectionMatrix()
+            .vp = camera->GetViewProjectionMatrix()
         };
         std::array<PushConstant, 1> pushConstantData = {pushConstant};
         commandBuffer.pushConstants<PushConstant>(*m_PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, pushConstantData);
@@ -216,6 +219,8 @@ void RenderSystem::Update()
         CreateDepthBuffer();
         CreateFramebuffers();
         CreateSynchronization();
+
+        m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
     }
 }
 
@@ -306,6 +311,8 @@ void RenderSystem::CreateDepthBuffer()
     VkResult res = vmaCreateImage(m_Device.GetVmaAllocator(), cImageCreateInfo, &allocationCreateInfo, depthImage, &m_DepthImageAllocation, nullptr);
     VK_CHECK_RESULT(res);
 
+    m_Device.SetName(reinterpret_cast<uint64_t>(*depthImage), vk::ObjectType::eImage, "Depth Buffer");
+
     vk::ImageViewCreateInfo imageViewCreateInfo({},
                                                 m_DepthImage,
                                                 vk::ImageViewType::e2D,
@@ -314,6 +321,8 @@ void RenderSystem::CreateDepthBuffer()
                                                 {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1});
 
     m_DepthImageView = m_Device.Get().createImageView(imageViewCreateInfo);
+
+    m_Device.SetName(m_DepthImageView, "Depth Buffer ImageView");
 }
 
 void RenderSystem::LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint)
@@ -343,6 +352,8 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
     m_CubeVertexShader           = m_Device.Get().createShaderModule(vertexShaderCreateInfo);
     m_CubeVertexShaderEntryPoint = vertexEntryPoint;
 
+    m_Device.SetName(m_CubeVertexShader, "Cube Vertex Shader");
+
     std::filesystem::path fragmentShaderPath = getShaderFile(vk::ShaderStageFlagBits::eFragment);
 
     std::vector<char> fragmentShaderBinary = FileSystem::ReadAllBinary(fragmentShaderPath);
@@ -357,6 +368,8 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
 
     m_CubeFragmentShader           = m_Device.Get().createShaderModule(fragmentShaderCreateInfo);
     m_CubeFragmentShaderEntryPoint = fragmentEntryPoint;
+
+    m_Device.SetName(m_CubeFragmentShader, "Cube Fragment Shader");
 }
 
 void RenderSystem::CreateRenderPass()
@@ -403,6 +416,8 @@ void RenderSystem::CreateRenderPass()
     vk::RenderPassCreateInfo renderPassCreateInfo({}, attachments, subpasses, dependencies);
 
     m_RenderPass = m_Device.Get().createRenderPass(renderPassCreateInfo);
+
+    m_Device.SetName(m_RenderPass, "Cube Color Pass");
 }
 
 void RenderSystem::CreatePipeline()
@@ -428,7 +443,7 @@ void RenderSystem::CreatePipeline()
     vk::PipelineViewportStateCreateInfo viewportStateCreateInfo({}, 1, nullptr, 1, nullptr);
     vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo({}, false, false, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise, false, 0.0f, 0.0f, 0.0f, 1.0f);
     vk::PipelineMultisampleStateCreateInfo multisampleStateCreateInfo({}, vk::SampleCountFlagBits::e1, false, 0.0f, nullptr, false, false);
-    vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo({}, true, true, vk::CompareOp::eLess, false, false, {}, {}, 0.0f, 1.0f);
+    vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo({}, true, true, vk::CompareOp::eGreaterOrEqual, false, false, {}, {}, 0.0f, 1.0f);
 
     vk::PipelineColorBlendAttachmentState colorBlendAttachmentState(false,
                                                                     vk::BlendFactor::eOne,
@@ -460,6 +475,8 @@ void RenderSystem::CreatePipeline()
                                                       -1);     // basePipelineIndex
 
     m_Pipeline = m_Device.Get().createGraphicsPipeline(nullptr, pipelineCreateInfo);
+
+    m_Device.SetName(m_Pipeline, "Cube Pipeline");
 }
 
 void RenderSystem::CreateFramebuffers()
@@ -476,6 +493,8 @@ void RenderSystem::CreateFramebuffers()
         std::vector<vk::ImageView> attachments = {*swapchainImageViews[i], *m_DepthImageView};
         vk::FramebufferCreateInfo framebufferCreateInfo({}, *m_RenderPass, attachments, swapchainExtent.width, swapchainExtent.height, 1);
         m_Framebuffers.emplace_back(m_Device.Get().createFramebuffer(framebufferCreateInfo));
+
+        m_Device.SetName(m_Framebuffers[i], "Cube Framebuffer " + std::to_string(i));
     }
 
 }
@@ -510,21 +529,9 @@ void RenderSystem::GetQueues()
 
     m_GraphicsQueue = m_Device.Get().getQueue(m_GraphicsQueueFamilyIndex, 0);
     m_PresentQueue  = m_Device.Get().getQueue(m_PresentQueueFamilyIndex, 0);
-}
 
-void RenderSystem::CreateCommandPools()
-{
-    uint32_t swapchainImageCount = m_Swapchain.GetImageCount();
-    m_CommandPools.reserve(swapchainImageCount);
-    m_CommandBuffers.reserve(swapchainImageCount);
-    vk::CommandPoolCreateInfo commandPoolCreateInfo({}, m_GraphicsQueueFamilyIndex);
-    for (uint32_t i = 0; i < swapchainImageCount; ++i)
-    {
-        m_CommandPools.emplace_back(m_Device.Get().createCommandPool(commandPoolCreateInfo));
-        std::vector<vk::raii::CommandBuffer> buffers = m_Device.Get().allocateCommandBuffers({*m_CommandPools[i], vk::CommandBufferLevel::ePrimary, 1});
-        m_CommandBuffers.emplace_back(nullptr);
-        m_CommandBuffers[i].swap(buffers[0]);
-    }
+    m_Device.SetName(m_GraphicsQueue, "Graphics Queue");
+    m_Device.SetName(m_PresentQueue, "Present Queue");
 }
 
 const gfx::PhysicalDevice& RenderSystem::GetBestDevice(const std::vector<gfx::PhysicalDevice>& devices) const
@@ -564,6 +571,9 @@ void RenderSystem::CreateSynchronization()
     {
         m_RenderFinishedSemaphores.emplace_back(m_Device.Get().createSemaphore({}));
         m_InFlightFences.emplace_back(m_Device.Get().createFence({vk::FenceCreateFlagBits::eSignaled}));
+
+        m_Device.SetName(m_RenderFinishedSemaphores[i], "Render Finished Semaphore " + std::to_string(i));
+        m_Device.SetName(m_InFlightFences[i], "In Flight Fence " + std::to_string(i));
     }
 }
 

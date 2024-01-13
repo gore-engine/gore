@@ -171,23 +171,23 @@ Matrix4x4 Matrix4x4::CreatePerspectiveFieldOfViewLH(float fov, float aspectRatio
     float CosFov = cosf(fov / 2);
     float Height = CosFov / SinFov;
     float Width  = Height / aspectRatio;
-    float fRange = farPlane / (farPlane - nearPlane);
+    float fRange = -nearPlane / (farPlane - nearPlane);
 
     return static_cast<Matrix4x4>(SIMDValueType(rtm::matrix_set(
         rtm::vector_set(Width, 0.0f, 0.0f, 0.0f),
         rtm::vector_set(0.0f, Height, 0.0f, 0.0f),
         rtm::vector_set(0.0f, 0.0f, fRange, 1.0f),
-        rtm::vector_set(0.0f, 0.0f, -fRange * nearPlane, 0.0f))));
+        rtm::vector_set(0.0f, 0.0f, -fRange * farPlane, 0.0f))));
 }
 Matrix4x4 Matrix4x4::CreateOrthographicLH(float width, float height, float zNearPlane, float zFarPlane) noexcept
 {
-    float fRange = 1.0f / (zFarPlane - zNearPlane);
+    float fRange = 1.0f / (zNearPlane - zFarPlane);
 
     return static_cast<Matrix4x4>(rtm::matrix_set(
         rtm::vector_set(2.0f / width, 0.0f, 0.0f, 0.0f),
         rtm::vector_set(0.0f, 2.0f / height, 0.0f, 0.0f),
         rtm::vector_set(0.0f, 0.0f, fRange, 0.0f),
-        rtm::vector_set(0.0f, 0.0f, -fRange * zNearPlane, 1.0f)));
+        rtm::vector_set(0.0f, 0.0f, fRange * zFarPlane, 1.0f)));
 }
 
 } // namespace gore
