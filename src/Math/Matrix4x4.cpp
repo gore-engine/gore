@@ -181,7 +181,7 @@ Matrix4x4 Matrix4x4::CreatePerspectiveFieldOfViewLH(float fov, float aspectRatio
 }
 Matrix4x4 Matrix4x4::CreateOrthographicLH(float width, float height, float zNearPlane, float zFarPlane) noexcept
 {
-    float fRange = 1.0f / (zNearPlane - zFarPlane);
+    float fRange = 1.0f / (zFarPlane - zNearPlane);
 
     return static_cast<Matrix4x4>(rtm::matrix_set(
         rtm::vector_set(2.0f / width, 0.0f, 0.0f, 0.0f),
