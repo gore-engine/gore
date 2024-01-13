@@ -16,11 +16,6 @@
         ::gore::Logger::Default().Log(::gore::LogLevel::LEVEL, __FILE__, __LINE__, __VA_ARGS__); \
     } while (false)
 
-// windows.h, sigh...
-#ifdef ERROR
-#undef ERROR
-#endif
-
 namespace gore
 {
 

@@ -2,10 +2,6 @@
 
 #include <string>
 
-#ifdef None // X11 defines this
-    #undef None
-#endif
-
 namespace gore::gfx
 {
 
