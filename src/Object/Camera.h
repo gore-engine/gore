@@ -7,6 +7,7 @@ namespace gore
 {
 
 struct Matrix4x4;
+class Window;
 
 ENGINE_CLASS(Camera) final : public Component
 {
@@ -25,6 +26,9 @@ public:
 
     // clang-format off
     // properties
+    [[nodiscard]] Window* GetWindow() const { return m_Window; }
+    void SetWindow(Window* window) { m_Window = window; }
+
     [[nodiscard]] float GetPerspectiveFOV() const { return m_PerspectiveFOV; }
     void SetFOV(float fov) { m_PerspectiveFOV = fov; }
 
@@ -40,14 +44,15 @@ public:
     void SetProjectionType(ProjectionType projectionType) { m_ProjectionType = projectionType; }
 
     [[nodiscard]] float GetPerspectiveAspectRatio() const { return m_AspectRatio; }
-    void SetAspectRatio(float aspectRatio) { m_AspectRatio = aspectRatio; }
+    void SetAspectRatio(float aspectRatio);
+    void ResetAspectRatio();
     // clang-format on
 
 public:
     NON_COPYABLE(Camera);
 
     Camera() = delete;
-    explicit Camera(GameObject * gameObject) noexcept;
+    explicit Camera(GameObject* gameObject) noexcept;
     ~Camera() override = default;
 
     void Start() override;
@@ -62,6 +67,17 @@ public:
     static const ProjectionType DefaultProjectionType;
 
 private:
+    enum class AspectRatioMode
+    {
+        FollowWindow,
+        Custom
+    };
+
+private:
+    Window* m_Window;
+
+    AspectRatioMode m_AspectRatioMode;
+
     float m_AspectRatio;
     float m_PerspectiveFOV;
     float m_OrthographicSize;

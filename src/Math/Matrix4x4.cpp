@@ -186,7 +186,7 @@ Matrix4x4 Matrix4x4::CreateOrthographicLH(float width, float height, float zNear
     return static_cast<Matrix4x4>(rtm::matrix_set(
         rtm::vector_set(2.0f / width, 0.0f, 0.0f, 0.0f),
         rtm::vector_set(0.0f, 2.0f / height, 0.0f, 0.0f),
-        rtm::vector_set(0.0f, 0.0f, fRange, 0.0f),
+        rtm::vector_set(0.0f, 0.0f, -fRange, 0.0f),
         rtm::vector_set(0.0f, 0.0f, fRange * zFarPlane, 1.0f)));
 }
 
