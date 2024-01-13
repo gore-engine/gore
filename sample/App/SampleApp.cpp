@@ -38,7 +38,7 @@ void SampleApp::Initialize()
     cameraGameObject->AddComponent<CameraController>();
 
     gore::Transform* cameraTransform = cameraGameObject->GetComponent<gore::Transform>();
-    cameraTransform->RotateAroundAxisInWorldSpace(gore::Vector3::Right, gore::math::constants::PI_4);
+    cameraTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
     cameraTransform->SetLocalPosition((gore::Vector3::Backward + gore::Vector3::Up) * 1.5f);
 
     gore::GameObject* gameObject = scene->NewObject();
