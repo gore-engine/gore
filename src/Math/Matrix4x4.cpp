@@ -176,7 +176,7 @@ Matrix4x4 Matrix4x4::CreatePerspectiveFieldOfViewLH(float fov, float aspectRatio
     if (std::isinf(farPlane))
     {
         a = 0.0f;
-        b = 1.0f;
+        b = nearPlane;
     }
     else
     {
