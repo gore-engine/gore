@@ -82,13 +82,6 @@ void CameraController::Update()
     if (m_Pitch < -gore::math::constants::PI_3)
         m_Pitch = -gore::math::constants::PI_3;
 
-    if (m_Yaw > gore::math::constants::PI)
-        m_Yaw -= gore::math::constants::PI * 2.0f;
-
-    if (m_Yaw < -gore::math::constants::PI)
-        m_Yaw += gore::math::constants::PI * 2.0f;
-
-
     gore::Quaternion pitchRotation = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Right, m_Pitch);
     gore::Quaternion yawRotation   = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Up, m_Yaw);
 
