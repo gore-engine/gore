@@ -18,4 +18,5 @@ private:
 
     float m_Yaw;
     float m_Pitch;
+    float m_Roll;
 };

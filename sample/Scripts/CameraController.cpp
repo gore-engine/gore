@@ -11,7 +11,8 @@ CameraController::CameraController(gore::GameObject* gameObject) :
     m_Keyboard(nullptr),
     m_Mouse(nullptr),
     m_Yaw(0.0f),
-    m_Pitch(gore::math::constants::PI_4)
+    m_Pitch(gore::math::constants::PI_4),
+    m_Roll(0.0f)
 {
 }
 
@@ -66,6 +67,11 @@ void CameraController::Update()
         m_Pitch += m_Mouse->GetDelta(gore::MouseMovementCode::Y) * mouseSensitivity * deltaTime;
     }
 
+    if (m_Keyboard->KeyState(gore::KeyCode::R))
+        m_Roll += deltaTime;
+    if (m_Keyboard->KeyState(gore::KeyCode::F))
+        m_Roll -= deltaTime;
+
     if (m_Keyboard->KeyState(gore::KeyCode::Right))
         m_Yaw += deltaTime;
     if (m_Keyboard->KeyState(gore::KeyCode::Left))
@@ -82,8 +88,11 @@ void CameraController::Update()
     if (m_Pitch < -gore::math::constants::PI_3)
         m_Pitch = -gore::math::constants::PI_3;
 
+    gore::Quaternion rollRotation  = gore::Quaternion::CreateFromAxisAngle(front, m_Roll);
     gore::Quaternion pitchRotation = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Right, m_Pitch);
     gore::Quaternion yawRotation   = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Up, m_Yaw);
 
-    transform->SetLocalRotation(pitchRotation * yawRotation);
+    transform->SetLocalRotation(yawRotation * pitchRotation * rollRotation);
+
+//    transform->SetLocalRotation(gore::Quaternion::CreateFromYawPitchRoll(m_Yaw, m_Roll, -m_Pitch));
 }
