@@ -48,34 +48,36 @@ void SampleApp::Initialize()
 
     TestComponent* testComponent = gameObject->AddComponent<TestComponent>();
 
+    const float distance = 5.0f;
+
     gameObject = scene->NewObject();
     gameObject->SetName("TestObject L");
-    gameObject->transform->SetLocalPosition(gore::Vector3::Left * 2.0f);
+    gameObject->transform->SetLocalPosition(gore::Vector3::Left * distance);
     testComponent = gameObject->AddComponent<TestComponent>();
 
     gameObject = scene->NewObject();
     gameObject->SetName("TestObject R");
-    gameObject->transform->SetLocalPosition(gore::Vector3::Right * 2.0f);
+    gameObject->transform->SetLocalPosition(gore::Vector3::Right * distance);
     testComponent = gameObject->AddComponent<TestComponent>();
 
     gameObject = scene->NewObject();
     gameObject->SetName("TestObject F");
-    gameObject->transform->SetLocalPosition(gore::Vector3::Forward * 2.0f);
+    gameObject->transform->SetLocalPosition(gore::Vector3::Forward * distance);
     testComponent = gameObject->AddComponent<TestComponent>();
 
     gameObject = scene->NewObject();
     gameObject->SetName("TestObject B");
-    gameObject->transform->SetLocalPosition(gore::Vector3::Backward * 2.0f);
+    gameObject->transform->SetLocalPosition(gore::Vector3::Backward * distance);
     testComponent = gameObject->AddComponent<TestComponent>();
 
     gameObject = scene->NewObject();
     gameObject->SetName("TestObject U");
-    gameObject->transform->SetLocalPosition(gore::Vector3::Up * 2.0f);
+    gameObject->transform->SetLocalPosition(gore::Vector3::Up * distance);
     testComponent = gameObject->AddComponent<TestComponent>();
 
     gameObject = scene->NewObject();
     gameObject->SetName("TestObject D");
-    gameObject->transform->SetLocalPosition(gore::Vector3::Down * 2.0f);
+    gameObject->transform->SetLocalPosition(gore::Vector3::Down * distance);
     testComponent = gameObject->AddComponent<TestComponent>();
 }
 
