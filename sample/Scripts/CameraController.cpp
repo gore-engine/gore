@@ -62,9 +62,9 @@ void CameraController::Update()
 
     if (mouseRight)
     {
-        float mouseSensitivity = 1.0f;
-        m_Yaw += m_Mouse->GetDelta(gore::MouseMovementCode::X) * mouseSensitivity * deltaTime;
-        m_Pitch += m_Mouse->GetDelta(gore::MouseMovementCode::Y) * mouseSensitivity * deltaTime;
+        float mouseSensitivity = 0.001f;
+        m_Yaw += m_Mouse->GetDelta(gore::MouseMovementCode::X) * mouseSensitivity;
+        m_Pitch += m_Mouse->GetDelta(gore::MouseMovementCode::Y) * mouseSensitivity;
     }
 
     if (m_Keyboard->KeyState(gore::KeyCode::R))
@@ -89,7 +89,7 @@ void CameraController::Update()
         m_Pitch = -gore::math::constants::PI_3;
 
     gore::Quaternion rollRotation  = gore::Quaternion::CreateFromAxisAngle(front, m_Roll);
-    gore::Quaternion pitchRotation = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Right, m_Pitch);
+    gore::Quaternion pitchRotation = gore::Quaternion::CreateFromAxisAngle(right, m_Pitch);
     gore::Quaternion yawRotation   = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Up, m_Yaw);
 
     transform->SetLocalRotation(yawRotation * pitchRotation * rollRotation);
