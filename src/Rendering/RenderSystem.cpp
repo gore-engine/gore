@@ -25,10 +25,6 @@
 #include <algorithm>
 #include <filesystem>
 
-#ifdef ERROR
-    #undef ERROR
-#endif
-
 namespace gore
 {
 

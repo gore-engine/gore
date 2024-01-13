@@ -123,7 +123,7 @@ public:
     // Projection matrices
     [[nodiscard]] static Matrix4x4 CreatePerspectiveFieldOfViewLH(float fov, float aspectRatio, float nearPlane, float farPlane) noexcept;
 //    [[nodiscard]] static Matrix4x4 CreatePerspectiveOffCenterLH(float left, float right, float bottom, float top, float nearPlane, float farPlane) noexcept;
-    [[nodiscard]] static Matrix4x4 CreateOrthographicLH(float width, float height, float zNearPlane, float zFarPlane) noexcept;
+    [[nodiscard]] static Matrix4x4 CreateOrthographicLH(float width, float height, float nearPlane, float farPlane) noexcept;
 //    [[nodiscard]] static Matrix4x4 CreateOrthographicOffCenterLH(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane) noexcept;
 
     [[nodiscard]] static Matrix4x4 CreateLookAt(const Vector3& position, const Vector3& target, const Vector3& up) noexcept;
