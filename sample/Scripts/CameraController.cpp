@@ -95,11 +95,11 @@ void CameraController::Update()
     if (m_Pitch < -gore::math::constants::PI_3)
         m_Pitch = -gore::math::constants::PI_3;
 
-    gore::Quaternion rollRotation  = gore::Quaternion::CreateFromAxisAngle(front, m_Roll);
-    gore::Quaternion pitchRotation = gore::Quaternion::CreateFromAxisAngle(right, m_Pitch);
+    gore::Quaternion rollRotation  = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Forward, m_Roll);
+    gore::Quaternion pitchRotation = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Right, m_Pitch);
     gore::Quaternion yawRotation   = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Up, m_Yaw);
 
-    transform->SetLocalRotation(yawRotation * pitchRotation * rollRotation);
+    transform->SetLocalRotation(rollRotation * pitchRotation * yawRotation);
 
     //    transform->SetLocalRotation(gore::Quaternion::CreateFromYawPitchRoll(m_Yaw, m_Roll, -m_Pitch));
 
