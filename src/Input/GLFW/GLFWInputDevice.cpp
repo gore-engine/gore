@@ -84,9 +84,6 @@ void GLFWMouse::Update()
     m_Movements[static_cast<int>(MouseMovementCode::ScrollX)].state     = static_cast<float>(m_ScrollX);
     m_Movements[static_cast<int>(MouseMovementCode::ScrollY)].state     = static_cast<float>(m_ScrollY);
 
-    m_ScrollX = 0.0;
-    m_ScrollY = 0.0;
-
     UpdateAllActions();
 }
 
