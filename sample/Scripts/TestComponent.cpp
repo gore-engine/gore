@@ -30,7 +30,5 @@ void TestComponent::Update()
 
     transform->RotateAroundAxisInWorldSpace(gore::Vector3::Up, deltaTime);
 
-    transform->SetLocalRotation(gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Up, totalTime));
-
     // LOG_STREAM(DEBUG) << "TestComponent position:" << transform->GetLocalPosition() << " Quaternion: " << transform->GetLocalRotation() << std::endl;
 }
