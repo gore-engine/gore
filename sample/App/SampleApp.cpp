@@ -15,6 +15,7 @@
 #include "Math/Constants.h"
 
 #include "Scripts/TestComponent.h"
+#include "Scripts/CameraController.h"
 
 SampleApp::SampleApp(int argc, char** argv) :
     App(argc, argv)
@@ -34,8 +35,7 @@ void SampleApp::Initialize()
     gore::GameObject* cameraGameObject = scene->NewObject();
     cameraGameObject->SetName("MainCamera");
     gore::Camera* camera = cameraGameObject->AddComponent<gore::Camera>();
-    // by default the camera is perspective
-    camera->SetProjectionType(gore::Camera::ProjectionType::Perspective);
+    cameraGameObject->AddComponent<CameraController>();
 
     gore::Transform* cameraTransform = cameraGameObject->GetComponent<gore::Transform>();
     cameraTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
