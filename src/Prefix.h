@@ -89,3 +89,23 @@
 #ifdef None
     #undef None
 #endif
+
+#ifdef Button1
+    #undef Button1
+#endif
+
+#ifdef Button2
+    #undef Button2
+#endif
+
+#ifdef Button3
+    #undef Button3
+#endif
+
+#ifdef Button4
+    #undef Button4
+#endif
+
+#ifdef Button5
+    #undef Button5
+#endif
