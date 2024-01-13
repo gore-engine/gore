@@ -39,7 +39,7 @@ public:
     [[nodiscard]] Vector3 GetLocalEulerAngles() const;
     void SetLocalEulerAngles(const Vector3& eulerAngles);
 
-    void RotateAroundAxis(const Vector3& axisInWorldSpace, float angle);
+    void RotateAroundAxis(const Vector3& axis, float angle);
     void RotateAroundPointInWorldSpace(const Vector3& pointInWorldSpace, const Vector3& axisInWorldSpace, float angle);
 
     [[nodiscard]] Matrix4x4 GetLocalToWorldMatrix() const;
