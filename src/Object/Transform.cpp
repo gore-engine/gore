@@ -37,7 +37,7 @@ void Transform::Start()
 
 void Transform::Update()
 {
-    // this->RotateAroundAxis(Vector3::Up, 0.01f);
+    // this->RotateAroundAxisInWorldSpace(Vector3::Up, 0.01f);
     // LOG_STREAM(DEBUG) << "Update Transform in GameObject: " << GetGameObject()->GetName()
     //                   << "  Position: " << m_LocalPosition
     //                   << "  Rotation: " << m_LocalRotation
@@ -65,11 +65,11 @@ Quaternion Transform::GetLocalRotation() const
 //    return m_LocalRotation.ToEuler();
 //}
 
-void Transform::RotateAroundAxis(const Vector3& axis, float angle)
+void Transform::RotateAroundAxisInWorldSpace(const Vector3& axisInWorldSpace, float angle)
 {
-    auto q = Quaternion::CreateFromAxisAngle(axis, angle);
+    auto q = Quaternion::CreateFromAxisAngle(axisInWorldSpace, angle);
     m_LocalRotation = q * m_LocalRotation;
-    m_LocalPosition = static_cast<Vector3>(rtm::quat_mul_vector3(static_cast<Vector3::SIMDValueType>(m_LocalPosition), q)) + m_LocalPosition;
+    m_LocalPosition = static_cast<Vector3>(rtm::quat_mul_vector3(static_cast<Vector3::SIMDValueType>(m_LocalPosition), q));
 }
 
 Matrix4x4 Transform::GetLocalToWorldMatrix() const
