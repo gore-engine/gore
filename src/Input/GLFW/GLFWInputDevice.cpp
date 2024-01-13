@@ -1,6 +1,9 @@
 #include "Prefix.h"
 
 #include "GLFWInputDevice.h"
+#include "GLFWInputSystem.h"
+#include "Input/InputSystem.h"
+#include "Input/InputAction.h"
 #include "Windowing/Window.h"
 
 #include <GLFW/glfw3.h>
@@ -27,18 +30,28 @@ void GLFWKeyboard::Update()
         const KeyCode keyCode = static_cast<KeyCode>(i);
         const int glfwKeyCode = GetGLFWKeyCode(keyCode);
 
-        const bool state = glfwGetKey(m_Window->Get(), glfwKeyCode) == GLFW_PRESS;
+        const bool state           = glfwGetKey(m_Window->Get(), glfwKeyCode) == GLFW_PRESS;
         DigitalState& digitalState = m_Keys[i];
 
         digitalState.lastState = digitalState.state;
-        digitalState.state = state;
+        digitalState.state     = state;
     }
+
+    UpdateAllActions();
 }
 
 GLFWMouse::GLFWMouse(Window* window) :
     Mouse(),
-    m_Window(window)
+    m_Window(window),
+    m_ScrollX(0.0),
+    m_ScrollY(0.0)
 {
+    glfwSetScrollCallback(m_Window->Get(), [](GLFWwindow* window, double xoffset, double yoffset)
+                          {
+                              const GLFWInputSystem* inputSystem = reinterpret_cast<const GLFWInputSystem*>(InputSystem::Get());
+                              GLFWMouse* mouse = reinterpret_cast<GLFWMouse*>(inputSystem->GetMouse());
+                              mouse->ScrollCallback(window, xoffset, yoffset);
+                          });
 }
 
 GLFWMouse::~GLFWMouse()
@@ -51,11 +64,11 @@ void GLFWMouse::Update()
     {
         const MouseButtonCode buttonCode = static_cast<MouseButtonCode>(i);
 
-        const bool state = glfwGetMouseButton(m_Window->Get(), i) == GLFW_PRESS;
+        const bool state           = glfwGetMouseButton(m_Window->Get(), i) == GLFW_PRESS;
         DigitalState& digitalState = m_Buttons[i];
 
         digitalState.lastState = digitalState.state;
-        digitalState.state = state;
+        digitalState.state     = state;
     }
 
     double x, y;
@@ -63,13 +76,29 @@ void GLFWMouse::Update()
 
     m_Movements[static_cast<int>(MouseMovementCode::X)].lastState = m_Movements[static_cast<int>(MouseMovementCode::X)].state;
     m_Movements[static_cast<int>(MouseMovementCode::Y)].lastState = m_Movements[static_cast<int>(MouseMovementCode::Y)].state;
-    m_Movements[static_cast<int>(MouseMovementCode::X)].state = static_cast<float>(x);
-    m_Movements[static_cast<int>(MouseMovementCode::Y)].state = static_cast<float>(y);
+    m_Movements[static_cast<int>(MouseMovementCode::X)].state     = static_cast<float>(x);
+    m_Movements[static_cast<int>(MouseMovementCode::Y)].state     = static_cast<float>(y);
+
+    m_Movements[static_cast<int>(MouseMovementCode::ScrollX)].lastState = m_Movements[static_cast<int>(MouseMovementCode::ScrollX)].state;
+    m_Movements[static_cast<int>(MouseMovementCode::ScrollY)].lastState = m_Movements[static_cast<int>(MouseMovementCode::ScrollY)].state;
+    m_Movements[static_cast<int>(MouseMovementCode::ScrollX)].state     = static_cast<float>(m_ScrollX);
+    m_Movements[static_cast<int>(MouseMovementCode::ScrollY)].state     = static_cast<float>(m_ScrollY);
+
+    m_ScrollX = 0.0;
+    m_ScrollY = 0.0;
+
+    UpdateAllActions();
 }
 
 void GLFWMouse::SetCursorShow(bool show) const
 {
     glfwSetInputMode(m_Window->Get(), GLFW_CURSOR, show ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+}
+
+void GLFWMouse::ScrollCallback(GLFWwindow* window, double x, double y)
+{
+    m_ScrollX += x;
+    m_ScrollY += y;
 }
 
 int GetGLFWKeyCode(KeyCode keyCode)
@@ -286,10 +315,10 @@ int GetGLFWKeyCode(KeyCode keyCode)
             return GLFW_KEY_RIGHT_SUPER;
         case KeyCode::Menu:
             return GLFW_KEY_MENU;
-        case KeyCode::ErrorKey:
+        case KeyCode::Unknown:
         default:
             return GLFW_KEY_UNKNOWN;
     }
 }
 
-}
+} // namespace gore

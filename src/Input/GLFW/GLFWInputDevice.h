@@ -2,6 +2,8 @@
 
 #include "Input/InputDevice.h"
 
+typedef struct GLFWwindow GLFWwindow;
+
 namespace gore
 {
 
@@ -31,6 +33,11 @@ public:
 
 private:
     Window* m_Window;
+
+    double m_ScrollX;
+    double m_ScrollY;
+
+    void ScrollCallback(GLFWwindow* window, double x, double y);
 };
 
 } // namespace gore
