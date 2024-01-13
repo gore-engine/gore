@@ -2,6 +2,8 @@
 
 #include "Object/GameObject.h"
 #include "Math/Matrix4x4.h"
+#include "Windowing/Window.h"
+#include "Core/App.h"
 
 namespace gore
 {
@@ -12,10 +14,16 @@ void Camera::Start()
 
 void Camera::Update()
 {
+    if (m_AspectRatioMode == AspectRatioMode::FollowWindow)
+    {
+        ResetAspectRatio();
+    }
 }
 
 Camera::Camera(gore::GameObject* gameObject) noexcept :
     Component(gameObject),
+    m_Window(App::Get()->GetWindow()),
+    m_AspectRatioMode(AspectRatioMode::FollowWindow),
     m_ProjectionType(DefaultProjectionType),
     m_AspectRatio(DefaultAspectRatio),
     m_PerspectiveFOV(DefaultPerspectiveFOV),
@@ -42,6 +50,20 @@ Matrix4x4 Camera::GetViewMatrix() const
 Matrix4x4 Camera::GetViewProjectionMatrix() const
 {
     return GetViewMatrix() * GetProjectionMatrix();
+}
+
+void Camera::SetAspectRatio(float aspectRatio)
+{
+    m_AspectRatio = aspectRatio;
+    m_AspectRatioMode = AspectRatioMode::Custom;
+}
+
+void Camera::ResetAspectRatio()
+{
+    int width, height;
+    m_Window->GetSize(&width, &height);
+    m_AspectRatio = static_cast<float>(width) / static_cast<float>(height);
+    m_AspectRatioMode = AspectRatioMode::FollowWindow;
 }
 
 // constants
