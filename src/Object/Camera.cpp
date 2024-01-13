@@ -17,12 +17,11 @@ void Camera::Update()
 Camera::Camera(gore::GameObject* gameObject) noexcept :
     Component(gameObject),
     m_ProjectionType(DefaultProjectionType),
-    m_PerspectiveFOV(DefaultPerspectiveFOV),
     m_AspectRatio(DefaultAspectRatio),
-    m_OrthographicViewWidth(DefaultOrthographicViewWidth),
-    m_OrthographicViewHeight(DefaultOrthographicViewHeight),
-    m_Near(DefaultZMin),
-    m_Far(DefaultZMax)
+    m_PerspectiveFOV(DefaultPerspectiveFOV),
+    m_OrthographicSize(DefaultOrthographicSize),
+    m_Near(DefaultNear),
+    m_Far(DefaultFar)
 {
 }
 
@@ -30,7 +29,7 @@ Matrix4x4 Camera::GetProjectionMatrix() const
 {
     return m_ProjectionType == ProjectionType::Perspective ?
                Matrix4x4::CreatePerspectiveFieldOfViewLH(m_PerspectiveFOV, m_AspectRatio, m_Near, m_Far) :
-               Matrix4x4::CreateOrthographicLH(m_OrthographicViewWidth, m_OrthographicViewHeight, m_Near, m_Far);
+               Matrix4x4::CreateOrthographicLH(DefaultOrthographicSize * DefaultAspectRatio, DefaultOrthographicSize, m_Near, m_Far);
 }
 
 Matrix4x4 Camera::GetViewMatrix() const
@@ -47,11 +46,10 @@ Matrix4x4 Camera::GetViewProjectionMatrix() const
 
 // constants
 const Camera::ProjectionType Camera::DefaultProjectionType = Camera::ProjectionType::Perspective;
-const float Camera::DefaultPerspectiveFOV                  = math::constants::PI_3;
 const float Camera::DefaultAspectRatio                     = 16.0f / 9.0f;
-const float Camera::DefaultOrthographicViewWidth           = 16.0f;
-const float Camera::DefaultOrthographicViewHeight          = 9.0f;
-const float Camera::DefaultZMin                            = 0.1f;
-const float Camera::DefaultZMax                            = 1000.0f;
+const float Camera::DefaultPerspectiveFOV                  = math::constants::PI_3;
+const float Camera::DefaultOrthographicSize                = 1.0f;
+const float Camera::DefaultNear                            = 0.1f;
+const float Camera::DefaultFar                             = 1000.0f;
 
 } // namespace gore

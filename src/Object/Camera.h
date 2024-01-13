@@ -28,10 +28,8 @@ public:
     [[nodiscard]] float GetPerspectiveFOV() const { return m_PerspectiveFOV; }
     void SetFOV(float fov) { m_PerspectiveFOV = fov; }
 
-    [[nodiscard]] float GetOrthographicWidth() const { return m_OrthographicViewWidth; }
-    void SetOrthographicWidth(float width) { m_OrthographicViewWidth = width; }
-    [[nodiscard]] float GetOrthographicHeight() const { return m_OrthographicViewHeight; }
-    void SetOrthographicHeight(float height) { m_OrthographicViewHeight = height; }
+    [[nodiscard]] float GetOrthographicSize() const { return m_OrthographicSize; }
+    void SetOrthographicSize(float size) { m_OrthographicSize = size; }
 
     [[nodiscard]] float GetNear() const { return m_Near; }
     void SetNear(float near) { m_Near = near; }
@@ -56,19 +54,17 @@ public:
     void Update() override;
 
 public:
-    static const float DefaultPerspectiveFOV;
     static const float DefaultAspectRatio;
-    static const float DefaultOrthographicViewWidth;
-    static const float DefaultOrthographicViewHeight;
-    static const float DefaultZMin;
-    static const float DefaultZMax;
+    static const float DefaultPerspectiveFOV;
+    static const float DefaultOrthographicSize;
+    static const float DefaultNear;
+    static const float DefaultFar;
     static const ProjectionType DefaultProjectionType;
 
 private:
-    float m_PerspectiveFOV;
     float m_AspectRatio;
-    float m_OrthographicViewWidth;
-    float m_OrthographicViewHeight;
+    float m_PerspectiveFOV;
+    float m_OrthographicSize;
     float m_Near;
     float m_Far;
     ProjectionType m_ProjectionType;
