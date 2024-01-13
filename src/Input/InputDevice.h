@@ -62,7 +62,7 @@ public:
     [[nodiscard]] float Get(MouseMovementCode movement) const;
     [[nodiscard]] float GetDelta(MouseMovementCode movement) const;
 
-    virtual void SetCursorShow(bool show) = 0;
+    virtual void SetCursorShow(bool show) const = 0;
 
 protected:
     DigitalState m_Buttons[static_cast<int>(MouseButtonCode::Count)];

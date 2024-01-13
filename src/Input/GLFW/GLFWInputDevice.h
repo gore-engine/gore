@@ -27,7 +27,7 @@ public:
 
     void Update() final;
 
-    void SetCursorShow(bool show) final;
+    void SetCursorShow(bool show) const final;
 
 private:
     Window* m_Window;
