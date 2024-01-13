@@ -11,7 +11,7 @@ CameraController::CameraController(gore::GameObject* gameObject) :
     m_Keyboard(nullptr),
     m_Mouse(nullptr),
     m_Yaw(0.0f),
-    m_Pitch(gore::math::constants::PI_2)
+    m_Pitch(gore::math::constants::PI_4)
 {
 }
 
@@ -75,8 +75,9 @@ void CameraController::Update()
         if (m_Yaw < -gore::math::constants::PI)
             m_Yaw += gore::math::constants::PI * 2.0f;
 
-        gore::Quaternion yawRotation   = gore::Quaternion::CreateFromAxisAngle(up, m_Yaw);
-        gore::Quaternion pitchRotation = gore::Quaternion::CreateFromAxisAngle(right, m_Pitch);
+        // Considering what we really want, we should use extrinsic rotations (i.e. global rotation axes)
+        gore::Quaternion yawRotation   = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Up, m_Yaw);
+        gore::Quaternion pitchRotation = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Right, m_Pitch);
 
         transform->SetLocalRotation(yawRotation * pitchRotation);
 
