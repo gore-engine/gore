@@ -28,7 +28,7 @@ void TestComponent::Update()
 
     gore::Transform* transform = m_GameObject->GetComponent<gore::Transform>();
 
-    //transform->RotateAroundAxis(gore::Vector3::Up, deltaTime);
+    transform->RotateAroundAxisInWorldSpace(gore::Vector3::Up, deltaTime);
 
     transform->SetLocalRotation(gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Up, totalTime));
 
