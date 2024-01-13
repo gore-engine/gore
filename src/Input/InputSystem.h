@@ -3,6 +3,7 @@
 #include "Export.h"
 
 #include "InputDevice.h"
+#include "InputAction.h"
 #include "Core/System.h"
 
 namespace gore

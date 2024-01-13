@@ -166,7 +166,7 @@ enum class KeyCode
     LeftWindows,
     RightWindows,
     Menu,
-    ErrorKey,
+    Unknown,
 
     Count
 };
@@ -193,7 +193,8 @@ enum class MouseMovementCode
 {
     X,
     Y,
-    ScrollWheel,
+    ScrollX,
+    ScrollY,
 
     Count
 };
