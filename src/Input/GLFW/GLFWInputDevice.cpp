@@ -67,7 +67,7 @@ void GLFWMouse::Update()
     m_Movements[static_cast<int>(MouseMovementCode::Y)].state = static_cast<float>(y);
 }
 
-void GLFWMouse::SetCursorShow(bool show)
+void GLFWMouse::SetCursorShow(bool show) const
 {
     glfwSetInputMode(m_Window->Get(), GLFW_CURSOR, show ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 }
