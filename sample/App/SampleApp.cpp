@@ -47,6 +47,36 @@ void SampleApp::Initialize()
     LOG_STREAM(INFO) << (gameObject->transform->GetLocalPosition()) << std::endl;
 
     TestComponent* testComponent = gameObject->AddComponent<TestComponent>();
+
+    gameObject = scene->NewObject();
+    gameObject->SetName("TestObject L");
+    gameObject->transform->SetLocalPosition(gore::Vector3::Left * 2.0f);
+    testComponent = gameObject->AddComponent<TestComponent>();
+
+    gameObject = scene->NewObject();
+    gameObject->SetName("TestObject R");
+    gameObject->transform->SetLocalPosition(gore::Vector3::Right * 2.0f);
+    testComponent = gameObject->AddComponent<TestComponent>();
+
+    gameObject = scene->NewObject();
+    gameObject->SetName("TestObject F");
+    gameObject->transform->SetLocalPosition(gore::Vector3::Forward * 2.0f);
+    testComponent = gameObject->AddComponent<TestComponent>();
+
+    gameObject = scene->NewObject();
+    gameObject->SetName("TestObject B");
+    gameObject->transform->SetLocalPosition(gore::Vector3::Backward * 2.0f);
+    testComponent = gameObject->AddComponent<TestComponent>();
+
+    gameObject = scene->NewObject();
+    gameObject->SetName("TestObject U");
+    gameObject->transform->SetLocalPosition(gore::Vector3::Up * 2.0f);
+    testComponent = gameObject->AddComponent<TestComponent>();
+
+    gameObject = scene->NewObject();
+    gameObject->SetName("TestObject D");
+    gameObject->transform->SetLocalPosition(gore::Vector3::Down * 2.0f);
+    testComponent = gameObject->AddComponent<TestComponent>();
 }
 
 void SampleApp::Update()
