@@ -25,8 +25,4 @@ private:
     gore::InputAction* m_ActionRotateHorizontal;
     gore::InputAction* m_ActionRotateVertical;
     gore::InputAction* m_ActionZoom;
-
-    float m_Yaw;
-    float m_Pitch;
-    float m_Roll;
 };
