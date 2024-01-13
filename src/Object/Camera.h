@@ -27,22 +27,20 @@ public:
     // properties
     [[nodiscard]] float GetPerspectiveFOV() const { return m_PerspectiveFOV; }
     void SetFOV(float fov) { m_PerspectiveFOV = fov; }
-    [[nodiscard]] float GetPerspectiveAspectRatio() const { return m_PerspectiveAspectRatio; }
-    void SetAspectRatio(float aspectRatio) { m_PerspectiveAspectRatio = aspectRatio; }
 
-    [[nodiscard]] float GetOrthographicWidth() const { return m_OrthographicViewWidth; }
-    void SetOrthographicWidth(float width) { m_OrthographicViewWidth = width; }
-    [[nodiscard]] float GetOrthographicHeight() const { return m_OrthographicViewHeight; }
-    void SetOrthographicHeight(float height) { m_OrthographicViewHeight = height; }
+    [[nodiscard]] float GetOrthographicSize() const { return m_OrthographicSize; }
+    void SetOrthographicSize(float size) { m_OrthographicSize = size; }
 
-    // okay lets avoid using near/far because of macros defined in windows.h
-    [[nodiscard]] float GetZMin() const { return m_ZMin; }
-    void SetNear(float zMin) { m_ZMin = zMin; }
-    [[nodiscard]] float GetZMax() const { return m_ZMax; }
-    void SetZMax(float zMax) { m_ZMax = zMax; }
+    [[nodiscard]] float GetNear() const { return m_Near; }
+    void SetNear(float near) { m_Near = near; }
+    [[nodiscard]] float GetFar() const { return m_Far; }
+    void SetFar(float far) { m_Far = far; }
 
     [[nodiscard]] ProjectionType GetProjectionType() const { return m_ProjectionType; }
     void SetProjectionType(ProjectionType projectionType) { m_ProjectionType = projectionType; }
+
+    [[nodiscard]] float GetPerspectiveAspectRatio() const { return m_AspectRatio; }
+    void SetAspectRatio(float aspectRatio) { m_AspectRatio = aspectRatio; }
     // clang-format on
 
 public:
@@ -56,21 +54,19 @@ public:
     void Update() override;
 
 public:
+    static const float DefaultAspectRatio;
     static const float DefaultPerspectiveFOV;
-    static const float DefaultPerspectiveAspectRatio;
-    static const float DefaultOrthographicViewWidth;
-    static const float DefaultOrthographicViewHeight;
-    static const float DefaultZMin;
-    static const float DefaultZMax;
+    static const float DefaultOrthographicSize;
+    static const float DefaultNear;
+    static const float DefaultFar;
     static const ProjectionType DefaultProjectionType;
 
 private:
+    float m_AspectRatio;
     float m_PerspectiveFOV;
-    float m_PerspectiveAspectRatio;
-    float m_OrthographicViewWidth;
-    float m_OrthographicViewHeight;
-    float m_ZMin;
-    float m_ZMax;
+    float m_OrthographicSize;
+    float m_Near;
+    float m_Far;
     ProjectionType m_ProjectionType;
 };
 
