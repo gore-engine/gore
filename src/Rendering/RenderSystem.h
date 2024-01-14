@@ -8,6 +8,7 @@
 namespace gore
 {
 
+class RenderContext;
 class Window;
 
 class RenderSystem final : System
@@ -25,6 +26,8 @@ public:
     void OnResize(Window* window, int width, int height);
 
 private:
+    std::unique_ptr<RenderContext> m_RenderContext;
+
     // Instance
     vk::raii::Context m_Context;
     uint32_t m_ApiVersion;
@@ -88,12 +91,20 @@ private:
     VmaAllocation m_DepthImageAllocation;
     vk::raii::ImageView m_DepthImageView;
 
+    vk::raii::Buffer m_VertexBuffer;
+    vk::raii::DeviceMemory m_VertexBufferMemory;
+    vk::raii::Buffer m_IndexBuffer;
+    vk::raii::DeviceMemory m_IndexBufferMemory;
+
 private:
+    uint32_t FindMemoryType(uint32_t typeFilter, vk::PhysicalDeviceMemoryProperties memProperties, vk::MemoryPropertyFlags properties) const;
+
     void CreateInstance();
     void CreateDevice();
     void CreateSurface();
     void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
     void CreateDepthBuffer();
+    void CreateVertexBuffer();
     void LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint);
     void CreateRenderPass();
     void CreatePipeline();
