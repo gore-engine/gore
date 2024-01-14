@@ -99,9 +99,12 @@ void CameraController::Update()
     gore::Quaternion pitchRotation = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Right, m_Pitch);
     gore::Quaternion yawRotation   = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Up, m_Yaw);
 
-    transform->SetLocalRotation(rollRotation * pitchRotation * yawRotation);
-
-    //    transform->SetLocalRotation(gore::Quaternion::CreateFromYawPitchRoll(m_Yaw, m_Roll, -m_Pitch));
+    // thw two ways setting rotations are different because of the rotation order. Axes are the same.
+    // transform->SetLocalRotation(rollRotation * pitchRotation * yawRotation);
+    // I believe rtm::quat_from_euler_angles is using XYZ rotation order:
+    // because when using this function, the yaw and pitch are always rotated as expected and not affected by the roll,
+    // which means roll(i.e. Z) is the last rotation.
+    transform->SetLocalRotation(gore::Quaternion::CreateFromYawPitchRoll(m_Yaw, m_Pitch, m_Roll));
 
     gore::Camera* camera = m_GameObject->GetComponent<gore::Camera>();
     float fov = camera->GetPerspectiveFOV();
