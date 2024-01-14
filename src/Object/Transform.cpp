@@ -65,9 +65,9 @@ Quaternion Transform::GetLocalRotation() const
 //    return m_LocalRotation.ToEuler();
 //}
 
-void Transform::RotateAroundAxis(const Vector3& axisInWorldSpace, float angle)
+void Transform::RotateAroundAxis(const Vector3& axis, float angle)
 {
-    m_LocalRotation = Quaternion::CreateFromAxisAngle(axisInWorldSpace, angle) * m_LocalRotation;
+    m_LocalRotation = Quaternion::CreateFromAxisAngle(axis, angle) * m_LocalRotation;
 }
 
 Matrix4x4 Transform::GetLocalToWorldMatrix() const
