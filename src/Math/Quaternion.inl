@@ -155,12 +155,12 @@ inline Quaternion Quaternion::CreateFromAxisAngle(const Vector3& axis, float ang
 
 inline Quaternion Quaternion::CreateFromYawPitchRoll(float yaw, float pitch, float roll) noexcept
 {
-    return static_cast<Quaternion>(rtm::quat_from_euler(yaw, roll, pitch));
+    return static_cast<Quaternion>(rtm::quat_from_euler(-yaw, roll, -pitch));
 }
 
 inline Quaternion Quaternion::CreateFromYawPitchRoll(const Vector3& angles) noexcept
 {
-    return static_cast<Quaternion>(rtm::quat_from_euler(angles.y, angles.z, angles.x));
+    return static_cast<Quaternion>(rtm::quat_from_euler(-angles.y, angles.z, -angles.x));
 }
 
 // inline Quaternion Quaternion::CreateFromRotationMatrix(const Matrix4x4& M) noexcept
