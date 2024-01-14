@@ -4,6 +4,7 @@
 #include "InputAction.h"
 
 #include <cstring>
+#include <utility>
 
 namespace gore
 {
@@ -17,7 +18,7 @@ InputDevice::~InputDevice()
 {
 }
 
-InputAction* InputDevice::GetAction(const std::string& name) const
+const InputAction* InputDevice::GetAction(const std::string& name) const
 {
     auto it = m_Actions.find(name);
     if (it == m_Actions.end())
@@ -25,15 +26,22 @@ InputAction* InputDevice::GetAction(const std::string& name) const
         return nullptr;
     }
 
-    return it->second;
+    return &it->second;
 }
 
 void InputDevice::UpdateAllActions()
 {
     for (auto& action : m_Actions)
     {
-        action.second->UpdateState();
+        action.second.UpdateState();
     }
+}
+
+InputAction* InputDevice::AddAction(const std::string& name, InputType type, std::function<bool()> updateDigitalFunction, std::function<float()> updateAnalogFunction)
+{
+    const auto& res = m_Actions.emplace(name, InputAction(this, name, type, std::move(updateDigitalFunction), std::move(updateAnalogFunction)));
+
+    return &res.first->second;
 }
 
 Keyboard::Keyboard() :
@@ -78,9 +86,8 @@ InputAction* Keyboard::RegisterAction(const std::string& name, KeyCode positiveK
             result -= 1.0f;
         return result;
     };
-    const auto& res = m_Actions.emplace(name, new InputAction(this, name, InputType::Digital, digitalUpdate, analogUpdate));
 
-    return res.first->second;
+    return AddAction(name, InputType::Digital, digitalUpdate, analogUpdate);
 }
 
 Mouse::Mouse() :
@@ -142,9 +149,7 @@ InputAction* Mouse::RegisterAction(const std::string& name, MouseButtonCode posi
         }
         return result;
     };
-    const auto& res = m_Actions.emplace(name, new InputAction(this, name, InputType::Digital, digitalUpdate, analogUpdate));
-
-    return res.first->second;
+    return AddAction(name, InputType::Digital, digitalUpdate, analogUpdate);
 }
 
 InputAction* Mouse::RegisterAction(const std::string& name, MouseMovementCode movement)
@@ -154,9 +159,7 @@ InputAction* Mouse::RegisterAction(const std::string& name, MouseMovementCode mo
     std::function<float()> analogUpdate = [this, movement]()
     { return Get(movement); };
 
-    const auto& res = m_Actions.emplace(name, new InputAction(this, name, InputType::Analog, digitalUpdate, analogUpdate));
-
-    return res.first->second;
+    return AddAction(name, InputType::Analog, digitalUpdate, analogUpdate);
 }
 
 } // namespace gore

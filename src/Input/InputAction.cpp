@@ -7,6 +7,17 @@
 namespace gore
 {
 
+InputAction::InputAction() :
+    m_Name(),
+    m_Type(InputType::Digital),
+    m_Device(nullptr),
+    m_DigitalState(),
+    m_AnalogState(),
+    m_UpdateDigitalFunction([]() { return false; }),
+    m_UpdateAnalogFunction([]() { return 0.0f; })
+{
+}
+
 InputAction::InputAction(InputDevice* device, std::string name, InputType type,
                          std::function<bool()> updateDigitalFunction,
                          std::function<float()> updateAnalogFunction) :
@@ -20,8 +31,32 @@ InputAction::InputAction(InputDevice* device, std::string name, InputType type,
 {
 }
 
+InputAction::InputAction(InputAction&& other) noexcept :
+    m_Name(std::move(other.m_Name)),
+    m_Type(other.m_Type),
+    m_Device(other.m_Device),
+    m_DigitalState(other.m_DigitalState),
+    m_AnalogState(other.m_AnalogState),
+    m_UpdateDigitalFunction(std::move(other.m_UpdateDigitalFunction)),
+    m_UpdateAnalogFunction(std::move(other.m_UpdateAnalogFunction))
+{
+}
+
 InputAction::~InputAction()
 {
+}
+
+InputAction& InputAction::operator=(InputAction&& other) noexcept
+{
+    m_Name = std::move(other.m_Name);
+    m_Type = other.m_Type;
+    m_Device = other.m_Device;
+    m_DigitalState = other.m_DigitalState;
+    m_AnalogState = other.m_AnalogState;
+    m_UpdateDigitalFunction = std::move(other.m_UpdateDigitalFunction);
+    m_UpdateAnalogFunction = std::move(other.m_UpdateAnalogFunction);
+
+    return *this;
 }
 
 bool InputAction::Pressed() const
