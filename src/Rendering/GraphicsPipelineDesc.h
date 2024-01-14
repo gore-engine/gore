@@ -17,6 +17,12 @@ enum class TopologyType
     Count
 };
 
+struct ShaderBinding final
+{
+    ShaderModuleHandle smHandle;
+    const char* entryFunc;
+};
+
 struct VertexAttributeDesc final
 {
     uint32_t byteOffset;
@@ -29,8 +35,27 @@ struct VertxBufferBinding final
     std::vector<VertexAttributeDesc> attributes;
 };
 
+enum class CompareOp
+{
+    Never,
+    Less,
+    Equal,
+    LessEqual,
+    Greater,
+    NotEqual,
+    GreaterEqual,
+    Always,
+    Count
+};
+
+struct MultisampleState final
+{
+    uint32_t sampleCount = 1;
+};
+
 struct DepthStencilState final
 {
+    CompareOp depthTest = CompareOp::LessEqual;
 };
 
 struct RenderState final
@@ -47,7 +72,31 @@ struct PipelineDesc final
 
     TopologyType topology = TopologyType::TriangleList;
 
+    // Vertex shader
+    ShaderBinding VS;
+    // Pixel shader
+    ShaderBinding PS;
+    /* Deprecated
+    just because I dislike them :(
+    and most platforms have overhead of them
+    ShaderBinding GS;
+    ShaderBinding HS;
+    ShaderBinding DS;
+    */
+    // Compute shader
+    ShaderBinding CS;
+
+    // Amplification shader
+    ShaderBinding AS;
+    // Mesh shader
+    ShaderBinding MS;
+
     std::vector<BindGroupHandle> bindGroups;
     std::vector<VertxBufferBinding> vertexBufferBindings;
+
+    MultisampleState multisampleState;
+    DepthStencilState depthStencilState;
+    RenderState renderState;
+    BlendState blendState;
 };
 } // namespace gore

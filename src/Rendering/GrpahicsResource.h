@@ -25,8 +25,14 @@ struct BindGroup
 {
 };
 
+struct ShaderModule
+{
+    vk::raii::ShaderModule sm;
+};
+
 using TextureHandle      = Handle<Texture>;
 using BufferHandle       = Handle<Buffer>;
 using SamplerHandle      = Handle<Sampler>;
 using BindGroupHandle    = Handle<BindGroup>;
+using ShaderModuleHandle = Handle<ShaderModule>;
 } // namespace gore

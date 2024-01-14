@@ -47,4 +47,12 @@ struct MaterialDesc final
 {
     const char* debugName = "Noname MaterialDesc";
 };
+
+struct ShaderModuleDesc final
+{
+    const char* debugName = "Noname ShaderModuleDesc";
+    uint8_t* byteCode     = nullptr;
+    uint32_t byteSize     = 0;
+    const char* entryFunc = "main";
+};
 } // namespace gore
