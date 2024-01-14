@@ -52,3 +52,60 @@
 #include <cstdint>
 
 #include "Utilities/Defines.h"
+
+// some pre-includes and undefs to prevent future conflicts
+#if PLATFORM_WIN
+    #define WIN32_LEAN_AND_MEAN
+    #define NOMINMAX
+    #include <Windows.h>
+#elif PLATFORM_LINUX
+    #include <X11/Xlib.h>
+#elif PLATFORM_MACOS
+
+#endif
+
+// windows
+#ifdef ERROR
+    #undef ERROR
+#endif
+
+#ifdef near
+    #undef near
+#endif
+
+#ifdef far
+    #undef far
+#endif
+
+#ifdef min
+    #undef min
+#endif
+
+#ifdef max
+    #undef max
+#endif
+
+// x11
+#ifdef None
+    #undef None
+#endif
+
+#ifdef Button1
+    #undef Button1
+#endif
+
+#ifdef Button2
+    #undef Button2
+#endif
+
+#ifdef Button3
+    #undef Button3
+#endif
+
+#ifdef Button4
+    #undef Button4
+#endif
+
+#ifdef Button5
+    #undef Button5
+#endif
