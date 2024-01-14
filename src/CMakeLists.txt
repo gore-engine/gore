@@ -32,6 +32,7 @@ set(COMMON_SOURCE_FOLDERS
         "Rendering"
         "Scene"
         "Object"
+        "Input"
         "Utilities"
         "Test"
 )

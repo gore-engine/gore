@@ -10,6 +10,7 @@
 #include "Rendering/RenderSystem.h"
 #include "Windowing/Window.h"
 #include "Scene/Scene.h"
+#include "Input/GLFW/GLFWInputSystem.h"
 
 namespace gore
 {
@@ -20,6 +21,7 @@ App::App(int argc, char** argv) :
     m_Args(argv + 1, argv + argc),
     m_ExecutablePath(argv[0]),
     m_TimeSystem(nullptr),
+    m_InputSystem(nullptr),
     m_RenderSystem(nullptr),
     m_Window(nullptr)
 {
@@ -49,6 +51,10 @@ int App::Run(int width, int height, const char* title)
     m_Window = new Window(this, width, height);
     m_Window->SetTitle(title);
 
+    // TODO: Choose backend
+    m_InputSystem = new GLFWInputSystem(this);
+    m_InputSystem->Initialize();
+
     m_RenderSystem = new RenderSystem(this);
     m_RenderSystem->Initialize();
 
@@ -60,6 +66,7 @@ int App::Run(int width, int height, const char* title)
     while (!m_Window->ShouldClose())
     {
         m_TimeSystem->Update();
+        m_InputSystem->Update();
 
         Update();
 
@@ -75,10 +82,11 @@ int App::Run(int width, int height, const char* title)
     Shutdown();
 
     m_RenderSystem->Shutdown();
-
+    m_InputSystem->Shutdown();
 
     delete m_TimeSystem;
     delete m_RenderSystem;
+    delete m_InputSystem;
 
     delete m_Window;
 
