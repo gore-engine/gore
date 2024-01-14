@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Handle.h"
+#include "GrpahicsResource.h"
 
 #include <vector>
 

@@ -1,8 +1,9 @@
 #include "Test/TestPrefix.h"
 
 #if ENABLE_TEST
-    #include "BindGroup.h"
-    #include "BindLayout.h"
+#include "BindGroup.h"
+#include "BindLayout.h"
+#include "GrpahicsResource.h"
 
 namespace gore
 {

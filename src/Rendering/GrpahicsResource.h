@@ -4,7 +4,8 @@
 
 #include "Handle.h"
 
-struct VKShaderModule;
+#include "Graphics/Vulkan/VulkanIncludes.h"
+#include "Graphics/Vulkan/VulkanExtensions.h"
 
 namespace gore
 {
@@ -24,14 +25,8 @@ struct BindGroup
 {
 };
 
-struct ShaderModule
-{
-    VKShaderModule* vkShaderModule;
-};
-
 using TextureHandle      = Handle<Texture>;
 using BufferHandle       = Handle<Buffer>;
 using SamplerHandle      = Handle<Sampler>;
 using BindGroupHandle    = Handle<BindGroup>;
-using ShaderModuleHandle = Handle<ShaderModule>;
 } // namespace gore

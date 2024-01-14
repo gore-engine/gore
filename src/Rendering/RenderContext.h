@@ -2,6 +2,8 @@
 
 #include "Prefix.h"
 
+#include "Graphics/Vulkan/VulkanIncludes.h"
+
 #include "GraphicsResourceDesc.h"
 #include "GrpahicsResource.h"
 
@@ -20,18 +22,17 @@ class RenderContext final
     NON_COPYABLE(RenderContext);
 
 public:
-    RenderContext() = default;
+    RenderContext(vk::raii::Device* device);
+    ~RenderContext();
 
     TextureHandle createTexture(const TextureDesc& desc);
     BufferHandle createBuffer(const BufferDesc& desc);
-    ShaderModuleHandle createShaderModule(const ShaderModuleDesc& desc);
     SamplerHandle createSampler(const SamplerDesc& desc);
     BindGroupHandle createBindGroup(const BindGroupDesc& desc);
     PipelineHandle createPipeline(const PipelineDesc& desc);
 
     void destroyTexture(TextureHandle handle);
     void destroyBuffer(BufferHandle handle);
-    void destroyShaderModule(ShaderModuleHandle handle);
     void destroySampler(SamplerHandle handle);
     void destroyBindGroup(BindGroupHandle handle);
     void destroyPipeline(PipelineHandle handle);
@@ -39,12 +40,13 @@ public:
     void clear();
 
 private:
-    Pool<TextureHandle, Texture*> m_texturePool                = {};
-    Pool<BufferHandle, Buffer*> m_bufferPool                   = {};
-    Pool<ShaderModuleHandle, ShaderModule*> m_shaderModulePool = {};
-    Pool<SamplerHandle, Sampler*> m_samplerPool                = {};
-    Pool<BindGroupHandle, BindGroup*> m_bindGroupPool          = {};
-    Pool<PipelineHandle, Pipeline*> m_pipelinePool             = {};
+    Pool<TextureDesc, Texture*> m_texturePool                = {};
+    Pool<BufferDesc, Buffer*> m_bufferPool                   = {};
+    Pool<SamplerDesc, Sampler*> m_samplerPool                = {};
+    Pool<BindGroupDesc, BindGroup*> m_bindGroupPool          = {};
+    Pool<PipelineDesc, Pipeline*> m_pipelinePool             = {};
+
+    vk::raii::Device* m_device = nullptr;
 };
 
 } // namespace gore
