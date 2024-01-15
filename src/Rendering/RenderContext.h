@@ -2,6 +2,8 @@
 
 #include "Prefix.h"
 
+#include "DummyVertex.h"
+
 #include "Graphics/Vulkan/VulkanIncludes.h"
 
 #include "GraphicsResourceDesc.h"
@@ -30,6 +32,10 @@ public:
     SamplerHandle createSampler(const SamplerDesc& desc);
     BindGroupHandle createBindGroup(const BindGroupDesc& desc);
     PipelineHandle createPipeline(const PipelineDesc& desc);
+    ShaderModuleHandle createShaderModule(const ShaderModuleDesc& desc);
+    ShaderModuleDesc& getShaderModuleDesc(ShaderModuleHandle handle); 
+    const ShaderModule& getShaderModule(ShaderModuleHandle handle);
+    void destroyShaderModule(ShaderModuleHandle handle);
 
     void destroyTexture(TextureHandle handle);
     void destroyBuffer(BufferHandle handle);
@@ -40,13 +46,11 @@ public:
     void clear();
 
 private:
-    Pool<TextureDesc, Texture*> m_texturePool                = {};
-    Pool<BufferDesc, Buffer*> m_bufferPool                   = {};
-    Pool<SamplerDesc, Sampler*> m_samplerPool                = {};
-    Pool<BindGroupDesc, BindGroup*> m_bindGroupPool          = {};
-    Pool<PipelineDesc, Pipeline*> m_pipelinePool             = {};
+    using ShaderModulePool = Pool<ShaderModuleDesc, ShaderModule>;
 
-    vk::raii::Device* m_device = nullptr;
+    ShaderModulePool m_ShaderModulePool;
+
+    std::unique_ptr<vk::raii::Device> m_device;
 };
 
 } // namespace gore

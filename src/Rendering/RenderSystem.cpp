@@ -278,6 +278,7 @@ void RenderSystem::Shutdown()
     {
         vmaDestroyAllocator(m_VmaAllocator);
     }
+    m_RenderContext->clear();
 }
 
 void RenderSystem::OnResize(Window* window, int width, int height)
@@ -456,6 +457,8 @@ void RenderSystem::CreateDevice()
     // Create
     vk::DeviceCreateInfo deviceCreateInfo({}, queueCreateInfos, {}, enabledDeviceExtensions, &enabledFeatures);
     m_Device = physicalDevice.createDevice(deviceCreateInfo);
+
+    m_RenderContext = std::make_unique<RenderContext>(&m_Device);
 
     LOG_STREAM(INFO) << "Created Vulkan device with \"" << properties.deviceName << "\"" << std::endl;
 
@@ -760,10 +763,19 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
     }
     LOG_STREAM(DEBUG) << "Loaded shader: " << vertexShaderPath << std::endl;
 
+    m_CubeVertexShaderHandle = m_RenderContext->createShaderModule({
+        .debugName = "Cube Vertex Shader",
+        .byteCode = reinterpret_cast<uint8_t*>(vertexShaderBinary.data()),
+        .byteSize = static_cast<uint32_t>(vertexShaderBinary.size()),
+        .entryFunc = vertexEntryPoint.c_str()
+    });
+
     vk::ShaderModuleCreateInfo vertexShaderCreateInfo({}, vertexShaderBinary.size(), reinterpret_cast<const uint32_t*>(vertexShaderBinary.data()));
 
     m_CubeVertexShader           = m_Device.createShaderModule(vertexShaderCreateInfo);
     m_CubeVertexShaderEntryPoint = vertexEntryPoint;
+
+    m_ShaderModules.push_back(m_Device.createShaderModule(vertexShaderCreateInfo));
 
     std::filesystem::path fragmentShaderPath = getShaderFile(vk::ShaderStageFlagBits::eFragment);
 
@@ -836,7 +848,9 @@ void RenderSystem::CreatePipeline()
 
     m_PipelineLayout = m_Device.createPipelineLayout(pipelineLayoutInfo);
 
-    vk::PipelineShaderStageCreateInfo vertexShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *m_CubeVertexShader, m_CubeVertexShaderEntryPoint.c_str());
+    auto& vertexShaderModule = m_RenderContext->getShaderModule(m_CubeVertexShaderHandle);
+
+    vk::PipelineShaderStageCreateInfo vertexShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *vertexShaderModule.sm, m_CubeVertexShaderEntryPoint.c_str());
     vk::PipelineShaderStageCreateInfo fragmentShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eFragment, *m_CubeFragmentShader, m_CubeFragmentShaderEntryPoint.c_str());
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStageCreateInfos = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
 

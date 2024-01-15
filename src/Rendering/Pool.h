@@ -39,8 +39,8 @@ public:
         else
         {
             idx = (uint32_t)objectDesc.size();
-            objectDesc.emplace_back(desc);
-            objects.emplace_back(obj);
+            objectDesc.emplace_back(PoolEntryDesc(desc));
+            objects.emplace_back(std::move(obj));
         }
         _numObjects++;
         return Handle<ImplObjectType>(idx, objectDesc[idx].gen);
@@ -58,6 +58,14 @@ public:
         objectDesc[index].nextFree = _freeListHead;
         _freeListHead              = index;
         _numObjects--;
+    }
+    const ImplObjectType& getObject(Handle<ImplObjectType> handle)
+    {
+        assert(!handle.empty());
+        const uint32_t index = handle.index();
+        assert(index < objects.size());
+        assert(handle.gen() == objectDesc[index].gen);
+        return objects[index];
     }
     const ImplObjectType* getObjectPtr(Handle<ImplObjectType> handle) const
     {

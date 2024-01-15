@@ -27,6 +27,11 @@ struct BindGroup
 
 struct ShaderModule
 {
+    ShaderModule(vk::raii::ShaderModule&& inSM) :
+        sm(std::move(inSM))
+    {
+    }
+
     vk::raii::ShaderModule sm;
 };
 

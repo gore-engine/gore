@@ -5,10 +5,10 @@
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 
+#include "RenderContext.h"
 namespace gore
 {
 
-class RenderContext;
 class Window;
 
 class RenderSystem final : System
@@ -27,6 +27,7 @@ public:
 
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
+    std::vector<vk::raii::ShaderModule> m_ShaderModules;
 
     // Instance
     vk::raii::Context m_Context;
@@ -60,6 +61,8 @@ private:
     uint32_t m_CurrentSwapchainImageIndex;
 
     // Shader
+    ShaderModuleHandle m_CubeVertexShaderHandle;
+
     vk::raii::ShaderModule m_CubeVertexShader;
     std::string m_CubeVertexShaderEntryPoint;
     vk::raii::ShaderModule m_CubeFragmentShader;
