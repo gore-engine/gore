@@ -27,7 +27,6 @@ public:
 
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
-    std::vector<vk::raii::ShaderModule> m_ShaderModules;
 
     // Instance
     vk::raii::Context m_Context;

@@ -775,8 +775,6 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
     m_CubeVertexShader           = m_Device.createShaderModule(vertexShaderCreateInfo);
     m_CubeVertexShaderEntryPoint = vertexEntryPoint;
 
-    m_ShaderModules.push_back(m_Device.createShaderModule(vertexShaderCreateInfo));
-
     std::filesystem::path fragmentShaderPath = getShaderFile(vk::ShaderStageFlagBits::eFragment);
 
     std::vector<char> fragmentShaderBinary = FileSystem::ReadAllBinary(fragmentShaderPath);
