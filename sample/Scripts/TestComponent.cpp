@@ -1,7 +1,9 @@
 #include "TestComponent.h"
 #include "Object/GameObject.h"
+#include "Object/Transform.h"
 #include "Core/Log.h"
 #include "Core/Time.h"
+#include "Math/Quaternion.h"
 
 TestComponent::TestComponent(gore::GameObject* gameObject) :
     Component(gameObject)

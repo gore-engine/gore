@@ -12,6 +12,7 @@
 #include "Object/Transform.h"
 #include "Object/Camera.h"
 #include "Core/Log.h"
+#include "Math/Constants.h"
 
 #include "Scripts/TestComponent.h"
 
@@ -42,9 +43,6 @@ void SampleApp::Initialize()
 
     gore::GameObject* gameObject = scene->NewObject();
     gameObject->SetName("TestObject");
-    // This is a NO-OP because the GameObject automatically creates a Transform component when it is created.
-    // It will only print an Error message to console.
-    gameObject->AddComponent<gore::Transform>();
 
     LOG_STREAM(INFO) << (gameObject->transform->GetLocalPosition()) << std::endl;
 
