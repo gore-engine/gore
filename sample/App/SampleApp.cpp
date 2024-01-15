@@ -15,6 +15,7 @@
 #include "Math/Constants.h"
 
 #include "Scripts/TestComponent.h"
+#include "Scripts/CameraController.h"
 
 SampleApp::SampleApp(int argc, char** argv) :
     App(argc, argv)
@@ -34,8 +35,7 @@ void SampleApp::Initialize()
     gore::GameObject* cameraGameObject = scene->NewObject();
     cameraGameObject->SetName("MainCamera");
     gore::Camera* camera = cameraGameObject->AddComponent<gore::Camera>();
-    // by default the camera is perspective
-    camera->SetProjectionType(gore::Camera::ProjectionType::Perspective);
+    cameraGameObject->AddComponent<CameraController>();
 
     gore::Transform* cameraTransform = cameraGameObject->GetComponent<gore::Transform>();
     cameraTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
@@ -43,10 +43,39 @@ void SampleApp::Initialize()
 
     gore::GameObject* gameObject = scene->NewObject();
     gameObject->SetName("TestObject");
-
-    LOG_STREAM(INFO) << (gameObject->transform->GetLocalPosition()) << std::endl;
-
     TestComponent* testComponent = gameObject->AddComponent<TestComponent>();
+
+    const float distance = 5.0f;
+
+    gameObject = scene->NewObject();
+    gameObject->SetName("TestObject L");
+    gameObject->transform->SetLocalPosition(gore::Vector3::Left * distance);
+    testComponent = gameObject->AddComponent<TestComponent>();
+
+    gameObject = scene->NewObject();
+    gameObject->SetName("TestObject R");
+    gameObject->transform->SetLocalPosition(gore::Vector3::Right * distance);
+    testComponent = gameObject->AddComponent<TestComponent>();
+
+    gameObject = scene->NewObject();
+    gameObject->SetName("TestObject F");
+    gameObject->transform->SetLocalPosition(gore::Vector3::Forward * distance);
+    testComponent = gameObject->AddComponent<TestComponent>();
+
+    gameObject = scene->NewObject();
+    gameObject->SetName("TestObject B");
+    gameObject->transform->SetLocalPosition(gore::Vector3::Backward * distance);
+    testComponent = gameObject->AddComponent<TestComponent>();
+
+    gameObject = scene->NewObject();
+    gameObject->SetName("TestObject U");
+    gameObject->transform->SetLocalPosition(gore::Vector3::Up * distance);
+    testComponent = gameObject->AddComponent<TestComponent>();
+
+    gameObject = scene->NewObject();
+    gameObject->SetName("TestObject D");
+    gameObject->transform->SetLocalPosition(gore::Vector3::Down * distance);
+    testComponent = gameObject->AddComponent<TestComponent>();
 }
 
 void SampleApp::Update()
