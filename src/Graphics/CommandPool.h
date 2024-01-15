@@ -26,25 +26,25 @@ public:
     void Reset(uint32_t swapchainImageIndex);
 
 private:
-    struct Pool
+    struct CommandPoolEntry
     {
         const Device* m_Device;
         vk::raii::CommandPool commandPool;
         std::vector<vk::raii::CommandBuffer> commandBuffers;
         int currentPoolIndex;
 
-        Pool();
-        Pool(const Device& device, vk::raii::CommandPool commandPool);
-        Pool(Pool&& other) noexcept;
-        ~Pool();
+        CommandPoolEntry();
+        CommandPoolEntry(const Device& device, vk::raii::CommandPool commandPool);
+        CommandPoolEntry(CommandPoolEntry&& other) noexcept;
+        ~CommandPoolEntry();
     };
 
-    static thread_local std::map<const CommandPool*, std::map<uint32_t, Pool>> s_CommandPools;
+    static thread_local std::map<const CommandPool*, std::map<uint32_t, CommandPoolEntry>> s_PoolEntries;
 
     const Device* m_Device;
     uint32_t m_QueueFamilyIndex;
 
-    Pool& GetPool(uint32_t swapchainImageIndex);
+    CommandPoolEntry& GetPoolEntry(uint32_t swapchainImageIndex);
 };
 
 } // namespace gore::gfx

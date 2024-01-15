@@ -8,7 +8,7 @@
 namespace gore::gfx
 {
 
-thread_local std::map<const CommandPool*, std::map<uint32_t, CommandPool::Pool>> CommandPool::s_CommandPools;
+thread_local std::map<const CommandPool*, std::map<uint32_t, CommandPool::CommandPoolEntry>> CommandPool::s_PoolEntries;
 
 CommandPool::CommandPool() :
     m_Device(nullptr),
@@ -26,18 +26,18 @@ CommandPool::CommandPool(CommandPool&& other) noexcept :
     m_Device(other.m_Device),
     m_QueueFamilyIndex(other.m_QueueFamilyIndex)
 {
-    if (s_CommandPools.contains(&other))
+    if (s_PoolEntries.contains(&other))
     {
-        s_CommandPools.emplace(this, std::move(s_CommandPools.at(&other)));
-        s_CommandPools.erase(&other);
+        s_PoolEntries.emplace(this, std::move(s_PoolEntries.at(&other)));
+        s_PoolEntries.erase(&other);
     }
 }
 
 CommandPool::~CommandPool()
 {
-    if (s_CommandPools.contains(this))
+    if (s_PoolEntries.contains(this))
     {
-        s_CommandPools.erase(this);
+        s_PoolEntries.erase(this);
     }
 }
 
@@ -46,10 +46,10 @@ CommandPool& CommandPool::operator=(CommandPool&& other) noexcept
     m_Device           = other.m_Device;
     m_QueueFamilyIndex = other.m_QueueFamilyIndex;
 
-    if (s_CommandPools.contains(&other))
+    if (s_PoolEntries.contains(&other))
     {
-        s_CommandPools.emplace(this, std::move(s_CommandPools.at(&other)));
-        s_CommandPools.erase(&other);
+        s_PoolEntries.emplace(this, std::move(s_PoolEntries.at(&other)));
+        s_PoolEntries.erase(&other);
     }
 
     return *this;
@@ -57,28 +57,28 @@ CommandPool& CommandPool::operator=(CommandPool&& other) noexcept
 
 const vk::raii::CommandPool& CommandPool::Get(uint32_t swapchainImageIndex)
 {
-    return GetPool(swapchainImageIndex).commandPool;
+    return GetPoolEntry(swapchainImageIndex).commandPool;
 }
 
-CommandPool::Pool& CommandPool::GetPool(uint32_t swapchainImageIndex)
+CommandPool::CommandPoolEntry& CommandPool::GetPoolEntry(uint32_t swapchainImageIndex)
 {
-    if (!s_CommandPools.contains(this))
+    if (!s_PoolEntries.contains(this))
     {
-        s_CommandPools.emplace(this, std::map<uint32_t, Pool>());
+        s_PoolEntries.emplace(this, std::map<uint32_t, CommandPoolEntry>());
     }
 
-    if (!s_CommandPools.at(this).contains(swapchainImageIndex))
+    if (!s_PoolEntries.at(this).contains(swapchainImageIndex))
     {
         vk::CommandPoolCreateInfo createInfo({}, m_QueueFamilyIndex);
-        s_CommandPools.at(this).emplace(swapchainImageIndex, Pool(*m_Device, vk::raii::CommandPool(m_Device->Get(), createInfo)));
+        s_PoolEntries.at(this).emplace(swapchainImageIndex, CommandPoolEntry(*m_Device, vk::raii::CommandPool(m_Device->Get(), createInfo)));
     }
 
-    return s_CommandPools.at(this).at(swapchainImageIndex);
+    return s_PoolEntries.at(this).at(swapchainImageIndex);
 }
 
 const vk::raii::CommandBuffer& CommandPool::GetCommandBuffer(uint32_t swapchainImageIndex)
 {
-    Pool& pool = GetPool(swapchainImageIndex);
+    CommandPoolEntry& pool = GetPoolEntry(swapchainImageIndex);
 
     if (pool.currentPoolIndex >= pool.commandBuffers.size())
     {
@@ -92,13 +92,13 @@ const vk::raii::CommandBuffer& CommandPool::GetCommandBuffer(uint32_t swapchainI
 
 void CommandPool::Reset(uint32_t swapchainImageIndex)
 {
-    Pool& pool = GetPool(swapchainImageIndex);
+    CommandPoolEntry& pool = GetPoolEntry(swapchainImageIndex);
 
     pool.commandPool.reset({});
     pool.currentPoolIndex = 0;
 }
 
-CommandPool::Pool::Pool() :
+CommandPool::CommandPoolEntry::CommandPoolEntry() :
     m_Device(nullptr),
     commandPool(nullptr),
     commandBuffers(),
@@ -106,7 +106,7 @@ CommandPool::Pool::Pool() :
 {
 }
 
-CommandPool::Pool::Pool(const Device& device, vk::raii::CommandPool commandPool) :
+CommandPool::CommandPoolEntry::CommandPoolEntry(const Device& device, vk::raii::CommandPool commandPool) :
     m_Device(&device),
     commandPool(std::move(commandPool)),
     commandBuffers(),
@@ -114,7 +114,7 @@ CommandPool::Pool::Pool(const Device& device, vk::raii::CommandPool commandPool)
 {
 }
 
-CommandPool::Pool::Pool(CommandPool::Pool&& other) noexcept :
+CommandPool::CommandPoolEntry::CommandPoolEntry(CommandPool::CommandPoolEntry&& other) noexcept :
     m_Device(other.m_Device),
     commandPool(std::move(other.commandPool)),
     commandBuffers(std::move(other.commandBuffers)),
@@ -122,7 +122,7 @@ CommandPool::Pool::Pool(CommandPool::Pool&& other) noexcept :
 {
 }
 
-CommandPool::Pool::~Pool()
+CommandPool::CommandPoolEntry::~CommandPoolEntry()
 {
 }
 

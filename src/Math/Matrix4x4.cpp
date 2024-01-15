@@ -1,6 +1,7 @@
 #include "Matrix4x4.h"
 
 #include <type_traits>
+#include <limits>
 #include <cmath>
 
 #include "Vector3.h"
@@ -171,13 +172,23 @@ Matrix4x4 Matrix4x4::CreatePerspectiveFieldOfViewLH(float fov, float aspectRatio
     float CosFov = cosf(fov / 2);
     float Height = CosFov / SinFov;
     float Width  = Height / aspectRatio;
-    float fRange = -nearPlane / (farPlane - nearPlane);
+    float a, b;
+    if (std::isinf(farPlane))
+    {
+        a = 0.0f;
+        b = nearPlane;
+    }
+    else
+    {
+        a = -nearPlane / (farPlane - nearPlane);
+        b = -farPlane * a;
+    }
 
     return static_cast<Matrix4x4>(SIMDValueType(rtm::matrix_set(
         rtm::vector_set(Width, 0.0f, 0.0f, 0.0f),
         rtm::vector_set(0.0f, Height, 0.0f, 0.0f),
-        rtm::vector_set(0.0f, 0.0f, fRange, 1.0f),
-        rtm::vector_set(0.0f, 0.0f, -fRange * farPlane, 0.0f))));
+        rtm::vector_set(0.0f, 0.0f, a, 1.0f),
+        rtm::vector_set(0.0f, 0.0f, b, 0.0f))));
 }
 Matrix4x4 Matrix4x4::CreateOrthographicLH(float width, float height, float nearPlane, float farPlane) noexcept
 {
