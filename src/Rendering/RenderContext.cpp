@@ -18,17 +18,16 @@ void RenderContext::clear()
     m_ShaderModulePool.clear();
 }
 
-ShaderModuleHandle RenderContext::createShaderModule(const ShaderModuleDesc& desc)
+ShaderModuleHandle RenderContext::createShaderModule(ShaderModuleDesc&& desc)
 {
-    vk::raii::ShaderModule sm = m_device->createShaderModule(vk::ShaderModuleCreateInfo(
-        vk::ShaderModuleCreateFlags(),
-        desc.byteSize,
-        reinterpret_cast<const uint32_t*>(desc.byteCode)));
-
-    // FIXME: remove this copy
-    ShaderModuleDesc copyDesc = desc;
-
-    return m_ShaderModulePool.create(std::move(copyDesc), std::move(ShaderModule(std::move(sm))));
+    return m_ShaderModulePool.create(
+        std::move(desc),
+        std::move(ShaderModule(
+            m_device->createShaderModule(
+                vk::ShaderModuleCreateInfo(
+                    {},
+                    desc.byteSize,
+                    reinterpret_cast<const uint32_t*>(desc.byteCode))))));
 }
 
 const ShaderModule& RenderContext::getShaderModule(ShaderModuleHandle handle)

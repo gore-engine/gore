@@ -32,7 +32,7 @@ public:
     SamplerHandle createSampler(const SamplerDesc& desc);
     BindGroupHandle createBindGroup(const BindGroupDesc& desc);
     PipelineHandle createPipeline(const PipelineDesc& desc);
-    ShaderModuleHandle createShaderModule(const ShaderModuleDesc& desc);
+    ShaderModuleHandle createShaderModule(ShaderModuleDesc&& desc);
     ShaderModuleDesc& getShaderModuleDesc(ShaderModuleHandle handle); 
     const ShaderModule& getShaderModule(ShaderModuleHandle handle);
     void destroyShaderModule(ShaderModuleHandle handle);
