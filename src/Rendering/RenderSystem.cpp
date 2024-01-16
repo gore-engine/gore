@@ -59,10 +59,8 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_InFlightFences(),
     m_CurrentSwapchainImageIndex(0),
     // Shader
-    m_CubeVertexShader(nullptr),
-    m_CubeVertexShaderEntryPoint(),
-    m_CubeFragmentShader(nullptr),
-    m_CubeFragmentShaderEntryPoint(),
+    m_CubeVertexShaderHandle(),
+    m_CubeFragmentShaderHandle(),
     // Render Pass
     m_RenderPass(nullptr),
     // Pipeline
@@ -772,9 +770,6 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
 
     vk::ShaderModuleCreateInfo vertexShaderCreateInfo({}, vertexShaderBinary.size(), reinterpret_cast<const uint32_t*>(vertexShaderBinary.data()));
 
-    m_CubeVertexShader           = m_Device.createShaderModule(vertexShaderCreateInfo);
-    m_CubeVertexShaderEntryPoint = vertexEntryPoint;
-
     std::filesystem::path fragmentShaderPath = getShaderFile(vk::ShaderStageFlagBits::eFragment);
 
     std::vector<char> fragmentShaderBinary = FileSystem::ReadAllBinary(fragmentShaderPath);
@@ -787,8 +782,12 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
 
     vk::ShaderModuleCreateInfo fragmentShaderCreateInfo({}, fragmentShaderBinary.size(), reinterpret_cast<const uint32_t*>(fragmentShaderBinary.data()));
 
-    m_CubeFragmentShader           = m_Device.createShaderModule(fragmentShaderCreateInfo);
-    m_CubeFragmentShaderEntryPoint = fragmentEntryPoint;
+    m_CubeFragmentShaderHandle = m_RenderContext->createShaderModule({
+        .debugName = "Cube Frag Shader",
+        .byteCode = reinterpret_cast<uint8_t*>(fragmentShaderBinary.data()),
+        .byteSize = static_cast<uint32_t>(fragmentShaderBinary.size()),
+        .entryFunc = fragmentEntryPoint.c_str()
+    });
 }
 
 void RenderSystem::CreateRenderPass()
@@ -846,10 +845,14 @@ void RenderSystem::CreatePipeline()
 
     m_PipelineLayout = m_Device.createPipelineLayout(pipelineLayoutInfo);
 
+    auto& vertexShaderModuleDesc = m_RenderContext->getShaderModuleDesc(m_CubeVertexShaderHandle);
     auto& vertexShaderModule = m_RenderContext->getShaderModule(m_CubeVertexShaderHandle);
 
-    vk::PipelineShaderStageCreateInfo vertexShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *vertexShaderModule.sm, m_CubeVertexShaderEntryPoint.c_str());
-    vk::PipelineShaderStageCreateInfo fragmentShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eFragment, *m_CubeFragmentShader, m_CubeFragmentShaderEntryPoint.c_str());
+    auto& fragmentShaderModuleDesc = m_RenderContext->getShaderModuleDesc(m_CubeFragmentShaderHandle);
+    auto& fragmentShaderModule = m_RenderContext->getShaderModule(m_CubeFragmentShaderHandle);
+
+    vk::PipelineShaderStageCreateInfo vertexShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *vertexShaderModule.sm, vertexShaderModuleDesc.entryFunc);
+    vk::PipelineShaderStageCreateInfo fragmentShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eFragment, *fragmentShaderModule.sm, fragmentShaderModuleDesc.entryFunc);
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStageCreateInfos = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
 
     std::vector<vk::DynamicState> dynamicStates = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};

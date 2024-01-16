@@ -33,7 +33,7 @@ public:
     BindGroupHandle createBindGroup(const BindGroupDesc& desc);
     PipelineHandle createPipeline(const PipelineDesc& desc);
     ShaderModuleHandle createShaderModule(ShaderModuleDesc&& desc);
-    ShaderModuleDesc& getShaderModuleDesc(ShaderModuleHandle handle); 
+    const ShaderModuleDesc& getShaderModuleDesc(ShaderModuleHandle handle); 
     const ShaderModule& getShaderModule(ShaderModuleHandle handle);
     void destroyShaderModule(ShaderModuleHandle handle);
 

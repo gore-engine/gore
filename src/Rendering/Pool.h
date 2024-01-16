@@ -87,6 +87,14 @@ public:
         assert(handle.gen() == objectDesc[index].gen); // accessing deleted object
         return &objects[index];
     }
+    const ObjectDesc& getObjectDesc(Handle<ImplObjectType> handle)
+    {
+        assert(!handle.empty());
+        const uint32_t index = handle.index();
+        assert(index < objectDesc.size());
+        assert(handle.gen() == objectDesc[index].gen);
+        return objectDesc[index].objDesc;
+    }
     const ObjectDesc* getObjectDescPtr(Handle<ImplObjectType> handle) const
     {
         if (handle.empty())

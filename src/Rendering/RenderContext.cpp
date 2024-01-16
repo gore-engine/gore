@@ -30,6 +30,12 @@ ShaderModuleHandle RenderContext::createShaderModule(ShaderModuleDesc&& desc)
                     reinterpret_cast<const uint32_t*>(desc.byteCode))))));
 }
 
+const ShaderModuleDesc& RenderContext::getShaderModuleDesc(ShaderModuleHandle handle)
+{
+    return m_ShaderModulePool.getObjectDesc(handle);
+}
+
+
 const ShaderModule& RenderContext::getShaderModule(ShaderModuleHandle handle)
 {
     return m_ShaderModulePool.getObject(handle);

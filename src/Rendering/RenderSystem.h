@@ -62,11 +62,7 @@ private:
 
     // Shader
     ShaderModuleHandle m_CubeVertexShaderHandle;
-
-    vk::raii::ShaderModule m_CubeVertexShader;
-    std::string m_CubeVertexShaderEntryPoint;
-    vk::raii::ShaderModule m_CubeFragmentShader;
-    std::string m_CubeFragmentShaderEntryPoint;
+    ShaderModuleHandle m_CubeFragmentShaderHandle;
 
     // Render pass
     vk::raii::RenderPass m_RenderPass;
