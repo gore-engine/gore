@@ -51,6 +51,28 @@ Transform* Transform::GetRoot() const
     return pTransform;
 }
 
+Transform* Transform::Find(const std::string& name, bool recursive) const
+{
+    auto result = std::find_if(m_Children.begin(), m_Children.end(), [name](Transform* child)
+                               { return child->GetGameObject()->GetName() == name; });
+    if (result != m_Children.end())
+    {
+        return *result;
+    }
+    if (!recursive)
+    {
+        return nullptr;
+    }
+
+    for (auto& child : m_Children)
+    {
+        auto pTransform = child->Find(name, recursive);
+        if (pTransform != nullptr)
+            return pTransform;
+    }
+    return nullptr;
+}
+
 void Transform::RotateAroundAxis(const Vector3& axis, float angle)
 {
     m_LocalTQS.q = Quaternion::CreateFromAxisAngle(axis, angle) * m_LocalTQS.q;
