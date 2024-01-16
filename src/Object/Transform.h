@@ -28,10 +28,11 @@ public:
     {
     }
 
-    ~Transform() override = default;
-
     void Start() override;
     void Update() override;
+
+protected:
+    ~Transform() override;
 
 public:
     // clang-format off
