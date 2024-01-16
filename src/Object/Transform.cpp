@@ -10,6 +10,13 @@
 namespace gore
 {
 
+Transform::~Transform()
+{
+    LOG_STREAM(WARNING) << "Destroyed Transform in GameObject " << GetGameObject()->GetName()
+        << ". Note that the destruction of children objects has NOT been implemented."
+        << std::endl;
+}
+
 void Transform::SetLocalEulerAngles(const Vector3& eulerAngles)
 {
     m_LocalTQS.q = Quaternion::CreateFromYawPitchRoll(eulerAngles.y, eulerAngles.x, eulerAngles.z);

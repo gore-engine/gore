@@ -44,7 +44,7 @@ Matrix4x4 Camera::GetViewMatrix() const
 {
     // 1. A camera is always attached to a game object, so we can safely assume that the transform is not null
     // 2. A camera never cares about the scale of the transform, so we can safely ignore it
-    return m_GameObject->transform->GetWorldToLocalMatrixIgnoreScale();
+    return m_GameObject->GetTransform()->GetWorldToLocalMatrixIgnoreScale();
 }
 
 Matrix4x4 Camera::GetViewProjectionMatrix() const

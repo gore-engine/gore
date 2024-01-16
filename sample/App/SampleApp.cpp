@@ -44,7 +44,7 @@ void SampleApp::Initialize()
     gore::GameObject* gameObject = scene->NewObject();
     gameObject->SetName("TestObject");
 
-    LOG_STREAM(INFO) << (gameObject->transform->GetLocalPosition()) << std::endl;
+    LOG_STREAM(INFO) << (gameObject->GetTransform()->GetLocalPosition()) << std::endl;
 
     TestComponent* testComponent = gameObject->AddComponent<TestComponent>();
 
