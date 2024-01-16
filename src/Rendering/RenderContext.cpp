@@ -2,7 +2,7 @@
 
 namespace gore
 {
-RenderContext::RenderContext(vk::raii::Device* device) :
+RenderContext::RenderContext(const vk::raii::Device* device) :
     m_DevicePtr(device),
     m_ShaderModulePool()
 {

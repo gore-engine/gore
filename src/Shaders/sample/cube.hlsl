@@ -44,7 +44,7 @@ VertOut vs(Attributes IN)
 {
     VertOut vertOut;
     float4 objVertPos = float4(IN.positionOS, 1.0f);
-    vertOut.pos = mul(mvpPushConst.p, mul(mvpPushConst.m, objVertPos));
+    vertOut.pos = mul(mvpPushConst.vp, mul(mvpPushConst.m, objVertPos));
     vertOut.pos.y *= -1.0f;
     vertOut.color = objVertPos.xyz + 0.5f;
     return vertOut;

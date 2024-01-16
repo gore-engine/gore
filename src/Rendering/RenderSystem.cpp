@@ -85,6 +85,8 @@ void RenderSystem::Initialize()
     m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), 3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
 
+    m_RenderContext = std::make_unique<RenderContext>(&m_Device.Get());
+
     CreateDepthBuffer();
     CreateVertexBuffer();
     LoadShader("sample/cube", "vs", "ps");
@@ -169,13 +171,6 @@ void RenderSystem::Update()
         if (gameObject == camera->GetGameObject())
             continue;
 
-<<<<<<< HEAD
-    commandBuffer.bindVertexBuffers(0, {*m_VertexBuffer}, {0});
-    commandBuffer.bindIndexBuffer(*m_IndexBuffer, 0, vk::IndexType::eUint16);
-
-    commandBuffer.drawIndexed(36, 1, 0, 0, 0);
-    // commandBuffer.draw(36, 1, 0, 0);
-=======
         PushConstant pushConstant
         {
             .m = gameObject->transform->GetLocalToWorldMatrix(),
@@ -183,10 +178,11 @@ void RenderSystem::Update()
         };
         std::array<PushConstant, 1> pushConstantData = {pushConstant};
         commandBuffer.pushConstants<PushConstant>(*m_PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, pushConstantData);
+        commandBuffer.bindVertexBuffers(0, {*m_VertexBuffer}, {0});
+        commandBuffer.bindIndexBuffer(*m_IndexBuffer, 0, vk::IndexType::eUint16);
 
-        commandBuffer.draw(36, 1, 0, 0);
+        commandBuffer.drawIndexed(36, 1, 0, 0, 0);
     }
->>>>>>> origin/main
 
     commandBuffer.endRenderPass();
 
@@ -264,316 +260,6 @@ void RenderSystem::OnResize(Window* window, int width, int height)
     CreateFramebuffers();
 }
 
-<<<<<<< HEAD
-void RenderSystem::CreateInstance()
-{
-    // Layers
-    std::vector<vk::LayerProperties> layerProperties = m_Context.enumerateInstanceLayerProperties();
-    
-    std::vector<const char*> requestedLayers = {
-#if ENGINE_DEBUG
-        "VK_LAYER_KHRONOS_validation",
-#endif
-    };
-
-    bool validationEnabled = false;
-    std::vector<const char*> enabledLayers;
-    for (const auto& requestedLayer : requestedLayers)
-    {
-        auto it = std::find_if(layerProperties.begin(), layerProperties.end(), [&requestedLayer](const vk::LayerProperties& layer)
-                               { return strcmp(layer.layerName, requestedLayer) == 0; });
-
-        if (it != layerProperties.end())
-        {
-            enabledLayers.push_back(it->layerName);
-            validationEnabled = validationEnabled || strcmp(it->layerName, "VK_LAYER_KHRONOS_validation") == 0;
-        }
-    }
-
-    if (!enabledLayers.empty())
-    {
-        LOG(DEBUG, "Enabled instance layers:\n");
-        for (const auto& layer : enabledLayers)
-        {
-            LOG(DEBUG, "  %s\n", layer);
-        }
-    }
-
-    // Instance Extensions
-    std::vector<vk::ExtensionProperties> instanceExtensionProperties = m_Context.enumerateInstanceExtensionProperties();
-
-    for (std::string layer : enabledLayers)
-    {
-        std::vector<vk::ExtensionProperties> layerExtensionProperties = m_Context.enumerateInstanceExtensionProperties(layer);
-        instanceExtensionProperties.insert(instanceExtensionProperties.end(), layerExtensionProperties.begin(), layerExtensionProperties.end());
-    }
-
-    m_EnabledInstanceExtensions.set();
-#ifndef ENGINE_DEBUG
-    m_EnabledInstanceExtensions.reset(static_cast<size_t>(VulkanInstanceExtension::kVK_EXT_debug_report));
-    m_EnabledInstanceExtensions.reset(static_cast<size_t>(VulkanInstanceExtension::kVK_EXT_debug_utils));
-#endif
-
-    std::vector<const char*> enabledInstanceExtensions = BuildEnabledExtensions<VulkanInstanceExtensionBitset, VulkanInstanceExtension>(instanceExtensionProperties,
-                                                                                                                                        m_EnabledInstanceExtensions);
-
-    // Instance Creation
-#ifdef VK_API_VERSION_1_1
-    m_ApiVersion = m_Context.enumerateInstanceVersion(); // TODO: potential crash
-#else
-    m_ApiVersion = VK_API_VERSION_1_0;
-#endif
-
-    vk::ApplicationInfo appInfo("Gore", 1, "Gore", 1, m_ApiVersion);
-    vk::InstanceCreateInfo instanceCreateInfo({}, &appInfo, enabledLayers, enabledInstanceExtensions);
-
-#if defined(VK_EXT_validation_features) && (VK_EXT_VALIDATION_FEATURES_SPEC_VERSION + 0) >= 4
-
-    // todo: make this a setting
-    const bool enableShaderPrintf = true;
-
-    std::vector<vk::ValidationFeatureEnableEXT> enabledValidationFeatures;
-    std::vector<vk::ValidationFeatureDisableEXT> disabledValidationFeatures;
-    vk::ValidationFeaturesEXT validationFeatures;
-
-    if (validationEnabled)
-    {
-        if (enableShaderPrintf)
-        {
-            enabledValidationFeatures.push_back(vk::ValidationFeatureEnableEXT::eDebugPrintf);
-        }
-
-        validationFeatures.setEnabledValidationFeatures(enabledValidationFeatures);
-        validationFeatures.setDisabledValidationFeatures(disabledValidationFeatures);
-
-        instanceCreateInfo.setPNext(&validationFeatures);
-    }
-#endif
-
-#if defined(VK_KHR_portability_enumeration)
-    if (m_EnabledInstanceExtensions.test(static_cast<size_t>(VulkanInstanceExtension::kVK_KHR_portability_enumeration)))
-        instanceCreateInfo.flags |= vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
-#endif
-
-    m_Instance = m_Context.createInstance(instanceCreateInfo);
-
-    LOG_STREAM(INFO) << "Created Vulkan instance version "
-                     << VK_API_VERSION_MAJOR(m_ApiVersion) << "."
-                     << VK_API_VERSION_MINOR(m_ApiVersion) << "."
-                     << VK_API_VERSION_PATCH(m_ApiVersion) << std::endl;
-}
-
-void RenderSystem::CreateDevice()
-{
-    // Physical Device
-    m_PhysicalDevices = m_Instance.enumeratePhysicalDevices();
-
-    int maxScore = -1;
-    for (int i = 0; i < m_PhysicalDevices.size(); ++i)
-    {
-        const vk::raii::PhysicalDevice& physicalDevice = m_PhysicalDevices[i];
-        Output(i, physicalDevice);
-
-        int score = GetScore(i, physicalDevice);
-        if (score >= maxScore)
-        {
-            maxScore              = score;
-            m_PhysicalDeviceIndex = i;
-        }
-    }
-
-    if (m_PhysicalDeviceIndex < 0)
-    {
-        LOG_STREAM(FATAL) << "No suitable physical device found" << std::endl;
-        return;
-    }
-
-    // Device
-    const vk::raii::PhysicalDevice& physicalDevice = m_PhysicalDevices[m_PhysicalDeviceIndex];
-    vk::PhysicalDeviceProperties properties        = physicalDevice.getProperties();
-    m_DeviceApiVersion                             = properties.apiVersion;
-
-    // Queue Families
-    m_QueueFamilyProperties = physicalDevice.getQueueFamilyProperties();
-
-    std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-    queueCreateInfos.reserve(m_QueueFamilyProperties.size());
-    std::vector<std::vector<float>> queuePriorities;
-    queuePriorities.reserve(m_QueueFamilyProperties.size());
-
-    for (uint32_t i = 0; i < m_QueueFamilyProperties.size(); ++i)
-    {
-        const vk::QueueFamilyProperties& queueFamilyProperty = m_QueueFamilyProperties[i];
-
-        std::vector<float> queuePriority(queueFamilyProperty.queueCount, 1.0f);
-        queuePriorities.push_back(queuePriority);
-
-        vk::DeviceQueueCreateInfo queueCreateInfo({}, i, queuePriorities[i]);
-        queueCreateInfos.push_back(queueCreateInfo);
-    }
-
-    // Features
-    vk::PhysicalDeviceFeatures enabledFeatures = physicalDevice.getFeatures();
-
-    // Device extensions
-    std::vector<vk::ExtensionProperties> deviceExtensionProperties = physicalDevice.enumerateDeviceExtensionProperties();
-    m_EnabledDeviceExtensions.set();
-    std::vector<const char*> enabledDeviceExtensions = BuildEnabledExtensions<VulkanDeviceExtensionBitset, VulkanDeviceExtension>(deviceExtensionProperties,
-                                                                                                                                  m_EnabledDeviceExtensions);
-
-    // Create
-    vk::DeviceCreateInfo deviceCreateInfo({}, queueCreateInfos, {}, enabledDeviceExtensions, &enabledFeatures);
-    m_Device = physicalDevice.createDevice(deviceCreateInfo);
-
-    m_RenderContext = std::make_unique<RenderContext>(&m_Device);
-
-    LOG_STREAM(INFO) << "Created Vulkan device with \"" << properties.deviceName << "\"" << std::endl;
-
-    // Create Vulkan Memory Allocator
-    VmaVulkanFunctions vulkanFunctions{
-        .vkGetInstanceProcAddr = m_Instance.getDispatcher()->vkGetInstanceProcAddr,
-        .vkGetDeviceProcAddr   = m_Device.getDispatcher()->vkGetDeviceProcAddr
-    };
-    VmaAllocatorCreateInfo allocatorCreateInfo{
-        .flags                       = 0,              // TODO: check what flags we can use potentially
-        .physicalDevice              = *physicalDevice,
-        .device                      = *m_Device,
-        .preferredLargeHeapBlockSize = 0,              // TODO: we are using default value here for now
-        .pAllocationCallbacks        = VK_NULL_HANDLE,
-        .pDeviceMemoryCallbacks      = VK_NULL_HANDLE,
-        .pHeapSizeLimit              = VK_NULL_HANDLE, // TODO: this means no limit on all heaps
-        .pVulkanFunctions            = &vulkanFunctions,
-        .instance                    = *m_Instance,
-        .vulkanApiVersion            = std::min(m_ApiVersion, m_DeviceApiVersion)
-    };
-
-    VkResult res = vmaCreateAllocator(&allocatorCreateInfo, &m_VmaAllocator);
-    VK_CHECK_RESULT(res);
-}
-
-void RenderSystem::CreateSurface()
-{
-    void* nativeWindowHandle = m_App->GetWindow()->GetNativeHandle();
-#ifdef VK_KHR_win32_surface
-
-    Win32Window* win32Window = reinterpret_cast<Win32Window*>(nativeWindowHandle);
-    vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo({}, win32Window->hInstance, win32Window->hWnd);
-    m_Surface = m_Instance.createWin32SurfaceKHR(surfaceCreateInfo);
-
-#elif VK_KHR_xlib_surface
-
-    X11Window* x11Window = reinterpret_cast<X11Window*>(nativeWindowHandle);
-    vk::XlibSurfaceCreateInfoKHR surfaceCreateInfo({}, x11Window->display, x11Window->window);
-    m_Surface = m_Instance.createXlibSurfaceKHR(surfaceCreateInfo);
-
-#elif VK_EXT_metal_surface
-
-    CocoaWindow* cocoaWindow = reinterpret_cast<CocoaWindow*>(nativeWindowHandle);
-    vk::MetalSurfaceCreateInfoEXT surfaceCreateInfo({}, cocoaWindow->layer);
-    m_Surface = m_Instance.createMetalSurfaceEXT(surfaceCreateInfo);
-
-#else
-    #error "No supported surface extension available"
-#endif
-
-    LOG(DEBUG, "Created Vulkan surface\n");
-}
-
-void RenderSystem::CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height)
-{
-    m_SwapchainImages.clear();
-    m_SwapchainImageViews.clear();
-    m_RenderFinishedSemaphores.clear();
-    m_ImageAcquiredFences.clear();
-    m_InFlightFences.clear();
-
-    const vk::raii::PhysicalDevice& physicalDevice = m_PhysicalDevices[m_PhysicalDeviceIndex];
-
-    vk::SurfaceCapabilitiesKHR surfaceCapabilities               = physicalDevice.getSurfaceCapabilitiesKHR(*m_Surface);
-    std::vector<vk::SurfaceFormatKHR> surfaceSupportedFormats    = physicalDevice.getSurfaceFormatsKHR(*m_Surface);
-    std::vector<vk::PresentModeKHR> surfaceSupportedPresentModes = physicalDevice.getSurfacePresentModesKHR(*m_Surface);
-
-    if (surfaceSupportedFormats.empty() || surfaceSupportedPresentModes.empty())
-    {
-        LOG(ERROR, "Physical device does not support swapchain\n");
-        return;
-    }
-
-    m_SurfaceFormat = surfaceSupportedFormats[0];
-    for (const auto& format : surfaceSupportedFormats)
-    {
-        if (format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
-        {
-            m_SurfaceFormat = format;
-            break;
-        }
-    }
-
-    vk::PresentModeKHR surfacePresentMode = vk::PresentModeKHR::eFifo;
-    for (const auto& presentMode : surfaceSupportedPresentModes)
-    {
-        if (presentMode == vk::PresentModeKHR::eMailbox)
-        {
-            surfacePresentMode = presentMode;
-            break;
-        }
-    }
-
-    m_SurfaceExtent.width  = std::clamp(width,
-                                       surfaceCapabilities.minImageExtent.width,
-                                       surfaceCapabilities.maxImageExtent.width);
-    m_SurfaceExtent.height = std::clamp(height,
-                                        surfaceCapabilities.minImageExtent.height,
-                                        surfaceCapabilities.maxImageExtent.height);
-    uint32_t layers        = std::min(1u, surfaceCapabilities.maxImageArrayLayers); // TODO: Require layers
-
-    if (surfaceCapabilities.maxImageCount < surfaceCapabilities.minImageCount)
-    {
-        // fix for some drivers
-        std::swap(surfaceCapabilities.maxImageCount, surfaceCapabilities.minImageCount);
-    }
-
-    m_SwapchainImageCount = std::clamp(imageCount,
-                                       surfaceCapabilities.minImageCount,
-                                       surfaceCapabilities.maxImageCount);
-
-    m_CurrentSwapchainImageIndex = 0;
-
-    vk::SwapchainCreateInfoKHR createInfo({}, *m_Surface, m_SwapchainImageCount,
-                                          m_SurfaceFormat.format, m_SurfaceFormat.colorSpace,
-                                          m_SurfaceExtent, layers,
-                                          vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc, // TODO: Check supported usage and maybe get this from user?
-                                          vk::SharingMode::eExclusive,
-                                          {}, // queueFamilies
-                                          surfaceCapabilities.currentTransform,
-                                          vk::CompositeAlphaFlagBitsKHR::eOpaque,
-                                          surfacePresentMode,
-                                          true,     // clipped
-                                          nullptr); // oldSwapchain
-
-    m_Swapchain = m_Device.createSwapchainKHR(createInfo);
-
-    m_SwapchainImages = m_Swapchain.getImages();
-
-    m_SwapchainImageViews.reserve(m_SwapchainImageCount);
-    m_RenderFinishedSemaphores.reserve(m_SwapchainImageCount);
-    m_ImageAcquiredFences.reserve(m_SwapchainImageCount);
-    m_InFlightFences.reserve(m_SwapchainImageCount);
-
-    for (uint32_t i = 0; i < m_SwapchainImageCount; ++i)
-    {
-        vk::ImageViewCreateInfo imageViewCreateInfo({}, m_SwapchainImages[i], vk::ImageViewType::e2D, m_SurfaceFormat.format, {}, {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
-        m_SwapchainImageViews.emplace_back(m_Device.createImageView(imageViewCreateInfo));
-        m_RenderFinishedSemaphores.emplace_back(m_Device.createSemaphore({}));
-        m_ImageAcquiredFences.emplace_back(m_Device.createFence({vk::FenceCreateFlagBits::eSignaled}));
-        m_InFlightFences.emplace_back(m_Device.createFence({vk::FenceCreateFlagBits::eSignaled}));
-    }
-
-    LOG(DEBUG, "Created Vulkan swapchain with %d images, size %dx%d\n", m_SwapchainImageCount, m_SurfaceExtent.width, m_SurfaceExtent.height);
-}
-
-=======
->>>>>>> origin/main
 void RenderSystem::CreateDepthBuffer()
 {
     std::vector<vk::Format> candidateFormats = {
@@ -680,14 +366,14 @@ void RenderSystem::CreateVertexBuffer()
 
     // create a vk::raii::Buffer vertexBuffer, given a vk::raii::Device device and some vertexData in host memory
     vk::BufferCreateInfo bufferCreateInfo( {}, sizeof(Vector3) * vertices.size(), vk::BufferUsageFlagBits::eVertexBuffer );
-    m_VertexBuffer = m_Device.createBuffer( bufferCreateInfo );
+    m_VertexBuffer = m_Device.Get().createBuffer( bufferCreateInfo );
     
     // create a vk::raii::DeviceMemory vertexDeviceMemory, given a vk::raii::Device device and a uint32_t memoryTypeIndex
     vk::MemoryRequirements memoryRequirements = m_VertexBuffer.getMemoryRequirements();
-    uint32_t memoryTypeIndex = FindMemoryType( memoryRequirements.memoryTypeBits, m_PhysicalDevices[m_PhysicalDeviceIndex].getMemoryProperties(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
+    uint32_t memoryTypeIndex = FindMemoryType( memoryRequirements.memoryTypeBits, m_Device.GetPhysicalDevice().Get().getMemoryProperties(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
     
     vk::MemoryAllocateInfo memoryAllocateInfo( memoryRequirements.size, memoryTypeIndex );
-    m_VertexBufferMemory = m_Device.allocateMemory( memoryAllocateInfo );
+    m_VertexBufferMemory = m_Device.Get().allocateMemory( memoryAllocateInfo );
 
     // bind the complete device memory to the vertex buffer
     m_VertexBuffer.bindMemory( *m_VertexBufferMemory, 0 );
@@ -699,14 +385,14 @@ void RenderSystem::CreateVertexBuffer()
 
     // create a vk::raii::Buffer indexBuffer, given a vk::raii::Device device and some indexData in host memory
     vk::BufferCreateInfo indexBufferCreateInfo( {}, sizeof(uint16_t) * indices.size(), vk::BufferUsageFlagBits::eIndexBuffer );
-    m_IndexBuffer = m_Device.createBuffer( indexBufferCreateInfo );
+    m_IndexBuffer = m_Device.Get().createBuffer( indexBufferCreateInfo );
     
     // create a vk::raii::DeviceMemory indexDeviceMemory, given a vk::raii::Device device and a uint32_t memoryTypeIndex
     memoryRequirements = m_IndexBuffer.getMemoryRequirements();
-    memoryTypeIndex = FindMemoryType( memoryRequirements.memoryTypeBits, m_PhysicalDevices[m_PhysicalDeviceIndex].getMemoryProperties(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
+    memoryTypeIndex = FindMemoryType( memoryRequirements.memoryTypeBits, m_Device.GetPhysicalDevice().Get().getMemoryProperties(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
 
     memoryAllocateInfo = vk::MemoryAllocateInfo( memoryRequirements.size, memoryTypeIndex );
-    m_IndexBufferMemory = m_Device.allocateMemory( memoryAllocateInfo );
+    m_IndexBufferMemory = m_Device.Get().allocateMemory( memoryAllocateInfo );
     
     m_IndexBuffer.bindMemory( *m_IndexBufferMemory, 0 );
 
@@ -745,15 +431,6 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
         .entryFunc = vertexEntryPoint.c_str()
     });
 
-<<<<<<< HEAD
-    vk::ShaderModuleCreateInfo vertexShaderCreateInfo({}, vertexShaderBinary.size(), reinterpret_cast<const uint32_t*>(vertexShaderBinary.data()));
-=======
-    m_CubeVertexShader           = m_Device.Get().createShaderModule(vertexShaderCreateInfo);
-    m_CubeVertexShaderEntryPoint = vertexEntryPoint;
->>>>>>> origin/main
-
-    m_Device.SetName(m_CubeVertexShader, "Cube Vertex Shader");
-
     std::filesystem::path fragmentShaderPath = getShaderFile(vk::ShaderStageFlagBits::eFragment);
 
     std::vector<char> fragmentShaderBinary = FileSystem::ReadAllBinary(fragmentShaderPath);
@@ -764,21 +441,12 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
     }
     LOG_STREAM(DEBUG) << "Loaded shader: " << fragmentShaderPath << std::endl;
 
-    vk::ShaderModuleCreateInfo fragmentShaderCreateInfo({}, fragmentShaderBinary.size(), reinterpret_cast<const uint32_t*>(fragmentShaderBinary.data()));
-
-<<<<<<< HEAD
     m_CubeFragmentShaderHandle = m_RenderContext->createShaderModule({
         .debugName = "Cube Frag Shader",
         .byteCode = reinterpret_cast<uint8_t*>(fragmentShaderBinary.data()),
         .byteSize = static_cast<uint32_t>(fragmentShaderBinary.size()),
         .entryFunc = fragmentEntryPoint.c_str()
     });
-=======
-    m_CubeFragmentShader           = m_Device.Get().createShaderModule(fragmentShaderCreateInfo);
-    m_CubeFragmentShaderEntryPoint = fragmentEntryPoint;
-
-    m_Device.SetName(m_CubeFragmentShader, "Cube Fragment Shader");
->>>>>>> origin/main
 }
 
 void RenderSystem::CreateRenderPass()
