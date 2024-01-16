@@ -78,11 +78,11 @@ public:
     void RotateAroundAxis(const Vector3& axis, float angle);
     void RotateAroundPointInWorldSpace(const Vector3& pointInWorldSpace, const Vector3& axisInWorldSpace, float angle);
 
-    Vector3 TransformPoint(const Vector3& point) const;
-    Vector3 TransformVector3(const Vector3& direction) const;
+    [[nodiscard]] Vector3 TransformPoint(const Vector3& point, bool useScale = true) const;
+    [[nodiscard]] Vector3 TransformVector3(const Vector3& vector, bool useScale = true) const;
 
-    Vector3 InverseTransformPoint(const Vector3& point) const;
-    Vector3 InverseTransformVector3(const Vector3& vector, bool useScale = true) const;
+    [[nodiscard]] Vector3 InverseTransformPoint(const Vector3& point, bool useScale = true) const;
+    [[nodiscard]] Vector3 InverseTransformVector3(const Vector3& vector, bool useScale = true) const;
 
     [[nodiscard]] Matrix4x4 GetLocalToWorldMatrix() const;
     [[nodiscard]] Matrix4x4 GetLocalToWorldMatrixIgnoreScale() const;

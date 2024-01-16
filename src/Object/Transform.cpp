@@ -13,8 +13,8 @@ namespace gore
 Transform::~Transform()
 {
     LOG_STREAM(WARNING) << "Destroyed Transform in GameObject " << GetGameObject()->GetName()
-        << ". Note that the destruction of children objects has NOT been implemented."
-        << std::endl;
+                        << ". Note that the destruction of children objects has NOT been implemented."
+                        << std::endl;
 }
 
 void Transform::SetLocalEulerAngles(const Vector3& eulerAngles)
@@ -49,6 +49,28 @@ Transform* Transform::GetRoot() const
     while (pTransform->m_Parent != nullptr)
         pTransform = pTransform->m_Parent;
     return pTransform;
+}
+
+Transform* Transform::Find(const std::string& name, bool recursive) const
+{
+    auto result = std::find_if(m_Children.begin(), m_Children.end(), [name](Transform* child)
+                               { return child->GetGameObject()->GetName() == name; });
+    if (result != m_Children.end())
+    {
+        return *result;
+    }
+    if (!recursive)
+    {
+        return nullptr;
+    }
+
+    for (auto& child : m_Children)
+    {
+        auto pTransform = child->Find(name, recursive);
+        if (pTransform != nullptr)
+            return pTransform;
+    }
+    return nullptr;
 }
 
 void Transform::RotateAroundAxis(const Vector3& axis, float angle)
@@ -110,7 +132,7 @@ void Transform::SetParent(Transform* newParent, bool reCalculateLocalTQS /* = tr
 
     if (reCalculateLocalTQS)
     {
-        m_LocalTQS = newParent == nullptr ? this->m_LocalTQS : TQS::Mul(this->GetLocalToWorldTQS(), newParent->GetWorldToLocalTQS());
+        m_LocalTQS = newParent == nullptr ? this->GetLocalToWorldTQS() : TQS::Mul(this->GetLocalToWorldTQS(), newParent->GetWorldToLocalTQS());
     }
 
     m_Parent = newParent;
@@ -137,6 +159,26 @@ TQS Transform::GetLocalToWorldTQS() const
 TQS Transform::GetWorldToLocalTQS() const
 {
     return GetLocalToWorldTQS().Inverse();
+}
+
+Vector3 Transform::TransformPoint(const Vector3& point, bool useScale /* = true */) const
+{
+    return GetLocalToWorldTQS().MulPoint3(point, useScale);
+}
+
+Vector3 Transform::TransformVector3(const Vector3& vector, bool useScale /* = true */) const
+{
+    return GetLocalToWorldTQS().MulVector3(vector, useScale);
+}
+
+Vector3 Transform::InverseTransformPoint(const Vector3& point, bool useScale /* = true */) const
+{
+    return GetWorldToLocalTQS().InvMulPoint3(point, useScale);
+}
+
+Vector3 Transform::InverseTransformVector3(const Vector3& vector, bool useScale /* = true */) const
+{
+    return GetWorldToLocalTQS().InvMulVector3(vector, useScale);
 }
 
 } // namespace gore
