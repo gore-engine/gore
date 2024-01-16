@@ -16,6 +16,10 @@
 
 #include "Scripts/TestComponent.h"
 #include "Scripts/CameraController.h"
+#include "Scripts/PeriodicallySwitchParent.h"
+#include "Scripts/SelfRotate.h"
+#include "Scripts/SelfMoveBackAndForth.h"
+#include "Scripts/SelfScaleInBetweenRange.h"
 
 SampleApp::SampleApp(int argc, char** argv) :
     App(argc, argv)
@@ -42,43 +46,83 @@ void SampleApp::Initialize()
     cameraTransform->SetLocalPosition((gore::Vector3::Backward + gore::Vector3::Up) * 1.5f);
 
     gore::GameObject* gameObject = scene->NewObject();
-    gameObject->SetName("TestObject");
+    gameObject->SetName("TestObject O, T&R&S");
 
-    LOG_STREAM(INFO) << (gameObject->GetTransform()->GetLocalPosition()) << std::endl;
+    auto pSelfRotate = gameObject->AddComponent<SelfRotate>();
+    auto pSelfScale = gameObject->AddComponent<SelfScaleInBetweenRange>();
+    auto pSelfMoveBackAndForth = gameObject->AddComponent<SelfMoveBackAndForth>();
 
-    TestComponent* testComponent = gameObject->AddComponent<TestComponent>();
-
-    const float distance = 5.0f;
-
-    gameObject = scene->NewObject();
-    gameObject->SetName("TestObject L");
-    gameObject->transform->SetLocalPosition(gore::Vector3::Left * distance);
-    testComponent = gameObject->AddComponent<TestComponent>();
+    const float distance = 2.5f;
 
     gameObject = scene->NewObject();
-    gameObject->SetName("TestObject R");
-    gameObject->transform->SetLocalPosition(gore::Vector3::Right * distance);
-    testComponent = gameObject->AddComponent<TestComponent>();
+    gameObject->SetName("TestObject L, T&S");
+    gameObject->GetTransform()->SetLocalPosition(gore::Vector3::Left * distance);
+    pSelfScale = gameObject->AddComponent<SelfScaleInBetweenRange>();
+    pSelfScale->SetMinMaxScale(0.5f, 1.5f);
+    pSelfMoveBackAndForth = gameObject->AddComponent<SelfMoveBackAndForth>();
+    pSelfMoveBackAndForth->m_Direction = gore::Vector3::Left;
+    auto pLeftObject = gameObject;
 
     gameObject = scene->NewObject();
-    gameObject->SetName("TestObject F");
-    gameObject->transform->SetLocalPosition(gore::Vector3::Forward * distance);
-    testComponent = gameObject->AddComponent<TestComponent>();
+    gameObject->SetName("TestObject R, R&S");
+    gameObject->GetTransform()->SetLocalPosition(gore::Vector3::Right * distance);
+    pSelfRotate = gameObject->AddComponent<SelfRotate>();
+    pSelfRotate->m_RotateAxis = gore::Vector3::Right;
+    pSelfScale = gameObject->AddComponent<SelfScaleInBetweenRange>();
+    pSelfScale->SetMinMaxScale(0.5f, 1.5f);
+    auto pRightObject = gameObject;
 
     gameObject = scene->NewObject();
-    gameObject->SetName("TestObject B");
-    gameObject->transform->SetLocalPosition(gore::Vector3::Backward * distance);
-    testComponent = gameObject->AddComponent<TestComponent>();
+    gameObject->SetName("TestObject F, T&R");
+    gameObject->GetTransform()->SetLocalPosition(gore::Vector3::Forward * distance);
+    pSelfRotate = gameObject->AddComponent<SelfRotate>();
+    pSelfRotate->m_RotateAxis = gore::Vector3::Forward;
+    pSelfMoveBackAndForth = gameObject->AddComponent<SelfMoveBackAndForth>();
+    pSelfMoveBackAndForth->m_Direction = gore::Vector3::Forward;
+    auto pForwardObject = gameObject;
 
     gameObject = scene->NewObject();
-    gameObject->SetName("TestObject U");
-    gameObject->transform->SetLocalPosition(gore::Vector3::Up * distance);
-    testComponent = gameObject->AddComponent<TestComponent>();
+    gameObject->SetName("TestObject B, T only");
+    gameObject->GetTransform()->SetLocalPosition(gore::Vector3::Backward * distance);
+    pSelfMoveBackAndForth = gameObject->AddComponent<SelfMoveBackAndForth>();
+    pSelfMoveBackAndForth->m_Direction = gore::Vector3::Backward;
+    auto pBackwardObject = gameObject;
 
     gameObject = scene->NewObject();
-    gameObject->SetName("TestObject D");
-    gameObject->transform->SetLocalPosition(gore::Vector3::Down * distance);
-    testComponent = gameObject->AddComponent<TestComponent>();
+    gameObject->SetName("TestObject U, R only");
+    gameObject->GetTransform()->SetLocalPosition(gore::Vector3::Up * distance);
+    pSelfRotate = gameObject->AddComponent<SelfRotate>();
+    pSelfRotate->m_RotateAxis = gore::Vector3::Up;
+    auto pUpObject = gameObject;
+
+    gameObject = scene->NewObject();
+    gameObject->SetName("TestObject D, S only");
+    gameObject->GetTransform()->SetLocalPosition(gore::Vector3::Down * distance);
+    pSelfScale = gameObject->AddComponent<SelfScaleInBetweenRange>();
+    pSelfScale->SetMinMaxScale(0.5f, 1.5f);
+    auto pDownObject = gameObject;
+
+    pDownObject->GetTransform()->SetLocalScale(gore::Vector3::One * 1.2f);
+
+    gore::GameObject* childGameObject = scene->NewObject();
+    childGameObject->SetName("ChildObject");
+    childGameObject->GetTransform()->SetParent(gameObject->GetTransform());
+    childGameObject->GetTransform()->SetLocalPosition(gore::Vector3::Right * 1.0f);
+    childGameObject->GetTransform()->SetLocalScale(gore::Vector3::One * 0.5f);
+
+    auto grandChildGameObject = scene->NewObject();
+    grandChildGameObject->SetName("GrandChildObject");
+    grandChildGameObject->GetTransform()->SetParent(childGameObject->GetTransform());
+    grandChildGameObject->GetTransform()->SetLocalPosition(gore::Vector3::Forward * 1.0f);
+    grandChildGameObject->GetTransform()->SetLocalScale(gore::Vector3::One * 2.0f);
+
+    auto pPeriodicallySwitchParent = grandChildGameObject->AddComponent<PeriodicallySwitchParent>();
+    pPeriodicallySwitchParent->SetParentAB(pLeftObject->GetTransform(), pForwardObject->GetTransform());
+    pPeriodicallySwitchParent->m_RecalculateLocalPosition = true;
+
+    pPeriodicallySwitchParent = childGameObject->AddComponent<PeriodicallySwitchParent>();
+    pPeriodicallySwitchParent->SetParentAB(pRightObject->GetTransform(), nullptr);
+    pPeriodicallySwitchParent->m_RecalculateLocalPosition = false;
 }
 
 void SampleApp::Update()
