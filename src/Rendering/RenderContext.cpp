@@ -3,7 +3,7 @@
 namespace gore
 {
 RenderContext::RenderContext(vk::raii::Device* device) :
-    m_device(device),
+    m_DevicePtr(device),
     m_ShaderModulePool()
 {
 }
@@ -23,7 +23,7 @@ ShaderModuleHandle RenderContext::createShaderModule(ShaderModuleDesc&& desc)
     return m_ShaderModulePool.create(
         std::move(desc),
         std::move(ShaderModule(
-            m_device->createShaderModule(
+            m_DevicePtr->createShaderModule(
                 vk::ShaderModuleCreateInfo(
                     {},
                     desc.byteSize,

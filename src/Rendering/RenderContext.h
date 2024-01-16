@@ -50,7 +50,7 @@ private:
 
     ShaderModulePool m_ShaderModulePool;
 
-    vk::raii::Device* m_device;
+    vk::raii::Device* m_DevicePtr;
 };
 
 } // namespace gore
