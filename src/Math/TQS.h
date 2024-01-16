@@ -21,17 +21,23 @@ ENGINE_STRUCT(TQS)
     Quaternion q;
     Vector3 s;
 
+public:
     SHALLOW_COPYABLE(TQS);
 
-    explicit TQS() noexcept;
-    TQS(const Vector3& translation, const Quaternion& rotation, const Vector3& scale) noexcept;
+    MATHF_SIMD_SET_VALUE_TYPE(rtm::qvvf);
+    MATHF_SIMD_CONVERSION_WITH_VALUE_TYPE_DECLARATIONS(TQS);
+
+    explicit inline TQS() noexcept;
+    inline TQS(const Vector3& translation, const Quaternion& rotation, const Vector3& scale) noexcept;
+
+    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream & os, const TQS& tqs) noexcept;
 
 public:
     [[nodiscard]] inline Matrix4x4 ToMatrix4x4() const noexcept;
     [[nodiscard]] inline Matrix4x4 ToMatrix4x4Inverse() const noexcept;
 
 public:
-    [[nodiscard]] static TQS CreateIdentity() noexcept;
+    [[nodiscard]] static inline TQS CreateIdentity() noexcept;
     [[nodiscard]] static inline TQS Create(const Vector3& translation, const Quaternion& rotation, const Vector3& scale) noexcept;
     [[nodiscard]] static inline TQS CreateInverse(const Vector3& translation, const Quaternion& rotation, const Vector3& scale) noexcept;
 
@@ -62,6 +68,39 @@ TQS::TQS(const Vector3& translation, const Quaternion& rotation, const Vector3& 
 {
 }
 
+std::ostream& operator<<(std::ostream& os, const TQS& tqs) noexcept
+{
+    os << "TQS(" << tqs.t << ", " << tqs.q << ", " << tqs.s << ")";
+    return os;
+}
+
+TQS::operator SIMDValueType() const noexcept
+{
+    return rtm::qvv_set(q, t, s);
+}
+
+TQS::TQS(const SIMDValueType& V) noexcept :
+    t(static_cast<Vector3>(V.translation)),
+    q(static_cast<Quaternion>(V.rotation)),
+    s(static_cast<Vector3>(V.scale))
+{
+}
+
+TQS::TQS(SIMDValueType&& V) noexcept :
+    t(static_cast<Vector3>(V.translation)),
+    q(static_cast<Quaternion>(V.rotation)),
+    s(static_cast<Vector3>(V.scale))
+{
+}
+
+TQS& TQS::operator=(const SIMDValueType& V) noexcept
+{
+    t = static_cast<Vector3>(V.translation);
+    q = static_cast<Quaternion>(V.rotation);
+    s = static_cast<Vector3>(V.scale);
+    return *this;
+}
+
 TQS TQS::CreateIdentity() noexcept
 {
     return TQS{};
@@ -75,7 +114,7 @@ TQS TQS::Create(const Vector3& translation, const Quaternion& rotation, const Ve
 TQS TQS::CreateInverse(const Vector3& translation, const Quaternion& rotation, const Vector3& scale) noexcept
 {
     using namespace rtm;
-    qvvf qvvInv = qvv_inverse(qvv_set(rotation, translation, scale));
+    SIMDValueType qvvInv = qvv_inverse(qvv_set(rotation, translation, scale));
     return TQS{static_cast<Vector3>(qvvInv.translation),
                static_cast<Quaternion>(qvvInv.rotation),
                static_cast<Vector3>(qvvInv.scale)};
@@ -89,24 +128,22 @@ Matrix4x4 TQS::ToMatrix4x4() const noexcept
 Matrix4x4 TQS::ToMatrix4x4Inverse() const noexcept
 {
     using namespace rtm;
-    qvvf qvvInv = qvv_inverse(qvv_set(q, t, s));
+    SIMDValueType qvvInv = qvv_inverse(qvv_set(q, t, s));
     return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, matrix_from_qvv(qvvInv));
 }
 
 TQS TQS::Inverse() const noexcept
 {
     using namespace rtm;
-    qvvf qvvInv = qvv_inverse(qvv_set(q, t, s));
-    return TQS{static_cast<Vector3>(qvvInv.translation),
-               static_cast<Quaternion>(qvvInv.rotation),
-               static_cast<Vector3>(qvvInv.scale)};
+    SIMDValueType qvvInv = qvv_inverse(qvv_set(q, t, s));
+    return static_cast<TQS>(qvvInv);
 }
 
 Vector3 TQS::MulPoint3(const Vector3& v, bool useScale) const noexcept
 {
     using namespace rtm;
-    auto vSIMD = static_cast<Vector3::SIMDValueType>(v);
-    qvvf qvv   = qvv_set(q, t, s);
+    auto vSIMD        = static_cast<Vector3::SIMDValueType>(v);
+    SIMDValueType qvv = qvv_set(q, t, s);
 
     return static_cast<Vector3>(useScale ?
                                     qvv_mul_point3(vSIMD, qvv) :
@@ -122,8 +159,8 @@ Vector3 TQS::MulVector3(const Vector3& v, bool useScale) const noexcept
 Vector3 TQS::InvMulPoint3(const Vector3& v, bool useScale) const noexcept
 {
     using namespace rtm;
-    qvvf qvvInv = qvv_inverse(qvv_set(q, t, s));
-    auto vSIMD  = static_cast<Vector3::SIMDValueType>(v);
+    SIMDValueType qvvInv = qvv_inverse(qvv_set(q, t, s));
+    auto vSIMD           = static_cast<Vector3::SIMDValueType>(v);
     return static_cast<Vector3>(useScale ?
                                     qvv_mul_point3(vSIMD, qvvInv) :
                                     qvv_mul_point3_no_scale(vSIMD, qvvInv));
@@ -139,25 +176,17 @@ Vector3 TQS::InvMulVector3(const Vector3& v, bool useScale) const noexcept
 TQS TQS::Mul(const TQS& a, const TQS& b) noexcept
 {
     using namespace rtm;
-    qvvf qvvA = qvv_set(a.q, a.t, a.s);
-    qvvf qvvB = qvv_set(b.q, b.t, b.s);
-    qvvf qvv  = qvv_mul(qvvA, qvvB);
-
-    return TQS{static_cast<Vector3>(qvv.translation),
-               static_cast<Quaternion>(qvv.rotation),
-               static_cast<Vector3>(qvv.scale)};
+    SIMDValueType qvvA = qvv_set(a.q, a.t, a.s);
+    SIMDValueType qvvB = qvv_set(b.q, b.t, b.s);
+    return static_cast<TQS>(qvv_mul(qvvA, qvvB));
 }
 
 TQS TQS::Blend(const TQS& a, const TQS& b, float t) noexcept
 {
     using namespace rtm;
-    qvvf qvvA = qvv_set(a.q, a.t, a.s);
-    qvvf qvvB = qvv_set(b.q, b.t, b.s);
-    qvvf qvv  = qvv_slerp(qvvA, qvvB, t);
-
-    return TQS{static_cast<Vector3>(qvv.translation),
-               static_cast<Quaternion>(qvv.rotation),
-               static_cast<Vector3>(qvv.scale)};
+    SIMDValueType qvvA = qvv_set(a.q, a.t, a.s);
+    SIMDValueType qvvB = qvv_set(b.q, b.t, b.s);
+    return static_cast<TQS>(qvv_slerp(qvvA, qvvB, t));
 }
 
 } // namespace gore
