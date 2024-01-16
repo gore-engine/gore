@@ -44,7 +44,7 @@ enum class CompareOp
     Greater,
     NotEqual,
     GreaterEqual,
-    Always,
+    AlwaysTrue,
     Count
 };
 
