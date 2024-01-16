@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GraphicsResourcePrefix.h"
-#include <glm/glm.hpp>
 
 namespace gore
 {
@@ -19,7 +18,7 @@ struct TextureDesc final
     const char* debugName = "Noname TextureDesc_2D_R8G8B8A8_SRGB";
     TextureType type      = TextureType::Tex2D;
     // use dimentions.z for different texturetypes
-    glm::ivec3 dimentions = glm::ivec3(0);
+    // glm::ivec3 dimentions = glm::ivec3(0);
     TextureFormat format  = TextureFormat::R8G8B8A8_SRGB;
     MemoryUsage memUsage  = MemoryUsage::GPU;
     int numMips           = 1;

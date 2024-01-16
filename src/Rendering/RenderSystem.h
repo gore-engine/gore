@@ -6,6 +6,7 @@
 #include "Graphics/Vulkan/VulkanExtensions.h"
 
 #include "RenderContext.h"
+
 namespace gore
 {
 

@@ -683,15 +683,15 @@ uint32_t RenderSystem::FindMemoryType(uint32_t typeFilter, vk::PhysicalDeviceMem
 
 void RenderSystem::CreateVertexBuffer()
 {
-    std::vector<glm::vec3> vertices = {
-        glm::vec3(-1.0f, -1.0f, -1.0f), // 0
-        glm::vec3(-1.0f, -1.0f,  1.0f), // 1
-        glm::vec3(-1.0f,  1.0f, -1.0f), // 2
-        glm::vec3(-1.0f,  1.0f,  1.0f), // 3
-        glm::vec3( 1.0f, -1.0f, -1.0f), // 4
-        glm::vec3( 1.0f, -1.0f,  1.0f), // 5
-        glm::vec3( 1.0f,  1.0f, -1.0f), // 6
-        glm::vec3( 1.0f,  1.0f,  1.0f), // 7
+    std::vector<Vector3> vertices = {
+        Vector3(-1.0f, -1.0f, -1.0f), // 0
+        Vector3(-1.0f, -1.0f,  1.0f), // 1
+        Vector3(-1.0f,  1.0f, -1.0f), // 2
+        Vector3(-1.0f,  1.0f,  1.0f), // 3
+        Vector3( 1.0f, -1.0f, -1.0f), // 4
+        Vector3( 1.0f, -1.0f,  1.0f), // 5
+        Vector3( 1.0f,  1.0f, -1.0f), // 6
+        Vector3( 1.0f,  1.0f,  1.0f), // 7
     };
 
     std::vector<uint16_t> indices = {
@@ -704,7 +704,7 @@ void RenderSystem::CreateVertexBuffer()
     };
 
     // create a vk::raii::Buffer vertexBuffer, given a vk::raii::Device device and some vertexData in host memory
-    vk::BufferCreateInfo bufferCreateInfo( {}, sizeof(glm::vec3) * vertices.size(), vk::BufferUsageFlagBits::eVertexBuffer );
+    vk::BufferCreateInfo bufferCreateInfo( {}, sizeof(Vector3) * vertices.size(), vk::BufferUsageFlagBits::eVertexBuffer );
     m_VertexBuffer = m_Device.createBuffer( bufferCreateInfo );
     
     // create a vk::raii::DeviceMemory vertexDeviceMemory, given a vk::raii::Device device and a uint32_t memoryTypeIndex
@@ -719,7 +719,7 @@ void RenderSystem::CreateVertexBuffer()
 
     // copy the vertex data into the vertexDeviceMemory
     uint8_t* pData = static_cast<uint8_t*>(m_VertexBufferMemory.mapMemory( 0, memoryRequirements.size ));
-    memcpy( pData, vertices.data(), sizeof(glm::vec3) * vertices.size() );
+    memcpy( pData, vertices.data(), sizeof(Vector3) * vertices.size() );
     m_VertexBufferMemory.unmapMemory();
 
     // create a vk::raii::Buffer indexBuffer, given a vk::raii::Device device and some indexData in host memory

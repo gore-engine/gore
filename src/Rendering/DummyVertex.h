@@ -6,12 +6,12 @@
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 
-#include <glm/glm.hpp>
+#include "Math/Vector3.h"
 #include <vector>
 
 struct Vertex
 {
-    glm::vec3 position;
+    gore::Vector3 position;
     // glm::vec3 color;
     // glm::vec2 uv;
 
