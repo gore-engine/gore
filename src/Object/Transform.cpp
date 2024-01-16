@@ -132,7 +132,7 @@ void Transform::SetParent(Transform* newParent, bool reCalculateLocalTQS /* = tr
 
     if (reCalculateLocalTQS)
     {
-        m_LocalTQS = newParent == nullptr ? this->m_LocalTQS : TQS::Mul(this->GetLocalToWorldTQS(), newParent->GetWorldToLocalTQS());
+        m_LocalTQS = newParent == nullptr ? this->GetLocalToWorldTQS() : TQS::Mul(this->GetLocalToWorldTQS(), newParent->GetWorldToLocalTQS());
     }
 
     m_Parent = newParent;
