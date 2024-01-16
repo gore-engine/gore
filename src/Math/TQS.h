@@ -68,12 +68,6 @@ TQS::TQS(const Vector3& translation, const Quaternion& rotation, const Vector3& 
 {
 }
 
-std::ostream& operator<<(std::ostream& os, const TQS& tqs) noexcept
-{
-    os << "TQS(" << tqs.t << ", " << tqs.q << ", " << tqs.s << ")";
-    return os;
-}
-
 TQS::operator SIMDValueType() const noexcept
 {
     return rtm::qvv_set(q, t, s);

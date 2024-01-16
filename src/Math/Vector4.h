@@ -95,4 +95,6 @@ public:
 
 MATHF_VECTOR_BINARY_OPERATOR_DECLARATIONS(Vector4);
 
+#include "Vector4.inl"
+
 } // namespace gore
