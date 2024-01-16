@@ -1,8 +1,9 @@
 #include "RenderContext.h"
+#include "Graphics/Device.h"
 
 namespace gore
 {
-RenderContext::RenderContext(const vk::raii::Device* device) :
+RenderContext::RenderContext(const gfx::Device* device) :
     m_DevicePtr(device),
     m_ShaderModulePool()
 {
@@ -23,7 +24,7 @@ ShaderModuleHandle RenderContext::createShaderModule(ShaderModuleDesc&& desc)
     return m_ShaderModulePool.create(
         std::move(desc),
         std::move(ShaderModule(
-            m_DevicePtr->createShaderModule(
+            m_DevicePtr->Get().createShaderModule(
                 vk::ShaderModuleCreateInfo(
                     {},
                     desc.byteSize,

@@ -85,7 +85,7 @@ void RenderSystem::Initialize()
     m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), 3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
 
-    m_RenderContext = std::make_unique<RenderContext>(&m_Device.Get());
+    m_RenderContext = std::make_unique<RenderContext>(&m_Device);
 
     CreateDepthBuffer();
     CreateVertexBuffer();

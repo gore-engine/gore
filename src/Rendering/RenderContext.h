@@ -18,13 +18,19 @@
 
 namespace gore
 {
+
+namespace gfx
+{
+    class Device;
+}
+
 class RenderContext final
 {
     // TODO: actually we can copy this class??
     NON_COPYABLE(RenderContext);
 
 public:
-    RenderContext(const vk::raii::Device* device);
+    RenderContext(const gfx::Device* device);
     ~RenderContext();
 
     TextureHandle createTexture(const TextureDesc& desc);
@@ -50,7 +56,7 @@ private:
 
     ShaderModulePool m_ShaderModulePool;
 
-    const vk::raii::Device* m_DevicePtr;
+    const gfx::Device* m_DevicePtr;
 };
 
 } // namespace gore
