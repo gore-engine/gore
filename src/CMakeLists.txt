@@ -33,6 +33,7 @@ set(COMMON_SOURCE_FOLDERS
         "Scene"
         "Object"
         "Input"
+        "Job"
         "Utilities"
         "Test"
 )
