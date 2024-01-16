@@ -1,5 +1,27 @@
 #pragma once
 
+// Conversion with SIMDValueType
+Quaternion::operator SIMDValueType() const noexcept
+{
+    return m_Q;
+}
+
+Quaternion::Quaternion(const Quaternion::SIMDValueType& F) noexcept :
+    m_Q(F)
+{
+}
+
+Quaternion::Quaternion(Quaternion::SIMDValueType&& F) noexcept :
+    m_Q(std::move(F))
+{
+}
+
+Quaternion& Quaternion::operator=(const Quaternion::SIMDValueType& F) noexcept
+{
+    m_Q = F;
+    return *this;
+}
+
 //------------------------------------------------------------------------------
 // Binary operators
 //------------------------------------------------------------------------------
