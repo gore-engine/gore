@@ -37,7 +37,7 @@ public:
     // clang-format off
     // Hierarchy
     [[nodiscard]] Transform* GetParent() const { return m_Parent; }
-    void SetParent(Transform* parent);
+    void SetParent(Transform* newParent, bool reCalculateLocalTQS = true);
 
     [[nodiscard]] Transform* GetChild(int index) const { return m_Children[index]; }
     [[nodiscard]] int GetChildCount() const { return static_cast<int>(m_Children.size()); }
@@ -63,7 +63,6 @@ public:
     // clang-format off
     [[nodiscard]] Vector3 GetLocalPosition() const { return m_LocalTQS.t; }
     void SetLocalPosition(const Vector3& position) { m_LocalTQS.t = position; }
-    
 
     [[nodiscard]] Vector3 GetLocalScale() const { return m_LocalTQS.s; }
     void SetLocalScale(const Vector3& scale) { m_LocalTQS.s = scale; }
@@ -89,6 +88,9 @@ public:
 
     [[nodiscard]] Matrix4x4 GetWorldToLocalMatrix() const;
     [[nodiscard]] Matrix4x4 GetWorldToLocalMatrixIgnoreScale() const;
+
+    [[nodiscard]] TQS GetLocalToWorldTQS() const;
+    [[nodiscard]] TQS GetWorldToLocalTQS() const;
 
 private:
     Transform* m_Parent;
