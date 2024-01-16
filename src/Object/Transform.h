@@ -6,6 +6,8 @@
 #include "Core/Log.h"
 
 #include "Math/Types.h"
+#include "Math/TQS.h"
+
 #include <vector>
 #include <iterator>
 
@@ -20,9 +22,9 @@ public:
 
     explicit Transform(GameObject * gameObject) :
         Component(gameObject),
-        m_LocalPosition(Vector3::Zero),
-        m_LocalRotation(Quaternion::Identity),
-        m_LocalScale(Vector3::One)
+        m_Parent(nullptr),
+        m_Children(),
+        m_LocalTQS(TQS::CreateIdentity())
     {
     }
 
@@ -58,14 +60,18 @@ public:
     [[nodiscard]] Transform* Find(const std::string& name, bool recursive = false) const;
 
 public:
-    [[nodiscard]] Vector3 GetLocalPosition() const;
-    void SetLocalPosition(const Vector3& position);
+    // clang-format off
+    [[nodiscard]] Vector3 GetLocalPosition() const { return m_LocalTQS.t; }
+    void SetLocalPosition(const Vector3& position) { m_LocalTQS.t = position; }
+    
 
-    [[nodiscard]] Vector3 GetLocalScale() const;
-    void SetLocalScale(const Vector3& scale);
+    [[nodiscard]] Vector3 GetLocalScale() const { return m_LocalTQS.s; }
+    void SetLocalScale(const Vector3& scale) { m_LocalTQS.s = scale; }
 
-    [[nodiscard]] Quaternion GetLocalRotation() const;
-    void SetLocalRotation(const Quaternion& rotation);
+    [[nodiscard]] Quaternion GetLocalRotation() const { return m_LocalTQS.q; }
+    void SetLocalRotation(const Quaternion& rotation) { m_LocalTQS.q = rotation; }
+    // clang-format on
+
     [[nodiscard]] Vector3 GetLocalEulerAngles() const;
     void SetLocalEulerAngles(const Vector3& eulerAngles);
 
@@ -76,7 +82,7 @@ public:
     Vector3 TransformVector3(const Vector3& direction) const;
 
     Vector3 InverseTransformPoint(const Vector3& point) const;
-    Vector3 InverseTransformVector3(const Vector3& vector, bool affectedByScale = true) const;
+    Vector3 InverseTransformVector3(const Vector3& vector, bool useScale = true) const;
 
     [[nodiscard]] Matrix4x4 GetLocalToWorldMatrix() const;
     [[nodiscard]] Matrix4x4 GetLocalToWorldMatrixIgnoreScale() const;
@@ -88,9 +94,7 @@ private:
     Transform* m_Parent;
     std::vector<Transform*> m_Children;
 
-    Vector3 m_LocalPosition;
-    Quaternion m_LocalRotation;
-    Vector3 m_LocalScale;
+    TQS m_LocalTQS;
 };
 
 } // namespace gore
