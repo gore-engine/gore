@@ -67,9 +67,7 @@ Quaternion Transform::GetLocalRotation() const
 
 void Transform::RotateAroundAxis(const Vector3& axis, float angle)
 {
-    auto q = Quaternion::CreateFromAxisAngle(axis, angle);
-    m_LocalRotation = q * m_LocalRotation;
-    m_LocalPosition = static_cast<Vector3>(rtm::quat_mul_vector3(static_cast<Vector3::SIMDValueType>(m_LocalPosition), q)) + m_LocalPosition;
+    m_LocalRotation = Quaternion::CreateFromAxisAngle(axis, angle) * m_LocalRotation;
 }
 
 Matrix4x4 Transform::GetLocalToWorldMatrix() const

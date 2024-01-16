@@ -2,6 +2,8 @@
 
 #include "Core/System.h"
 
+#include "Graphics/Graphics.h"
+
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 
@@ -30,35 +32,13 @@ private:
     std::unique_ptr<RenderContext> m_RenderContext;
 
     // Instance
-    vk::raii::Context m_Context;
-    uint32_t m_ApiVersion;
-    vk::raii::Instance m_Instance;
-    VulkanInstanceExtensionBitset m_EnabledInstanceExtensions;
+    gfx::Instance m_Instance;
 
     // Device
-    std::vector<vk::raii::PhysicalDevice> m_PhysicalDevices;
-    int m_PhysicalDeviceIndex;
-    vk::raii::Device m_Device;
-    uint32_t m_DeviceApiVersion;
-    VulkanDeviceExtensionBitset m_EnabledDeviceExtensions;
-
-    VmaAllocator m_VmaAllocator;
+    gfx::Device m_Device;
 
     // Surface & Swapchain
-    vk::raii::SurfaceKHR m_Surface;
-    vk::raii::SwapchainKHR m_Swapchain;
-    vk::SurfaceFormatKHR m_SurfaceFormat;
-    vk::Extent2D m_SurfaceExtent;
-
-    uint32_t m_SwapchainImageCount;
-
-    std::vector<vk::Image> m_SwapchainImages;
-    std::vector<vk::raii::ImageView> m_SwapchainImageViews;
-    std::vector<vk::raii::Semaphore> m_RenderFinishedSemaphores;
-    std::vector<vk::raii::Fence> m_ImageAcquiredFences;
-    std::vector<vk::raii::Fence> m_InFlightFences;
-
-    uint32_t m_CurrentSwapchainImageIndex;
+    gfx::Swapchain m_Swapchain;
 
     // Shader
     ShaderModuleHandle m_CubeVertexShaderHandle;
@@ -75,15 +55,17 @@ private:
     std::vector<vk::raii::Framebuffer> m_Framebuffers;
 
     // Queue
-    std::vector<vk::QueueFamilyProperties> m_QueueFamilyProperties;
     vk::raii::Queue m_GraphicsQueue;
     uint32_t m_GraphicsQueueFamilyIndex;
     vk::raii::Queue m_PresentQueue;
     uint32_t m_PresentQueueFamilyIndex;
 
     // Command Pool & Command Buffer
-    std::vector<vk::raii::CommandPool> m_CommandPools;
-    std::vector<vk::raii::CommandBuffer> m_CommandBuffers;
+    gfx::CommandPool m_CommandPool;
+
+    // Synchronization
+    std::vector<vk::raii::Semaphore> m_RenderFinishedSemaphores;
+    std::vector<vk::raii::Fence> m_InFlightFences;
 
     // Depth buffer
     vk::Image m_DepthImage;
@@ -109,17 +91,9 @@ private:
     void CreatePipeline();
     void CreateFramebuffers();
     void GetQueues();
-    void CreateCommandPools();
+    void CreateSynchronization();
 
-private:
-    [[nodiscard]] bool HasExtension(VulkanInstanceExtension instanceExtension) const;
-    [[nodiscard]] bool HasExtension(VulkanDeviceExtension deviceExtension) const;
-    [[nodiscard]] int GetScore(int index, const vk::raii::PhysicalDevice& physicalDevice) const;
-    void Output(int index, const vk::raii::PhysicalDevice& physicalDevice) const;
-    [[nodiscard]] bool QueueFamilyIsPresentable(const vk::raii::PhysicalDevice& physicalDevice,
-                                                uint32_t queueFamilyIndex,
-                                                void* nativeWindowHandle) const;
-    [[nodiscard]] bool QueueFamilyIsPresentable(uint32_t queueFamilyIndex, void* nativeWindowHandle) const;
+    [[nodiscard]] const gfx::PhysicalDevice& GetBestDevice(const std::vector<gfx::PhysicalDevice>& devices) const;
 };
 
 } // namespace gore

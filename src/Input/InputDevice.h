@@ -6,6 +6,7 @@
 
 #include <map>
 #include <string>
+#include <functional>
 
 namespace gore
 {
@@ -22,7 +23,7 @@ public:
 
     virtual void Update() = 0;
 
-    [[nodiscard]] InputAction* GetAction(const std::string& name) const;
+    [[nodiscard]] const InputAction* GetAction(const std::string& name) const;
 
 protected:
     friend class InputAction;
@@ -39,7 +40,11 @@ protected:
         float lastState;
     };
 
-    std::map<std::string, InputAction*> m_Actions;
+    std::map<std::string, InputAction> m_Actions;
+
+    InputAction* AddAction(const std::string& name, InputType type,
+                           std::function<bool()> updateDigitalFunction = []() { return false; },
+                           std::function<float()> updateAnalogFunction = []() { return 0.0f; });
 
     void UpdateAllActions();
 };

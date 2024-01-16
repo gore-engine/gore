@@ -1,14 +1,14 @@
 # dxc
-# FindVulkan with dxc component emits warning on Windows Debug setup
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.25 AND NOT WIN32)
-    find_package(Vulkan REQUIRED COMPONENTS dxc)
-    set(VULKAN_DXC_EXECUTABLE ${Vulkan_dxc_EXECUTABLE})
-else ()
-    find_package(Vulkan REQUIRED)
-    # try to find dxc executable in (and only in) glslangValidator directory
-    get_filename_component(GLSLANG_VALIDATOR_DIR ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} DIRECTORY)
-    find_program(VULKAN_DXC_EXECUTABLE NAMES dxc PATHS ${GLSLANG_VALIDATOR_DIR} NO_CACHE NO_DEFAULT_PATH)
-endif ()
+# FindVulkan with dxc is mostly problematic
+#if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.25)
+#    find_package(Vulkan REQUIRED COMPONENTS dxc)
+#    set(VULKAN_DXC_EXECUTABLE ${Vulkan_dxc_EXECUTABLE})
+#else ()
+find_package(Vulkan REQUIRED)
+# try to find dxc executable in (and only in) glslangValidator directory
+get_filename_component(GLSLANG_VALIDATOR_DIR ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} DIRECTORY)
+find_program(VULKAN_DXC_EXECUTABLE NAMES dxc PATHS ${GLSLANG_VALIDATOR_DIR} NO_CACHE NO_DEFAULT_PATH)
+#endif ()
 
 if (VULKAN_DXC_EXECUTABLE STREQUAL "")
     message(FATAL_ERROR "dxc (from Vulkan SDK) not found! It is needed for shader compilation. Try installing Vulkan SDK with dxc.")

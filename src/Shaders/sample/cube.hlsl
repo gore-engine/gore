@@ -28,7 +28,7 @@ struct Attributes
 struct PushConstant
 {
     float4x4 m;
-    float4x4 p;
+    float4x4 vp;
 };
 
 [[vk::push_constant]]
@@ -43,7 +43,7 @@ struct VertOut
 VertOut vs(Attributes IN)
 {
     VertOut vertOut;
-     float4 objVertPos = float4(IN.positionOS, 1.0f);
+    float4 objVertPos = float4(IN.positionOS, 1.0f);
     vertOut.pos = mul(mvpPushConst.p, mul(mvpPushConst.m, objVertPos));
     vertOut.pos.y *= -1.0f;
     vertOut.color = objVertPos.xyz + 0.5f;
