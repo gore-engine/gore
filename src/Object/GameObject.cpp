@@ -13,11 +13,11 @@ namespace gore
 GameObject::GameObject(std::string name, Scene* scene) :
     Object(std::move(name)),
     m_Scene(scene),
-    transform(),
+    m_Transform(),
     m_Components()
 {
     AddComponent<Transform>();
-    transform = reinterpret_cast<Transform*>(m_Components[0]);
+    m_Transform = reinterpret_cast<Transform*>(m_Components[0]);
 }
 
 GameObject::~GameObject()
@@ -42,11 +42,11 @@ void GameObject::Update()
 template <>
 Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent<Transform>()
 {
-    if (transform != nullptr)
+    if (m_Transform != nullptr)
     {
         LOG_STREAM(ERROR) << "Cannot add more than one Transform component to GameObject. "
                           << "This operation will do nothing." << std::endl;
-        return const_cast<Transform*>(transform);
+        return m_Transform;
     }
 
     auto pTransform = new Transform(this);
@@ -56,11 +56,11 @@ Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent<Transfor
 template <>
 Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent(Transform* inpTransform)
 {
-    if (transform != nullptr)
+    if (m_Transform != nullptr)
     {
         LOG_STREAM(ERROR) << "Cannot add more than one Transform component to GameObject. "
                           << "This operation will do nothing." << std::endl;
-        return const_cast<Transform*>(transform);
+        return m_Transform;
     }
 
     m_Components.push_back(inpTransform);
