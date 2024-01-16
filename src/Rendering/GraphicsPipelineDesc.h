@@ -29,7 +29,7 @@ struct VertexAttributeDesc final
     GraphicsFormat format;
 };
 
-struct VertxBufferBinding final
+struct VertexBufferBinding final
 {
     uint32_t byteStride;
     std::vector<VertexAttributeDesc> attributes;
@@ -92,7 +92,7 @@ struct PipelineDesc final
     ShaderBinding MS;
 
     std::vector<BindGroupHandle> bindGroups;
-    std::vector<VertxBufferBinding> vertexBufferBindings;
+    std::vector<VertexBufferBinding> vertexBufferBindings;
 
     MultisampleState multisampleState;
     DepthStencilState depthStencilState;
