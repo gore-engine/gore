@@ -48,8 +48,8 @@ void SampleApp::Initialize()
     gore::GameObject* gameObject = scene->NewObject();
     gameObject->SetName("TestObject O, T&R&S");
 
-    auto pSelfRotate = gameObject->AddComponent<SelfRotate>();
-    auto pSelfScale = gameObject->AddComponent<SelfScaleInBetweenRange>();
+    auto pSelfRotate           = gameObject->AddComponent<SelfRotate>();
+    auto pSelfScale            = gameObject->AddComponent<SelfScaleInBetweenRange>();
     auto pSelfMoveBackAndForth = gameObject->AddComponent<SelfMoveBackAndForth>();
 
     const float distance = 2.5f;
@@ -59,44 +59,44 @@ void SampleApp::Initialize()
     gameObject->GetTransform()->SetLocalPosition(gore::Vector3::Left * distance);
     pSelfScale = gameObject->AddComponent<SelfScaleInBetweenRange>();
     pSelfScale->SetMinMaxScale(0.5f, 1.5f);
-    pSelfMoveBackAndForth = gameObject->AddComponent<SelfMoveBackAndForth>();
+    pSelfMoveBackAndForth              = gameObject->AddComponent<SelfMoveBackAndForth>();
     pSelfMoveBackAndForth->m_Direction = gore::Vector3::Left;
-    auto pLeftObject = gameObject;
+    auto pLeftObject                   = gameObject;
 
     gameObject = scene->NewObject();
     gameObject->SetName("TestObject R, R&S");
     gameObject->GetTransform()->SetLocalPosition(gore::Vector3::Right * distance);
-    pSelfRotate = gameObject->AddComponent<SelfRotate>();
+    pSelfRotate               = gameObject->AddComponent<SelfRotate>();
     pSelfRotate->m_RotateAxis = gore::Vector3::Right;
-    pSelfScale = gameObject->AddComponent<SelfScaleInBetweenRange>();
+    pSelfScale                = gameObject->AddComponent<SelfScaleInBetweenRange>();
     pSelfScale->SetMinMaxScale(0.5f, 1.5f);
     auto pRightObject = gameObject;
 
     gameObject = scene->NewObject();
     gameObject->SetName("TestObject F, T&R");
     gameObject->GetTransform()->SetLocalPosition(gore::Vector3::Forward * distance);
-    pSelfRotate = gameObject->AddComponent<SelfRotate>();
-    pSelfRotate->m_RotateAxis = gore::Vector3::Forward;
-    pSelfMoveBackAndForth = gameObject->AddComponent<SelfMoveBackAndForth>();
+    pSelfRotate                        = gameObject->AddComponent<SelfRotate>();
+    pSelfRotate->m_RotateAxis          = gore::Vector3::Forward;
+    pSelfMoveBackAndForth              = gameObject->AddComponent<SelfMoveBackAndForth>();
     pSelfMoveBackAndForth->m_Direction = gore::Vector3::Forward;
-    auto pForwardObject = gameObject;
+    auto pForwardObject                = gameObject;
 
     gameObject = scene->NewObject();
-    gameObject->SetName("TestObject B, T only");
+    gameObject->SetName("TestObject B, Translation only");
     gameObject->GetTransform()->SetLocalPosition(gore::Vector3::Backward * distance);
-    pSelfMoveBackAndForth = gameObject->AddComponent<SelfMoveBackAndForth>();
+    pSelfMoveBackAndForth              = gameObject->AddComponent<SelfMoveBackAndForth>();
     pSelfMoveBackAndForth->m_Direction = gore::Vector3::Backward;
-    auto pBackwardObject = gameObject;
+    auto pBackwardObject               = gameObject;
 
     gameObject = scene->NewObject();
-    gameObject->SetName("TestObject U, R only");
+    gameObject->SetName("TestObject U, Rotation only");
     gameObject->GetTransform()->SetLocalPosition(gore::Vector3::Up * distance);
-    pSelfRotate = gameObject->AddComponent<SelfRotate>();
+    pSelfRotate               = gameObject->AddComponent<SelfRotate>();
     pSelfRotate->m_RotateAxis = gore::Vector3::Up;
-    auto pUpObject = gameObject;
+    auto pUpObject            = gameObject;
 
     gameObject = scene->NewObject();
-    gameObject->SetName("TestObject D, S only");
+    gameObject->SetName("TestObject D, Scale only");
     gameObject->GetTransform()->SetLocalPosition(gore::Vector3::Down * distance);
     pSelfScale = gameObject->AddComponent<SelfScaleInBetweenRange>();
     pSelfScale->SetMinMaxScale(0.5f, 1.5f);
@@ -106,23 +106,33 @@ void SampleApp::Initialize()
 
     gore::GameObject* childGameObject = scene->NewObject();
     childGameObject->SetName("ChildObject");
-    childGameObject->GetTransform()->SetParent(gameObject->GetTransform());
-    childGameObject->GetTransform()->SetLocalPosition(gore::Vector3::Right * 1.0f);
+    childGameObject->GetTransform()->SetParent(pUpObject->GetTransform());
+    childGameObject->GetTransform()->SetLocalPosition(gore::Vector3::Up * 1.0f);
     childGameObject->GetTransform()->SetLocalScale(gore::Vector3::One * 0.5f);
 
     auto grandChildGameObject = scene->NewObject();
     grandChildGameObject->SetName("GrandChildObject");
     grandChildGameObject->GetTransform()->SetParent(childGameObject->GetTransform());
-    grandChildGameObject->GetTransform()->SetLocalPosition(gore::Vector3::Forward * 1.0f);
-    grandChildGameObject->GetTransform()->SetLocalScale(gore::Vector3::One * 2.0f);
+    grandChildGameObject->GetTransform()->SetLocalPosition(gore::Vector3::Forward * 1.5f);
+    grandChildGameObject->GetTransform()->SetLocalScale(gore::Vector3::One * 0.7f);
 
     auto pPeriodicallySwitchParent = grandChildGameObject->AddComponent<PeriodicallySwitchParent>();
     pPeriodicallySwitchParent->SetParentAB(pLeftObject->GetTransform(), pForwardObject->GetTransform());
-    pPeriodicallySwitchParent->m_RecalculateLocalPosition = true;
+    pPeriodicallySwitchParent->m_RecalculateLocalPosition = false;
 
     pPeriodicallySwitchParent = childGameObject->AddComponent<PeriodicallySwitchParent>();
-    pPeriodicallySwitchParent->SetParentAB(pRightObject->GetTransform(), nullptr);
-    pPeriodicallySwitchParent->m_RecalculateLocalPosition = false;
+    pPeriodicallySwitchParent->SetParentAB(childGameObject->GetTransform()->GetParent(), nullptr);
+    pPeriodicallySwitchParent->m_RecalculateLocalPosition = true;
+
+    LOG_STREAM(DEBUG) << "Find ChildObject in pUpObject at Initialization, non-recursively: "
+                      << pUpObject->GetTransform()->Find("GrandChildObject")
+                      << std::endl;
+    LOG_STREAM(DEBUG) << "Find ChildObject in pUpObject at Initialization, recursively: "
+                      << pUpObject->GetTransform()->Find("GrandChildObject", true)
+                      << std::endl;
+    LOG_STREAM(DEBUG) << "GetRoot() of grandChildGameObject: "
+                      << grandChildGameObject->GetTransform()->GetRoot()->GetGameObject()->GetName()
+                      << std::endl;
 }
 
 void SampleApp::Update()
