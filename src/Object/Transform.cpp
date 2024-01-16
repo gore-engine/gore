@@ -51,22 +51,24 @@ void Transform::RotateAroundAxis(const Vector3& axis, float angle)
 
 Matrix4x4 Transform::GetLocalToWorldMatrix() const
 {
-    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qvv(m_LocalTQS.q, m_LocalTQS.t, m_LocalTQS.s));
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qvv(static_cast<TQS::SIMDValueType>(GetLocalToWorldTQS())));
 }
 
 Matrix4x4 Transform::GetLocalToWorldMatrixIgnoreScale() const
 {
-    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qv(m_LocalTQS.q, m_LocalTQS.t));
+    TQS tqsWorld = GetLocalToWorldTQS();
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qv(tqsWorld.q, tqsWorld.t));
 }
 
 Matrix4x4 Transform::GetWorldToLocalMatrix() const
 {
-    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qvv(rtm::qvv_inverse(rtm::qvvf{.rotation = m_LocalTQS.q, .translation = m_LocalTQS.t, .scale = m_LocalTQS.s})));
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qvv(static_cast<TQS::SIMDValueType>(GetWorldToLocalTQS())));
 }
 
 Matrix4x4 Transform::GetWorldToLocalMatrixIgnoreScale() const
 {
-    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qv(rtm::qv_inverse(rtm::qvf{.rotation = m_LocalTQS.q, .translation = m_LocalTQS.t})));
+    TQS tqsWorld = GetLocalToWorldTQS();
+    return CAST_FROM_SIMD_MATRIX_HELPER(Matrix4x4, rtm::matrix_from_qv(rtm::qv_inverse(rtm::qv_set(tqsWorld.q, tqsWorld.t))));
 }
 
 void Transform::SetParent(Transform* newParent, bool reCalculateLocalTQS /* = true */)
