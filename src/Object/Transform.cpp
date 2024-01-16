@@ -13,8 +13,8 @@ namespace gore
 Transform::~Transform()
 {
     LOG_STREAM(WARNING) << "Destroyed Transform in GameObject " << GetGameObject()->GetName()
-        << ". Note that the destruction of children objects has NOT been implemented."
-        << std::endl;
+                        << ". Note that the destruction of children objects has NOT been implemented."
+                        << std::endl;
 }
 
 void Transform::SetLocalEulerAngles(const Vector3& eulerAngles)
@@ -137,6 +137,26 @@ TQS Transform::GetLocalToWorldTQS() const
 TQS Transform::GetWorldToLocalTQS() const
 {
     return GetLocalToWorldTQS().Inverse();
+}
+
+Vector3 Transform::TransformPoint(const Vector3& point, bool useScale /* = true */) const
+{
+    return GetLocalToWorldTQS().MulPoint3(point, useScale);
+}
+
+Vector3 Transform::TransformVector3(const Vector3& vector, bool useScale /* = true */) const
+{
+    return GetLocalToWorldTQS().MulVector3(vector, useScale);
+}
+
+Vector3 Transform::InverseTransformPoint(const Vector3& point, bool useScale /* = true */) const
+{
+    return GetWorldToLocalTQS().InvMulPoint3(point, useScale);
+}
+
+Vector3 Transform::InverseTransformVector3(const Vector3& vector, bool useScale /* = true */) const
+{
+    return GetWorldToLocalTQS().InvMulVector3(vector, useScale);
 }
 
 } // namespace gore
