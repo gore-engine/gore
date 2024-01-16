@@ -1,3 +1,5 @@
+#pragma once
+#include <cstddef>
 
 namespace gore
 {
@@ -55,8 +57,8 @@ private:
     uint32_t _gen   = 0;
 };
 
-using BufferHandle = Handle<struct BufferDesc>;
-using TextureHandle = Handle<struct TextureDesc>;
-using ShaderModuleHandle = Handle<struct ShaderModuleDesc>;
-using PipelineHandle = Handle<struct PipelineDesc>;
+// using BufferHandle = Handle<struct Buffer>;
+// using TextureHandle = Handle<struct Texture>;
+// using ShaderModuleHandle = Handle<struct ShaderModule>;
+// using PipelineHandle = Handle<struct Pipeline>;
 } // namespace gore

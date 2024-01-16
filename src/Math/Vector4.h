@@ -10,10 +10,10 @@
 namespace gore
 {
 
-ENGINE_STRUCT(Vector2);
-ENGINE_STRUCT(Vector3);
-ENGINE_STRUCT(Quaternion);
-ENGINE_STRUCT(Matrix4x4);
+struct Vector2;
+struct Vector3;
+struct Quaternion;
+struct Matrix4x4;
 
 ENGINE_STRUCT(Vector4)
 {
@@ -23,7 +23,7 @@ public:
     float z;
     float w;
 
-    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream& os, const Vector4& v) noexcept;
+    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream & os, const Vector4& v) noexcept;
 
 public:
     MATHF_SIMD_SET_VALUE_TYPE(rtm::vector4f);
@@ -52,67 +52,36 @@ public:
     {
     }
 
-
     // Vector operations
-    bool InBounds(const Vector4& Bounds) const noexcept;
+    [[nodiscard]] bool InBounds(const Vector4& Bounds) const noexcept;
 
-    float Length() const noexcept;
-    float LengthSquared() const noexcept;
+    [[nodiscard]] float Length() const noexcept;
+    [[nodiscard]] float LengthSquared() const noexcept;
 
-    float Dot(const Vector4& V) const noexcept;
-    void Cross(const Vector4& v1, const Vector4& v2, Vector4& result) const noexcept;
-    Vector4 Cross(const Vector4& v1, const Vector4& v2) const noexcept;
+    [[nodiscard]] float Dot(const Vector4& V) const noexcept;
+    [[nodiscard]] static float Dot(const Vector4& lhs, const Vector4& rhs) noexcept;
 
+    [[nodiscard]] Vector4 Normalized() const noexcept;
     void Normalize() noexcept;
-    void Normalize(Vector4 & result) const noexcept;
+    static void Normalize(Vector4 & v) noexcept;
 
-    void Clamp(const Vector4& vmin, const Vector4& vmax) noexcept;
-    void Clamp(const Vector4& vmin, const Vector4& vmax, Vector4& result) const noexcept;
+    [[nodiscard]] static Vector4 Clamp(const Vector4& v, const Vector4& vmin, const Vector4& vmax) noexcept;
 
     // Static functions
-    static float Distance(const Vector4& v1, const Vector4& v2) noexcept;
-    static float DistanceSquared(const Vector4& v1, const Vector4& v2) noexcept;
+    [[nodiscard]] static float Distance(const Vector4& v1, const Vector4& v2) noexcept;
+    [[nodiscard]] static float DistanceSquared(const Vector4& v1, const Vector4& v2) noexcept;
 
-    static void Min(const Vector4& v1, const Vector4& v2, Vector4& result) noexcept;
-    static Vector4 Min(const Vector4& v1, const Vector4& v2) noexcept;
+    [[nodiscard]] static Vector4 Min(const Vector4& v1, const Vector4& v2) noexcept;
+    [[nodiscard]] static Vector4 Max(const Vector4& v1, const Vector4& v2) noexcept;
 
-    static void Max(const Vector4& v1, const Vector4& v2, Vector4& result) noexcept;
-    static Vector4 Max(const Vector4& v1, const Vector4& v2) noexcept;
+    [[nodiscard]] static Vector4 Lerp(const Vector4& v1, const Vector4& v2, float t) noexcept;
+    [[nodiscard]] static Vector4 SmoothStep(const Vector4& v1, const Vector4& v2, float t) noexcept;
 
-    static void Lerp(const Vector4& v1, const Vector4& v2, float t, Vector4& result) noexcept;
-    static Vector4 Lerp(const Vector4& v1, const Vector4& v2, float t) noexcept;
+    [[nodiscard]] static Vector4 Barycentric(const Vector4& v1, const Vector4& v2, const Vector4& v3, float f, float g) noexcept;
+    [[nodiscard]] static Vector4 CatmullRom(const Vector4& v1, const Vector4& v2, const Vector4& v3, const Vector4& v4, float t) noexcept;
+    [[nodiscard]] static Vector4 Hermite(const Vector4& v1, const Vector4& t1, const Vector4& v2, const Vector4& t2, float t) noexcept;
 
-    static void SmoothStep(const Vector4& v1, const Vector4& v2, float t, Vector4& result) noexcept;
-    static Vector4 SmoothStep(const Vector4& v1, const Vector4& v2, float t) noexcept;
-
-    static void Barycentric(const Vector4& v1, const Vector4& v2, const Vector4& v3, float f, float g, Vector4& result) noexcept;
-    static Vector4 Barycentric(const Vector4& v1, const Vector4& v2, const Vector4& v3, float f, float g) noexcept;
-
-    static void CatmullRom(const Vector4& v1, const Vector4& v2, const Vector4& v3, const Vector4& v4, float t, Vector4& result) noexcept;
-    static Vector4 CatmullRom(const Vector4& v1, const Vector4& v2, const Vector4& v3, const Vector4& v4, float t) noexcept;
-
-    static void Hermite(const Vector4& v1, const Vector4& t1, const Vector4& v2, const Vector4& t2, float t, Vector4& result) noexcept;
-    static Vector4 Hermite(const Vector4& v1, const Vector4& t1, const Vector4& v2, const Vector4& t2, float t) noexcept;
-
-    static void Reflect(const Vector4& ivec, const Vector4& nvec, Vector4& result) noexcept;
-    static Vector4 Reflect(const Vector4& ivec, const Vector4& nvec) noexcept;
-
-    static void Refract(const Vector4& ivec, const Vector4& nvec, float refractionIndex, Vector4& result) noexcept;
-    static Vector4 Refract(const Vector4& ivec, const Vector4& nvec, float refractionIndex) noexcept;
-
-    static void Transform(const Vector2& v, const Quaternion& quat, Vector4& result) noexcept;
-    static Vector4 Transform(const Vector2& v, const Quaternion& quat) noexcept;
-
-    static void Transform(const Vector3& v, const Quaternion& quat, Vector4& result) noexcept;
-    static Vector4 Transform(const Vector3& v, const Quaternion& quat) noexcept;
-
-    static void Transform(const Vector4& v, const Quaternion& quat, Vector4& result) noexcept;
-    static Vector4 Transform(const Vector4& v, const Quaternion& quat) noexcept;
-
-    static void Transform(const Vector4& v, const Matrix4x4& m, Vector4& result) noexcept;
-    static Vector4 Transform(const Vector4& v, const Matrix4x4& m) noexcept;
-    static void Transform(const Vector4* varray, size_t count, const Matrix4x4& m, Vector4* resultArray) noexcept;
-
+    [[nodiscard]] static Vector4 Reflect(const Vector4& ivec, const Vector4& nvec) noexcept;
 
 public:
     // Common Values

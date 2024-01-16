@@ -26,7 +26,7 @@ public:
     std::vector<PoolEntryDesc> objectDesc;
     std::vector<ImplObjectType> objects;
 
-    Handle<ObjectDesc> create(ObjectDesc&& desc, ImplObjectType&& obj)
+    Handle<ImplObjectType> create(ObjectDesc&& desc, ImplObjectType&& obj)
     {
         uint32_t idx = 0;
         if (_freeListHead != kListEndSentinel)
@@ -39,13 +39,13 @@ public:
         else
         {
             idx = (uint32_t)objectDesc.size();
-            objectDesc.emplace_back(desc);
-            objects.emplace_back(obj);
+            objectDesc.emplace_back(PoolEntryDesc(desc));
+            objects.emplace_back(std::move(obj));
         }
         _numObjects++;
-        return Handle<ObjectDesc>(idx, objectDesc[idx].gen);
+        return Handle<ImplObjectType>(idx, objectDesc[idx].gen);
     }
-    void destroy(Handle<ObjectDesc> handle)
+    void destroy(Handle<ImplObjectType> handle)
     {
         if (handle.empty())
             return;
@@ -59,7 +59,15 @@ public:
         _freeListHead              = index;
         _numObjects--;
     }
-    const ImplObjectType* getObjectPtr(Handle<ObjectDesc> handle) const
+    const ImplObjectType& getObject(Handle<ImplObjectType> handle)
+    {
+        assert(!handle.empty());
+        const uint32_t index = handle.index();
+        assert(index < objects.size());
+        assert(handle.gen() == objectDesc[index].gen);
+        return objects[index];
+    }
+    const ImplObjectType* getObjectPtr(Handle<ImplObjectType> handle) const
     {
         if (handle.empty())
             return nullptr;
@@ -69,7 +77,7 @@ public:
         assert(handle.gen() == objectDesc[index].gen); // accessing deleted object
         return &objects[index];
     }
-    ImplObjectType* getObjectPtr(Handle<ObjectDesc> handle)
+    ImplObjectType* getObjectPtr(Handle<ImplObjectType> handle)
     {
         if (handle.empty())
             return nullptr;
@@ -79,7 +87,7 @@ public:
         assert(handle.gen() == objectDesc[index].gen); // accessing deleted object
         return &objects[index];
     }
-    const ObjectDesc* getObjectDescPtr(Handle<ObjectDesc> handle) const
+    const ObjectDesc* getObjectDescPtr(Handle<ImplObjectType> handle) const
     {
         if (handle.empty())
             return nullptr;
@@ -89,7 +97,7 @@ public:
         assert(handle.gen() == objectDesc[index].gen); // accessing deleted object
         return &objectDesc[index].objDesc;
     }
-    ObjectDesc* getObjectDescPtr(Handle<ObjectDesc> handle)
+    ObjectDesc* getObjectDescPtr(Handle<ImplObjectType> handle)
     {
         if (handle.empty())
             return nullptr;
@@ -99,7 +107,7 @@ public:
         assert(handle.gen() == objectDesc[index].gen); // accessing deleted object
         return &objectDesc[index].objDesc;
     }
-    Handle<ObjectDesc> getObjectHandle(const ImplObjectType* obj)
+    Handle<ImplObjectType> getObjectHandle(const ImplObjectType* obj)
     {
         if (!obj)
             return {};
@@ -108,7 +116,7 @@ public:
         {
             if (objects[idx] == *obj)
             {
-                return Handle<ObjectDesc>((uint32_t)idx, objectDesc[idx].gen);
+                return Handle<ImplObjectType>((uint32_t)idx, objectDesc[idx].gen);
             }
         }
 

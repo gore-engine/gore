@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Handle.h"
+#include "GrpahicsResource.h"
 
 #include <vector>
 
@@ -15,9 +16,9 @@ struct DynamicBuffer final
     uint32_t byteOffset = 0;
 };
 
-struct BindGroup final
+struct BindGroupDesc final
 {
-    const char* debugName               = "Noname BindGroup";
+    const char* debugName               = "Noname BindGroupDesc";
     const BindLayout* bindLayout        = nullptr;
     std::vector<TextureHandle> textures = {};
     std::vector<DynamicBuffer> buffers  = {};

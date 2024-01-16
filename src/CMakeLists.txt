@@ -28,9 +28,11 @@ set(COMMON_SOURCE_FOLDERS
         "Math"
         "Memory"
         "Windowing"
+        "Graphics"
         "Rendering"
         "Scene"
         "Object"
+        "Input"
         "Utilities"
         "Test"
 )
@@ -44,7 +46,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND COMMON_DEFINITIONS "ENGINE_DEBUG=1")
 endif ()
 
-set (SHADER_SOURCE_FILES "Shaders/sample/triangle.hlsl")
+set (SHADER_SOURCE_FILES "Shaders/sample/cube.hlsl")
 compile_shader(${SHADER_SOURCE_FILES} "vulkan" "vertex" "vs")
 compile_shader(${SHADER_SOURCE_FILES} "vulkan" "pixel" "ps")
 
@@ -105,15 +107,11 @@ list(APPEND COMMON_DEFINITIONS "GLFW_INCLUDE_NONE")
 
 # vulkan
 find_package(Vulkan REQUIRED)
-list(APPEND COMMON_LIBRARIES Vulkan::Headers)
+list(APPEND COMMON_INCLUDE_FOLDERS ${Vulkan_INCLUDE_DIRS})
 
 # vulkan memory allocator
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 list(APPEND COMMON_LIBRARIES GPUOpen::VulkanMemoryAllocator)
-
-# volk
-find_package(volk CONFIG REQUIRED)
-list(APPEND COMMON_LIBRARIES volk::volk_headers)
 
 # imgui
 find_package(imgui CONFIG REQUIRED)

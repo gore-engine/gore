@@ -19,12 +19,24 @@ Vector3::operator SIMDValueType() const noexcept
     return vector_load3((reinterpret_cast<const float*>(this)));
 }
 
-Vector3::Vector3(SIMDValueType F) noexcept :
-    x(),
-    y(),
-    z()
+Vector3::Vector3(const Vector3::SIMDValueType& F) noexcept :
+    x(rtm::vector_get_x(F)),
+    y(rtm::vector_get_y(F)),
+    z(rtm::vector_get_z(F))
 {
-    vector_store(F, reinterpret_cast<float*>(this));
+}
+
+Vector3::Vector3(Vector3::SIMDValueType&& F) noexcept :
+    x(rtm::vector_get_x(std::move(F))),
+    y(rtm::vector_get_y(std::move(F))),
+    z(rtm::vector_get_z(std::move(F)))
+{
+}
+
+Vector3& Vector3::operator=(const Vector3::SIMDValueType& F) noexcept
+{
+    rtm::vector_store3(F, reinterpret_cast<float*>(this));
+    return *this;
 }
 
 Vector4 Vector3::AsPoint() const noexcept

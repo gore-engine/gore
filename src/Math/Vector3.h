@@ -14,9 +14,8 @@
 namespace gore
 {
 
-ENGINE_STRUCT(Vector4);
-ENGINE_STRUCT(Quaternion);
-ENGINE_STRUCT(Matrix4x4);
+struct Vector4;
+struct Quaternion;
 
 ENGINE_STRUCT(Vector3)
 {
@@ -25,7 +24,7 @@ public:
     float y;
     float z;
 
-    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream& os, const Vector3& v) noexcept;
+    friend ENGINE_API_FUNC(std::ostream&, operator<<, std::ostream & os, const Vector3& v) noexcept;
 
 public:
     MATHF_SIMD_SET_VALUE_TYPE(rtm::vector4f);
@@ -36,7 +35,6 @@ public:
     MATHF_COMMON_UNARY_OPERATOR_DECLARATIONS(Vector3);
     MATHF_VECTOR_COMPARISON_OPERATOR_DECLARATIONS(Vector3);
     MATHF_VECTOR_COMPOUND_ASSIGNMENT_OPERATOR_DECLARATIONS(Vector3);
-
 
     Vector3() noexcept = default;
     constexpr explicit Vector3(float ix) noexcept :
@@ -53,55 +51,41 @@ public:
     }
 
     // Vector operations
-    bool InBounds(const Vector3& Bounds) const noexcept;
+    [[nodiscard]] inline bool InBounds(const Vector3& Bounds) const noexcept;
 
-    float Length() const noexcept;
-    float LengthSquared() const noexcept;
+    [[nodiscard]] inline float Length() const noexcept;
+    [[nodiscard]] inline float LengthSquared() const noexcept;
 
-    float Dot(const Vector3& V) const noexcept;
-    void Cross(const Vector3& V, Vector3& result) const noexcept;
-    Vector3 Cross(const Vector3& V) const noexcept;
+    [[nodiscard]] inline float Dot(const Vector3& V) const noexcept;
+    [[nodiscard]] inline static float Dot(const Vector3& lhs, const Vector3& rhs) noexcept;
+    [[nodiscard]] inline Vector3 Cross(const Vector3& rhs) const noexcept;
+    [[nodiscard]] inline static Vector3 Cross(const Vector3& lhs, const Vector3& rhs) noexcept;
 
-    void Normalize() noexcept;
-    void Normalize(Vector3 & result) const noexcept;
+    [[nodiscard]] inline Vector3 Normalized() const noexcept;
+    inline void Normalize() noexcept;
+    inline static void Normalize(Vector3 & v) noexcept;
 
-    void Clamp(const Vector3& vmin, const Vector3& vmax) noexcept;
-    void Clamp(const Vector3& vmin, const Vector3& vmax, Vector3& result) const noexcept;
+    inline void Clamp(const Vector3& vMin, const Vector3& vMax) noexcept;
+    [[nodiscard]] inline Vector3 Clamp(const Vector3& input, const Vector3& vMin, const Vector3& vMax) const noexcept;
 
-    Vector4 AsPoint() const noexcept;
-    Vector4 AsVector() const noexcept;
+    [[nodiscard]] Vector4 AsPoint() const noexcept;
+    [[nodiscard]] Vector4 AsVector() const noexcept;
 
     // Static functions
-    static float Distance(const Vector3& v1, const Vector3& v2) noexcept;
-    static float DistanceSquared(const Vector3& v1, const Vector3& v2) noexcept;
+    [[nodiscard]] inline static float Distance(const Vector3& v1, const Vector3& v2) noexcept;
+    [[nodiscard]] inline static float DistanceSquared(const Vector3& v1, const Vector3& v2) noexcept;
 
-    static void Min(const Vector3& v1, const Vector3& v2, Vector3& result) noexcept;
-    static Vector3 Min(const Vector3& v1, const Vector3& v2) noexcept;
+    [[nodiscard]] inline static Vector3 Min(const Vector3& v1, const Vector3& v2) noexcept;
+    [[nodiscard]] inline static Vector3 Max(const Vector3& v1, const Vector3& v2) noexcept;
 
-    static void Max(const Vector3& v1, const Vector3& v2, Vector3& result) noexcept;
-    static Vector3 Max(const Vector3& v1, const Vector3& v2) noexcept;
+    [[nodiscard]] inline static Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) noexcept;
+    [[nodiscard]] inline static Vector3 SmoothStep(const Vector3& v1, const Vector3& v2, float t) noexcept;
 
-    static void Lerp(const Vector3& v1, const Vector3& v2, float t, Vector3& result) noexcept;
-    static Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) noexcept;
+    [[nodiscard]] inline static Vector3 Barycentric(const Vector3& v1, const Vector3& v2, const Vector3& v3, float f, float g) noexcept;
+    [[nodiscard]] inline static Vector3 CatmullRom(const Vector3& v1, const Vector3& v2, const Vector3& v3, const Vector3& v4, float t) noexcept;
+    [[nodiscard]] inline static Vector3 Hermite(const Vector3& v1, const Vector3& t1, const Vector3& v2, const Vector3& t2, float t) noexcept;
 
-    static void SmoothStep(const Vector3& v1, const Vector3& v2, float t, Vector3& result) noexcept;
-    static Vector3 SmoothStep(const Vector3& v1, const Vector3& v2, float t) noexcept;
-
-    static void Barycentric(const Vector3& v1, const Vector3& v2, const Vector3& v3, float f, float g, Vector3& result) noexcept;
-    static Vector3 Barycentric(const Vector3& v1, const Vector3& v2, const Vector3& v3, float f, float g) noexcept;
-
-    static void CatmullRom(const Vector3& v1, const Vector3& v2, const Vector3& v3, const Vector3& v4, float t, Vector3& result) noexcept;
-    static Vector3 CatmullRom(const Vector3& v1, const Vector3& v2, const Vector3& v3, const Vector3& v4, float t) noexcept;
-
-    static void Hermite(const Vector3& v1, const Vector3& t1, const Vector3& v2, const Vector3& t2, float t, Vector3& result) noexcept;
-    static Vector3 Hermite(const Vector3& v1, const Vector3& t1, const Vector3& v2, const Vector3& t2, float t) noexcept;
-
-    static void Reflect(const Vector3& ivec, const Vector3& nvec, Vector3& result) noexcept;
-    static Vector3 Reflect(const Vector3& ivec, const Vector3& nvec) noexcept;
-
-    static void Refract(const Vector3& ivec, const Vector3& nvec, float refractionIndex, Vector3& result) noexcept;
-    static Vector3 Refract(const Vector3& ivec, const Vector3& nvec, float refractionIndex) noexcept;
-
+    [[nodiscard]] inline static Vector3 Reflect(const Vector3& ivec, const Vector3& nvec) noexcept;
 
 public:
     // Common Values

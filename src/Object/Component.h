@@ -39,7 +39,7 @@ protected:
     explicit Component(GameObject * gameObject);
     virtual ~Component();
 
-private:
+protected:
     GameObject* m_GameObject;
 
     bool m_Started;

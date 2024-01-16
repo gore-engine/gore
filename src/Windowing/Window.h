@@ -19,6 +19,8 @@ public:
 
     NON_COPYABLE(Window);
 
+    [[nodiscard]] GLFWwindow* Get() const { return m_Window; }
+
     void GetSize(int* width, int* height) const;
 
     [[nodiscard]] void* GetNativeHandle() const

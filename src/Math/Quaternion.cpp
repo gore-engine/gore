@@ -30,38 +30,23 @@ Quaternion::operator SIMDValueType() const noexcept
     return m_Q;
 }
 
-Quaternion::Quaternion(SIMDValueType F) noexcept :
+Quaternion::Quaternion(const Quaternion::SIMDValueType& F) noexcept :
     m_Q(F)
 {
 }
 
-void Quaternion::RotateTowards(const Quaternion& target, float maxAngle, Quaternion& result) const noexcept
+Quaternion::Quaternion(Quaternion::SIMDValueType&& F) noexcept :
+    m_Q(std::move(F))
 {
-    using SIMDVector = rtm::vector4f;
-
-    const SIMDVector T = m_Q;
-
-    // We can use the conjugate here instead of inverse assuming q1 & q2 are normalized.
-    const SIMDVector R = quat_mul(quat_conjugate(T), target);
-
-    const float rs      = quat_get_w(R);
-    const float length3 = vector_length3(R);
-    const float angle   = 2.f * atan2f(length3, rs);
-    if (angle > maxAngle)
-    {
-        const SIMDVector delta = quat_from_axis_angle(R, maxAngle);
-        const SIMDVector Q     = quat_mul(delta, T);
-        result.m_Q             = Q;
-    }
-    else
-    {
-        // Don't overshoot.
-        result = target;
-    }
 }
 
+Quaternion& Quaternion::operator=(const Quaternion::SIMDValueType& F) noexcept
+{
+    m_Q = F;
+    return *this;
+}
 
-void Quaternion::FromToRotation(const Vector3& fromDir, const Vector3& toDir, Quaternion& result) noexcept
+Quaternion Quaternion::FromToRotation(const Vector3& fromDir, const Vector3& toDir) noexcept
 {
     // Melax, "The Shortest Arc Quaternion", Game Programming Gems, Charles River Media (2000).
 
@@ -73,7 +58,7 @@ void Quaternion::FromToRotation(const Vector3& fromDir, const Vector3& toDir, Qu
     const float dot = vector_get_x(vector_dot3(F, T));
     if (dot >= 1.f)
     {
-        result = Identity;
+        return Quaternion::Identity;
     }
     else if (dot <= -1.f)
     {
@@ -85,39 +70,35 @@ void Quaternion::FromToRotation(const Vector3& fromDir, const Vector3& toDir, Qu
             axis = vector_cross3(F, Vector3::Up);
         }
 
-        const SIMDVector Q = quat_from_axis_angle(axis, math::constants::PI);
-        result.m_Q         = Q;
+        return static_cast<Quaternion>(quat_from_axis_angle(axis, math::constants::PI));
+
     }
     else
     {
         const SIMDVector C = vector_cross3(F, T);
         const float s      = sqrtf((1.f + dot) * 2.f);
         vector_div(C, vector_set(s));
-        result.m_Q = C;
+        return static_cast<Quaternion>(C);
     }
 }
 
-void Quaternion::LookRotation(const Vector3& forward, const Vector3& up, Quaternion& result) noexcept
+Quaternion Quaternion::LookRotation(const Vector3& forward, const Vector3& up) noexcept
 {
     using SIMDVector = rtm::vector4f;
 
-    Quaternion q1;
-    FromToRotation(Vector3::Forward, forward, q1);
+    Quaternion q1 = FromToRotation(Vector3::Forward, forward);
 
     const SIMDVector C = vector_cross3(forward, up);
     if (vector_all_near_equal3(vector_length_squared3(C), vector_zero()))
     {
         // forward and up are co-linear
-        result = q1;
-        return;
+        return q1;
     }
 
     SIMDVector U = quat_mul(q1, Vector3::Up);
+    Quaternion q2 = FromToRotation(static_cast<Vector3>(U), up);
 
-    Quaternion q2;
-    FromToRotation(Vector3(U), up, q2);
-
-    result.m_Q = quat_mul(q2, q1);
+    return static_cast<Quaternion>(quat_mul(q2, q1));
 }
 
 } // namespace gore

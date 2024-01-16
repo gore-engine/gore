@@ -1,6 +1,7 @@
 #include "TestComponent.h"
 #include "Object/GameObject.h"
 #include "Core/Log.h"
+#include "Core/Time.h"
 
 TestComponent::TestComponent(gore::GameObject* gameObject) :
     Component(gameObject)
@@ -20,5 +21,12 @@ void TestComponent::Start()
 
 void TestComponent::Update()
 {
-    // LOG_STREAM(DEBUG) << "Update TestComponent in GameObject " << GetGameObject()->GetName() << std::endl;
+    float deltaTime = GetDeltaTime();
+    float totalTime = GetTotalTime();
+
+    gore::Transform* transform = m_GameObject->GetComponent<gore::Transform>();
+
+    transform->RotateAroundAxis(gore::Vector3::Up, deltaTime);
+
+    // LOG_STREAM(DEBUG) << "TestComponent position:" << transform->GetLocalPosition() << " Quaternion: " << transform->GetLocalRotation() << std::endl;
 }
