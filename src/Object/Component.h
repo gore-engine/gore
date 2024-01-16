@@ -46,3 +46,9 @@ protected:
 };
 
 } // namespace gore
+
+#define DECLARE_FUNCTIONS_DERIVED_FROM_GORE_COMPONENT(CLASS_NAME) \
+    explicit CLASS_NAME(gore::GameObject* gameObject);            \
+    ~CLASS_NAME() override;                                       \
+    void Start() override;                                        \
+    void Update() override;
