@@ -17,6 +17,14 @@
 namespace gore
 {
 
+#ifdef __cpp_lib_hardware_interference_size
+constexpr std::size_t hardware_constructive_interference_size = std::hardware_constructive_interference_size;
+constexpr std::size_t hardware_destructive_interference_size = std::hardware_destructive_interference_size;
+#else
+constexpr std::size_t hardware_constructive_interference_size = 64;
+constexpr std::size_t hardware_destructive_interference_size = 64;
+#endif
+
 class JobBase
 {
 public:
@@ -47,10 +55,10 @@ public:
         float batchCountF = static_cast<float>(m_InvocationCount) / static_cast<float>(batchSize);
         int batchCount = batchCountF <= 1.0f ? 1 : static_cast<int>(std::ceil(batchCountF));
 
-        if (batchSize < PreferredBatchSize())
-        {
-            LOG_STREAM(WARNING) << "Batch size is smaller than preferred. This may result in false sharing. Consider change the batch size to " << PreferredBatchSize() << " or higher." << std::endl;
-        }
+//        if (batchSize < PreferredBatchSize())
+//        {
+//            LOG_STREAM(WARNING) << "Batch size is smaller than preferred. This may result in false sharing. Consider change the batch size to " << PreferredBatchSize() << " or higher." << std::endl;
+//        }
 
         if (dependency == nullptr)
         {
@@ -151,7 +159,7 @@ private:
 
         constexpr size_t stride = (size + align - 1) & ~(align - 1);
 
-        constexpr size_t cacheLineSize = std::hardware_destructive_interference_size;
+        constexpr size_t cacheLineSize = hardware_destructive_interference_size;
 
         constexpr float batchSizeF = static_cast<float>(cacheLineSize) / static_cast<float>(stride);
         size_t batchSize = batchSizeF <= 1.0f ? 1 : static_cast<size_t>(std::ceil(batchSizeF));
