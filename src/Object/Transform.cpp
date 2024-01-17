@@ -19,7 +19,7 @@ Transform::~Transform()
 
 void Transform::SetLocalEulerAngles(const Vector3& eulerAngles)
 {
-    m_LocalTQS.q = Quaternion::CreateFromYawPitchRoll(eulerAngles.y, eulerAngles.x, eulerAngles.z);
+    m_LocalTQS.q = Quaternion::FromYawPitchRoll(eulerAngles.y, eulerAngles.x, eulerAngles.z);
 }
 
 void Transform::Start()
@@ -124,7 +124,7 @@ void Transform::SetWorldRotation(const Quaternion& rotation)
 
 void Transform::RotateAroundAxis(const Vector3& axis, float angle)
 {
-    m_LocalTQS.q = Quaternion::CreateFromAxisAngle(axis, angle) * m_LocalTQS.q;
+    m_LocalTQS.q = Quaternion::FromAxisAngle(axis, angle) * m_LocalTQS.q;
 }
 
 Matrix4x4 Transform::GetLocalToWorldMatrix() const

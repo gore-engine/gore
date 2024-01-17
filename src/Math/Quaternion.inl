@@ -170,17 +170,17 @@ inline float Quaternion::Dot(const Quaternion& q) const noexcept
 // Static functions
 //------------------------------------------------------------------------------
 
-inline Quaternion Quaternion::CreateFromAxisAngle(const Vector3& axis, float angle) noexcept
+inline Quaternion Quaternion::FromAxisAngle(const Vector3& axis, float angle) noexcept
 {
     return static_cast<Quaternion>(rtm::quat_from_axis_angle(static_cast<Vector3::SIMDValueType>(axis), angle));
 }
 
-inline Quaternion Quaternion::CreateFromYawPitchRoll(float yaw, float pitch, float roll) noexcept
+inline Quaternion Quaternion::FromYawPitchRoll(float yaw, float pitch, float roll) noexcept
 {
     return static_cast<Quaternion>(rtm::quat_from_euler(-yaw, roll, -pitch));
 }
 
-inline Quaternion Quaternion::CreateFromYawPitchRoll(const Vector3& angles) noexcept
+inline Quaternion Quaternion::FromYawPitchRoll(const Vector3& angles) noexcept
 {
     return static_cast<Quaternion>(rtm::quat_from_euler(-angles.y, angles.z, -angles.x));
 }

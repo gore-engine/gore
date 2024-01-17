@@ -68,12 +68,12 @@ public:
     [[nodiscard]] Vector3 ToEuler() const noexcept;
 
     // Static functions
-    [[nodiscard]] static Quaternion CreateFromAxisAngle(const Vector3& axis, float angle) noexcept;
+    [[nodiscard]] static Quaternion FromAxisAngle(const Vector3& axis, float angle) noexcept;
     // Rotates about y-axis (yaw), then x-axis (pitch), then z-axis (roll)
-    [[nodiscard]] static Quaternion CreateFromYawPitchRoll(float yaw, float pitch, float roll) noexcept;
+    [[nodiscard]] static Quaternion FromYawPitchRoll(float yaw, float pitch, float roll) noexcept;
     // Rotates about y-axis (angles.y), then x-axis (angles.x), then z-axis (angles.z)
-    [[nodiscard]] static Quaternion CreateFromYawPitchRoll(const Vector3& angles) noexcept;
-    [[nodiscard]] static Quaternion CreateFromRotationMatrix(const Matrix4x4& M) noexcept;
+    [[nodiscard]] static Quaternion FromYawPitchRoll(const Vector3& angles) noexcept;
+    [[nodiscard]] static Quaternion FromRotationMatrix(const Matrix4x4& M) noexcept;
 
     [[nodiscard]] static Quaternion Lerp(const Quaternion& q1, const Quaternion& q2, float t) noexcept;
     [[nodiscard]] static Quaternion Slerp(const Quaternion& q1, const Quaternion& q2, float t) noexcept;
