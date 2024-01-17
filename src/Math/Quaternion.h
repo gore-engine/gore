@@ -58,6 +58,9 @@ public:
     void Conjugate() noexcept;
     static void Conjugate(Quaternion & q) noexcept;
 
+    // I don't think it's necessary to divide by length squared in this engine
+    // Nobody will really use a non-normalized quaternion and treat it as a regular rotation
+    // So the function here in this engine is effectively the same as Conjugate()
     [[nodiscard]] Quaternion Inverse() const noexcept;
     void Invert() noexcept;
     static void Invert(Quaternion & q) noexcept;

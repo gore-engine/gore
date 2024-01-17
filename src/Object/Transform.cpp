@@ -119,7 +119,7 @@ void Transform::SetWorldRotation(const Quaternion& rotation)
     }
 
     auto parentRotation = m_Parent->GetWorldRotation();
-    m_LocalTQS.q        = parentRotation.Inverse() * rotation;
+    m_LocalTQS.q        = rotation * parentRotation.Inverse();
 }
 
 void Transform::RotateAroundAxis(const Vector3& axis, float angle)
