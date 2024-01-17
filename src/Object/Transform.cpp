@@ -73,6 +73,55 @@ Transform* Transform::Find(const std::string& name, bool recursive) const
     return nullptr;
 }
 
+Vector3 Transform::GetWorldPosition() const
+{
+    return GetLocalToWorldTQS().t;
+}
+
+void Transform::SetWorldPosition(const Vector3& position)
+{
+    if (m_Parent == nullptr)
+    {
+        m_LocalTQS.t = position;
+        return;
+    }
+
+    m_LocalTQS.t = m_Parent->InverseTransformPoint(position);
+}
+
+Vector3 Transform::GetWorldScale() const
+{
+    return GetLocalToWorldTQS().s;
+}
+
+void Transform::SetWorldScale(const Vector3& scale)
+{
+    if (m_Parent == nullptr)
+    {
+        m_LocalTQS.s = scale;
+        return;
+    }
+
+    m_LocalTQS.s = m_Parent->InverseTransformVector3(scale);
+}
+
+Quaternion Transform::GetWorldRotation() const
+{
+    return GetLocalToWorldTQS().q;
+}
+
+void Transform::SetWorldRotation(const Quaternion& rotation)
+{
+    if (m_Parent == nullptr)
+    {
+        m_LocalTQS.q = rotation;
+        return;
+    }
+
+    auto parentRotation = m_Parent->GetWorldRotation();
+    m_LocalTQS.q        = parentRotation.Inverse() * rotation;
+}
+
 void Transform::RotateAroundAxis(const Vector3& axis, float angle)
 {
     m_LocalTQS.q = Quaternion::CreateFromAxisAngle(axis, angle) * m_LocalTQS.q;

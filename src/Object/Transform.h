@@ -75,6 +75,18 @@ public:
     [[nodiscard]] Vector3 GetLocalEulerAngles() const;
     void SetLocalEulerAngles(const Vector3& eulerAngles);
 
+    [[nodiscard]] Vector3 GetWorldPosition() const;
+    void SetWorldPosition(const Vector3& position);
+
+    [[nodiscard]] Vector3 GetWorldScale() const;
+    void SetWorldScale(const Vector3& scale);
+
+    [[nodiscard]] Quaternion GetWorldRotation() const;
+    void SetWorldRotation(const Quaternion& rotation);
+
+    [[nodiscard]] Vector3 GetWorldEulerAngles() const;
+    void SetWorldEulerAngles(const Vector3& eulerAngles);
+
     void RotateAroundAxis(const Vector3& axis, float angle);
     void RotateAroundPointInWorldSpace(const Vector3& pointInWorldSpace, const Vector3& axisInWorldSpace, float angle);
 

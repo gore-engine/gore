@@ -95,11 +95,11 @@ void CameraController::Update()
     if (m_Pitch < -gore::math::constants::PI_3)
         m_Pitch = -gore::math::constants::PI_3;
 
-    gore::Quaternion rollRotation  = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Forward, m_Roll);
-    gore::Quaternion pitchRotation = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Right, m_Pitch);
-    gore::Quaternion yawRotation   = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Up, m_Yaw);
+    // gore::Quaternion rollRotation  = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Forward, m_Roll);
+    // gore::Quaternion pitchRotation = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Right, m_Pitch);
+    // gore::Quaternion yawRotation   = gore::Quaternion::CreateFromAxisAngle(gore::Vector3::Up, m_Yaw);
 
-    // thw two ways setting rotations are different because of the rotation order. Axes are the same.
+    // the two ways setting rotations are different because of the rotation order. Axes are the same.
     // transform->SetLocalRotation(rollRotation * pitchRotation * yawRotation);
     // I believe rtm::quat_from_euler_angles is using XYZ rotation order:
     // because when using this function, the yaw and pitch are always rotated as expected and not affected by the roll,
