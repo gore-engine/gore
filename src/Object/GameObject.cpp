@@ -38,6 +38,10 @@ void GameObject::Update()
         component->Update();
     }
 }
+void GameObject::Destroy()
+{
+    m_Scene->DestroyObject(this);
+}
 
 template <>
 Component::SelfOrDerivedTypePointer<Transform> GameObject::AddComponent<Transform>()

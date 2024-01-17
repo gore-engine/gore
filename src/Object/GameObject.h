@@ -32,6 +32,8 @@ public:
         return m_Transform;
     }
 
+    void Destroy();
+
 public:
     template <typename T>
     Component::SelfOrDerivedTypePointer<T> AddComponent();

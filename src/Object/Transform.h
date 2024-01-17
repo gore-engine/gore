@@ -19,20 +19,7 @@ ENGINE_CLASS(Transform) final : public Component
 {
 public:
     NON_COPYABLE(Transform);
-
-    explicit Transform(GameObject * gameObject) :
-        Component(gameObject),
-        m_Parent(nullptr),
-        m_Children(),
-        m_LocalTQS(TQS::CreateIdentity())
-    {
-    }
-
-    void Start() override;
-    void Update() override;
-
-protected:
-    ~Transform() override;
+    DECLARE_FUNCTIONS_DERIVED_FROM_GORE_COMPONENT(Transform);
 
 public:
     // clang-format off

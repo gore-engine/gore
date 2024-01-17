@@ -10,6 +10,14 @@
 namespace gore
 {
 
+Transform::Transform(gore::GameObject* gameObject) :
+    Component(gameObject),
+    m_LocalTQS(),
+    m_Parent(nullptr),
+    m_Children()
+{
+}
+
 Transform::~Transform() = default;
 
 void Transform::SetLocalEulerAngles(const Vector3& eulerAngles)
