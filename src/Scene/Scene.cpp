@@ -56,12 +56,12 @@ GameObject* Scene::NewObject(std::string name)
 
 void Scene::DestroyObject(GameObject* gameObject)
 {
-    auto it = std::find(m_GameObjects.begin(), m_GameObjects.end(), gameObject);
-    if (it != m_GameObjects.end())
-    {
-        m_GameObjects.erase(it);
-        delete gameObject;
-    }
+    auto newLogicalEnd =
+        std::remove_if(m_GameObjects.begin(), m_GameObjects.end(), [gameObject](GameObject* pGameObject)
+                       { return pGameObject->GetTransform()->GetRoot()->GetGameObject() == pGameObject; });
+    std::for_each(newLogicalEnd, m_GameObjects.end(), [](GameObject* pGameObject)
+                  { delete pGameObject; });
+    m_GameObjects.erase(newLogicalEnd, m_GameObjects.end());
 }
 
 GameObject* Scene::FindObject(const std::string& name)
