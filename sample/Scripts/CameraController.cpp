@@ -104,7 +104,7 @@ void CameraController::Update()
     // I believe rtm::quat_from_euler_angles is using XYZ rotation order:
     // because when using this function, the yaw and pitch are always rotated as expected and not affected by the roll,
     // which means roll(i.e. Z) is the last rotation.
-    transform->SetLocalRotation(gore::Quaternion::CreateFromYawPitchRoll(m_Yaw, m_Pitch, m_Roll));
+    transform->SetLocalRotation(gore::Quaternion::FromYawPitchRoll(m_Yaw, m_Pitch, m_Roll));
 
     gore::Camera* camera = m_GameObject->GetComponent<gore::Camera>();
     float fov = camera->GetPerspectiveFOV();

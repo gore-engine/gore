@@ -19,7 +19,7 @@ Transform::~Transform()
 
 void Transform::SetLocalEulerAngles(const Vector3& eulerAngles)
 {
-    m_LocalTQS.q = Quaternion::CreateFromYawPitchRoll(eulerAngles.y, eulerAngles.x, eulerAngles.z);
+    m_LocalTQS.q = Quaternion::FromYawPitchRoll(eulerAngles.y, eulerAngles.x, eulerAngles.z);
 }
 
 void Transform::Start()
@@ -124,7 +124,7 @@ void Transform::SetWorldRotation(const Quaternion& rotation)
 
 void Transform::RotateAroundAxis(const Vector3& axis, float angle)
 {
-    m_LocalTQS.q = Quaternion::CreateFromAxisAngle(axis, angle) * m_LocalTQS.q;
+    m_LocalTQS.q = Quaternion::FromAxisAngle(axis, angle) * m_LocalTQS.q;
 }
 
 Matrix4x4 Transform::GetLocalToWorldMatrix() const
@@ -222,12 +222,12 @@ Vector3 Transform::TransformVector3(const Vector3& vector, bool useScale /* = tr
 
 Vector3 Transform::InverseTransformPoint(const Vector3& point, bool useScale /* = true */) const
 {
-    return GetWorldToLocalTQS().InvMulPoint3(point, useScale);
+    return GetLocalToWorldTQS().InvMulPoint3(point, useScale);
 }
 
 Vector3 Transform::InverseTransformVector3(const Vector3& vector, bool useScale /* = true */) const
 {
-    return GetWorldToLocalTQS().InvMulVector3(vector, useScale);
+    return GetLocalToWorldTQS().InvMulVector3(vector, useScale);
 }
 
 } // namespace gore
