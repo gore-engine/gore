@@ -2,6 +2,7 @@
 
 #include "Core/Time.h"
 #include "Object/GameObject.h"
+#include "Input/InputSystem.h"
 
 PeriodicallySwitchParent::PeriodicallySwitchParent(gore::GameObject* gameObject) :
     Component(gameObject),
@@ -10,7 +11,8 @@ PeriodicallySwitchParent::PeriodicallySwitchParent(gore::GameObject* gameObject)
     m_Time(0.0f),
     m_SwitchInterval(1.0f),
     m_Switched(false),
-    m_RecalculateLocalPosition(true)
+    m_RecalculateLocalPosition(true),
+    m_Keyboard(gore::InputSystem::Get()->GetKeyboard())
 {
 }
 
@@ -24,7 +26,8 @@ void PeriodicallySwitchParent::Update()
 {
     m_Time += GetDeltaTime();
 
-    if (m_Time >= m_SwitchInterval)
+    //    if (m_Time >= m_SwitchInterval)
+    if (m_Keyboard->KeyPressed(gore::KeyCode::G))
     {
         m_Time     = 0.0f;
         m_Switched = !m_Switched;

@@ -2,6 +2,7 @@
 
 #include "Object/Component.h"
 #include "Object/Transform.h"
+#include "Input/InputDevice.h"
 
 class PeriodicallySwitchParent final : public gore::Component
 {
@@ -19,4 +20,6 @@ public:
 private:
     float m_Time;
     bool m_Switched;
+
+    gore::Keyboard* m_Keyboard;
 };
