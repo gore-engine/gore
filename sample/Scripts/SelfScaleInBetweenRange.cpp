@@ -26,7 +26,7 @@ void SelfScaleInBetweenRange::Update()
     float totalTime = GetTotalTime();
 
     m_CurrentScale = m_MinScale + sinf(totalTime * m_Speed) * (m_MaxScale - m_MinScale);
-    GetGameObject()->GetTransform()->SetLocalScale(gore::Vector3(m_CurrentScale));
+    GetGameObject()->GetTransform()->SetWorldScale(gore::Vector3(m_CurrentScale));
 }
 
 void SelfScaleInBetweenRange::SetMinMaxScale(float minScale, float maxScale)

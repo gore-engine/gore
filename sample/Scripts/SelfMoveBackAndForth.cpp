@@ -26,5 +26,5 @@ void SelfMoveBackAndForth::Update()
 
     gore::Vector3 position = GetGameObject()->GetTransform()->GetLocalPosition();
     position += sinf(totalTime * m_Speed) * m_Direction * m_FarthestDistance * GetDeltaTime();
-    GetGameObject()->GetTransform()->SetLocalPosition(position);
+    GetGameObject()->GetTransform()->SetWorldPosition(position);
 }
