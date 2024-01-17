@@ -54,6 +54,24 @@ Transform* Transform::GetRoot() const
     return pTransform;
 }
 
+bool Transform::IsChildOf(const Transform* parent) const
+{
+    auto pTransform = const_cast<Transform*>(this);
+    while (pTransform->m_Parent != nullptr)
+    {
+        if (pTransform->m_Parent == parent)
+            return true;
+        pTransform = pTransform->m_Parent;
+    }
+    return false;
+}
+
+bool Transform::IsParentOf(const Transform* child) const
+{
+    return child->IsChildOf(this);
+}
+
+
 Transform* Transform::Find(const std::string& name, bool recursive) const
 {
     auto result = std::find_if(m_Children.begin(), m_Children.end(), [name](Transform* child)
@@ -158,17 +176,12 @@ void Transform::SetParent(Transform* newParent, bool reCalculateLocalTQS /* = tr
         return;
 
     auto oldParent = m_Parent;
-
-    if (newParent != nullptr)
+    
+    if (newParent->IsChildOf(this))
     {
-        // check if newParent is a child of this
-        auto it = std::find(newParent->begin(), newParent->end(), this);
-        if (it != newParent->m_Children.end())
-        {
-            LOG_STREAM(ERROR) << "Cannot set parent to a child of this Transform. "
-                              << "This operation will do nothing." << std::endl;
-            return;
-        }
+        LOG_STREAM(ERROR) << "Cannot set parent to a child of this Transform. "
+                          << "This operation will do nothing." << std::endl;
+        return;
     }
 
     if (oldParent != nullptr)
