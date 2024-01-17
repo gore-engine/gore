@@ -44,6 +44,8 @@ public:
     // clang-format on
 
     [[nodiscard]] Transform* GetRoot() const;
+    [[nodiscard]] bool IsChildOf(const Transform* parent) const;
+    [[nodiscard]] bool IsParentOf(const Transform* child) const;
 
     [[nodiscard]] Transform* Find(const std::string& name, bool recursive = false) const;
 
