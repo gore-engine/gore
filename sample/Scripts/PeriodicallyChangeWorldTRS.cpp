@@ -31,6 +31,6 @@ void PeriodicallyChangeWorldTRS::Update()
 
         auto transform = GetGameObject()->GetTransform();
         //        transform->SetWorldPosition(transform->GetWorldPosition() + gore::Vector3::Up);
-        transform->SetWorldRotation(gore::Quaternion::FromAxisAngle(gore::Vector3::Right, gore::math::constants::PI / 10 * m_CurrentIndex));
+        transform->SetWorldRotation(transform->GetWorldRotation() * gore::Quaternion::FromAxisAngle(gore::Vector3::Right, gore::math::constants::PI / 10));
     }
 }
