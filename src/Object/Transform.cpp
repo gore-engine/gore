@@ -222,12 +222,12 @@ Vector3 Transform::TransformVector3(const Vector3& vector, bool useScale /* = tr
 
 Vector3 Transform::InverseTransformPoint(const Vector3& point, bool useScale /* = true */) const
 {
-    return GetWorldToLocalTQS().InvMulPoint3(point, useScale);
+    return GetLocalToWorldTQS().InvMulPoint3(point, useScale);
 }
 
 Vector3 Transform::InverseTransformVector3(const Vector3& vector, bool useScale /* = true */) const
 {
-    return GetWorldToLocalTQS().InvMulVector3(vector, useScale);
+    return GetLocalToWorldTQS().InvMulVector3(vector, useScale);
 }
 
 } // namespace gore
