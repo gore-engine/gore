@@ -58,9 +58,13 @@ void Scene::DestroyObject(GameObject* gameObject)
 {
     auto newLogicalEnd =
         std::remove_if(m_GameObjects.begin(), m_GameObjects.end(), [gameObject](GameObject* pGameObject)
-                       { return pGameObject->GetTransform()->GetRoot()->GetGameObject() == gameObject; });
+                       { return pGameObject == gameObject || pGameObject->GetTransform()->IsChildOf(gameObject->GetTransform()); });
     std::for_each(newLogicalEnd, m_GameObjects.end(), [](GameObject* pGameObject)
-                  { delete pGameObject; });
+                  { LOG_STREAM(DEBUG) << "Destroying GameObject " << pGameObject->GetName() << std::endl;
+                      delete pGameObject; });
+
+    LOG_STREAM(DEBUG) << "Destroyed " << (std::distance(newLogicalEnd, m_GameObjects.end()))
+                      << " GameObjects" << std::endl;
     m_GameObjects.erase(newLogicalEnd, m_GameObjects.end());
 }
 
