@@ -10,6 +10,7 @@
 #include "Rendering/RenderSystem.h"
 #include "Windowing/Window.h"
 #include "Scene/Scene.h"
+#include "Job/WorkerThread.h"
 #include "Input/GLFW/GLFWInputSystem.h"
 
 namespace gore
@@ -46,6 +47,8 @@ void App::OnWindowResize(Window* window, int width, int height)
 
 int App::Run(int width, int height, const char* title)
 {
+    WorkerThread::Spawn();
+
     glfwInit();
 
     m_Window = new Window(this, width, height);
@@ -91,6 +94,8 @@ int App::Run(int width, int height, const char* title)
     delete m_Window;
 
     glfwTerminate();
+
+    WorkerThread::Shutdown();
 
     return 0;
 }

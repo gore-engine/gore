@@ -14,6 +14,7 @@
 #include <string>
 #include <mutex>
 #include <chrono>
+#include <filesystem>
 
 namespace gore
 {
@@ -105,7 +106,7 @@ void Logger::Log(LogLevel level, const char* file, int line, const char* format,
                         << " " << GetLogLevelStr(level) << ": " << buf;
 
         if (level >= LogLevel::WARNING)
-            *m_OutputStream << "    " << file << ":" << line << std::endl;
+            *m_OutputStream << "    " << std::filesystem::weakly_canonical(file).make_preferred().string() << ":" << line << std::endl;
         else
             *m_OutputStream << std::flush;
     }
