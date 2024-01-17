@@ -20,6 +20,7 @@
 #include "Scripts/SelfRotate.h"
 #include "Scripts/SelfMoveBackAndForth.h"
 #include "Scripts/SelfScaleInBetweenRange.h"
+#include "Scripts/PeriodicallyChangeWorldTRS.h"
 
 SampleApp::SampleApp(int argc, char** argv) :
     App(argc, argv)
@@ -43,7 +44,7 @@ void SampleApp::Initialize()
 
     gore::Transform* cameraTransform = cameraGameObject->GetComponent<gore::Transform>();
     cameraTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
-    cameraTransform->SetLocalPosition((gore::Vector3::Backward + gore::Vector3::Up) * 1.5f);
+    cameraTransform->SetLocalPosition((gore::Vector3::Backward + gore::Vector3::Up) * 7.5f);
 
     gore::GameObject* gameObject = scene->NewObject();
     gameObject->SetName("TestObject O, T&R&S");
@@ -106,23 +107,29 @@ void SampleApp::Initialize()
 
     gore::GameObject* childGameObject = scene->NewObject();
     childGameObject->SetName("ChildObject");
-    childGameObject->GetTransform()->SetParent(pUpObject->GetTransform());
+//    childGameObject->GetTransform()->SetParent(pUpObject->GetTransform());
+     childGameObject->GetTransform()->SetParent(nullptr);
     childGameObject->GetTransform()->SetLocalPosition(gore::Vector3::Up * 1.0f);
     childGameObject->GetTransform()->SetLocalScale(gore::Vector3::One * 0.5f);
 
     auto grandChildGameObject = scene->NewObject();
     grandChildGameObject->SetName("GrandChildObject");
     grandChildGameObject->GetTransform()->SetParent(childGameObject->GetTransform());
-    grandChildGameObject->GetTransform()->SetLocalPosition(gore::Vector3::Forward * 1.5f);
+    grandChildGameObject->GetTransform()->SetLocalPosition((gore::Vector3::Forward + gore::Vector3::Right) * 1.5f);
     grandChildGameObject->GetTransform()->SetLocalScale(gore::Vector3::One * 0.7f);
 
     auto pPeriodicallySwitchParent = grandChildGameObject->AddComponent<PeriodicallySwitchParent>();
-    pPeriodicallySwitchParent->SetParentAB(pLeftObject->GetTransform(), pForwardObject->GetTransform());
-    pPeriodicallySwitchParent->m_RecalculateLocalPosition = false;
+    pPeriodicallySwitchParent->SetParentAB(childGameObject->GetTransform(), pLeftObject->GetTransform());
+    pPeriodicallySwitchParent->m_RecalculateLocalPosition = true;
 
     pPeriodicallySwitchParent = childGameObject->AddComponent<PeriodicallySwitchParent>();
-    pPeriodicallySwitchParent->SetParentAB(childGameObject->GetTransform()->GetParent(), nullptr);
+    pPeriodicallySwitchParent->SetParentAB(pUpObject->GetTransform(), childGameObject->GetTransform()->GetParent());
     pPeriodicallySwitchParent->m_RecalculateLocalPosition = true;
+
+    auto pPeriodicallyChangeWorldTRS      = childGameObject->AddComponent<PeriodicallyChangeWorldTRS>();
+    pPeriodicallyChangeWorldTRS->m_Period = 0.5f;
+    pSelfScale = childGameObject->AddComponent<SelfScaleInBetweenRange>();
+    pSelfScale->SetMinMaxScale(0.5f, 1.5f);
 
     LOG_STREAM(DEBUG) << "Find ChildObject in pUpObject at Initialization, non-recursively: "
                       << pUpObject->GetTransform()->Find("GrandChildObject")
