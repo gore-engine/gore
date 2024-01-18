@@ -7,6 +7,8 @@
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 
+#include "RenderContext.h"
+
 namespace gore
 {
 
@@ -27,6 +29,8 @@ public:
     void OnResize(Window* window, int width, int height);
 
 private:
+    std::unique_ptr<RenderContext> m_RenderContext;
+
     // Instance
     gfx::Instance m_Instance;
 
@@ -37,10 +41,8 @@ private:
     gfx::Swapchain m_Swapchain;
 
     // Shader
-    vk::raii::ShaderModule m_CubeVertexShader;
-    std::string m_CubeVertexShaderEntryPoint;
-    vk::raii::ShaderModule m_CubeFragmentShader;
-    std::string m_CubeFragmentShaderEntryPoint;
+    ShaderModuleHandle m_CubeVertexShaderHandle;
+    ShaderModuleHandle m_CubeFragmentShaderHandle;
 
     // Render pass
     vk::raii::RenderPass m_RenderPass;
@@ -70,8 +72,20 @@ private:
     VmaAllocation m_DepthImageAllocation;
     vk::raii::ImageView m_DepthImageView;
 
+    vk::raii::Buffer m_VertexBuffer;
+    vk::raii::DeviceMemory m_VertexBufferMemory;
+    vk::raii::Buffer m_IndexBuffer;
+    vk::raii::DeviceMemory m_IndexBufferMemory;
+
 private:
+    uint32_t FindMemoryType(uint32_t typeFilter, vk::PhysicalDeviceMemoryProperties memProperties, vk::MemoryPropertyFlags properties) const;
+
+    void CreateInstance();
+    void CreateDevice();
+    void CreateSurface();
+    void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
     void CreateDepthBuffer();
+    void CreateVertexBuffer();
     void LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint);
     void CreateRenderPass();
     void CreatePipeline();

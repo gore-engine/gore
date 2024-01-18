@@ -2,6 +2,8 @@
 
 #include "RenderSystem.h"
 
+#include "RenderContext.h"
+
 #include "Graphics/Utils.h"
 #include "Core/App.h"
 #include "Core/Time.h"
@@ -35,10 +37,8 @@ RenderSystem::RenderSystem(gore::App* app) :
     // Surface & Swapchain
     m_Swapchain(),
     // Shader
-    m_CubeVertexShader(nullptr),
-    m_CubeVertexShaderEntryPoint(),
-    m_CubeFragmentShader(nullptr),
-    m_CubeFragmentShaderEntryPoint(),
+    m_CubeVertexShaderHandle(),
+    m_CubeFragmentShaderHandle(),
     // Render Pass
     m_RenderPass(nullptr),
     // Pipeline
@@ -59,7 +59,11 @@ RenderSystem::RenderSystem(gore::App* app) :
     // Depth Buffer
     m_DepthImage(nullptr),
     m_DepthImageAllocation(VK_NULL_HANDLE),
-    m_DepthImageView(nullptr)
+    m_DepthImageView(nullptr),
+    m_VertexBuffer(nullptr),
+    m_VertexBufferMemory(VK_NULL_HANDLE),
+    m_IndexBuffer(nullptr),
+    m_IndexBufferMemory(VK_NULL_HANDLE)
 {
     g_RenderSystem = this;
 }
@@ -81,7 +85,10 @@ void RenderSystem::Initialize()
     m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), 3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
 
+    m_RenderContext = std::make_unique<RenderContext>(&m_Device);
+
     CreateDepthBuffer();
+    CreateVertexBuffer();
     LoadShader("sample/cube", "vs", "ps");
     CreateRenderPass();
     CreatePipeline();
@@ -171,8 +178,10 @@ void RenderSystem::Update()
         };
         std::array<PushConstant, 1> pushConstantData = {pushConstant};
         commandBuffer.pushConstants<PushConstant>(*m_PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, pushConstantData);
+        commandBuffer.bindVertexBuffers(0, {*m_VertexBuffer}, {0});
+        commandBuffer.bindIndexBuffer(*m_IndexBuffer, 0, vk::IndexType::eUint16);
 
-        commandBuffer.draw(36, 1, 0, 0);
+        commandBuffer.drawIndexed(36, 1, 0, 0, 0);
     }
 
     commandBuffer.endRenderPass();
@@ -230,6 +239,7 @@ void RenderSystem::Shutdown()
 
         vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
     }
+    m_RenderContext->clear();
 }
 
 void RenderSystem::OnResize(Window* window, int width, int height)
@@ -321,6 +331,77 @@ void RenderSystem::CreateDepthBuffer()
     m_Device.SetName(m_DepthImageView, "Depth Buffer ImageView");
 }
 
+uint32_t RenderSystem::FindMemoryType(uint32_t typeFilter, vk::PhysicalDeviceMemoryProperties memProperties, vk::MemoryPropertyFlags properties) const
+{
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+    {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+            return i;
+    }
+
+    throw std::runtime_error("failed to find suitable memory type");
+}
+
+void RenderSystem::CreateVertexBuffer()
+{
+    std::vector<Vector3> vertices = {
+        Vector3(-1.0f, -1.0f, -1.0f), // 0
+        Vector3(-1.0f, -1.0f,  1.0f), // 1
+        Vector3(-1.0f,  1.0f, -1.0f), // 2
+        Vector3(-1.0f,  1.0f,  1.0f), // 3
+        Vector3( 1.0f, -1.0f, -1.0f), // 4
+        Vector3( 1.0f, -1.0f,  1.0f), // 5
+        Vector3( 1.0f,  1.0f, -1.0f), // 6
+        Vector3( 1.0f,  1.0f,  1.0f), // 7
+    };
+
+    std::vector<uint16_t> indices = {
+        2, 1, 0, 2, 3, 1, // -X
+        4, 5, 6, 6, 5, 7, // +X
+        0, 1, 5, 0, 5, 4, // -Y
+        2, 6, 3, 3, 6, 7, // +Y
+        0, 4, 2, 2, 4, 6, // -Z
+        1, 3, 5, 5, 3, 7  // +Z
+    };
+
+    // create a vk::raii::Buffer vertexBuffer, given a vk::raii::Device device and some vertexData in host memory
+    vk::BufferCreateInfo bufferCreateInfo( {}, sizeof(Vector3) * vertices.size(), vk::BufferUsageFlagBits::eVertexBuffer );
+    m_VertexBuffer = m_Device.Get().createBuffer( bufferCreateInfo );
+    
+    // create a vk::raii::DeviceMemory vertexDeviceMemory, given a vk::raii::Device device and a uint32_t memoryTypeIndex
+    vk::MemoryRequirements memoryRequirements = m_VertexBuffer.getMemoryRequirements();
+    uint32_t memoryTypeIndex = FindMemoryType( memoryRequirements.memoryTypeBits, m_Device.GetPhysicalDevice().Get().getMemoryProperties(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
+    
+    vk::MemoryAllocateInfo memoryAllocateInfo( memoryRequirements.size, memoryTypeIndex );
+    m_VertexBufferMemory = m_Device.Get().allocateMemory( memoryAllocateInfo );
+
+    // bind the complete device memory to the vertex buffer
+    m_VertexBuffer.bindMemory( *m_VertexBufferMemory, 0 );
+
+    // copy the vertex data into the vertexDeviceMemory
+    uint8_t* pData = static_cast<uint8_t*>(m_VertexBufferMemory.mapMemory( 0, memoryRequirements.size ));
+    memcpy( pData, vertices.data(), sizeof(Vector3) * vertices.size() );
+    m_VertexBufferMemory.unmapMemory();
+
+    // create a vk::raii::Buffer indexBuffer, given a vk::raii::Device device and some indexData in host memory
+    vk::BufferCreateInfo indexBufferCreateInfo( {}, sizeof(uint16_t) * indices.size(), vk::BufferUsageFlagBits::eIndexBuffer );
+    m_IndexBuffer = m_Device.Get().createBuffer( indexBufferCreateInfo );
+    
+    // create a vk::raii::DeviceMemory indexDeviceMemory, given a vk::raii::Device device and a uint32_t memoryTypeIndex
+    memoryRequirements = m_IndexBuffer.getMemoryRequirements();
+    memoryTypeIndex = FindMemoryType( memoryRequirements.memoryTypeBits, m_Device.GetPhysicalDevice().Get().getMemoryProperties(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
+
+    memoryAllocateInfo = vk::MemoryAllocateInfo( memoryRequirements.size, memoryTypeIndex );
+    m_IndexBufferMemory = m_Device.Get().allocateMemory( memoryAllocateInfo );
+    
+    m_IndexBuffer.bindMemory( *m_IndexBufferMemory, 0 );
+
+    // copy the index data into the indexDeviceMemory
+    pData = static_cast<uint8_t*>(m_IndexBufferMemory.mapMemory( 0, memoryRequirements.size ));
+    memcpy( pData, indices.data(), sizeof(uint16_t) * indices.size() );
+    m_IndexBufferMemory.unmapMemory();
+}
+
 void RenderSystem::LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint)
 {
     static const std::filesystem::path kShaderSourceFolder = FileSystem::GetResourceFolder() / "Shaders";
@@ -343,12 +424,12 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
     }
     LOG_STREAM(DEBUG) << "Loaded shader: " << vertexShaderPath << std::endl;
 
-    vk::ShaderModuleCreateInfo vertexShaderCreateInfo({}, vertexShaderBinary.size(), reinterpret_cast<const uint32_t*>(vertexShaderBinary.data()));
-
-    m_CubeVertexShader           = m_Device.Get().createShaderModule(vertexShaderCreateInfo);
-    m_CubeVertexShaderEntryPoint = vertexEntryPoint;
-
-    m_Device.SetName(m_CubeVertexShader, "Cube Vertex Shader");
+    m_CubeVertexShaderHandle = m_RenderContext->createShaderModule({
+        .debugName = "Cube Vertex Shader",
+        .byteCode = reinterpret_cast<uint8_t*>(vertexShaderBinary.data()),
+        .byteSize = static_cast<uint32_t>(vertexShaderBinary.size()),
+        .entryFunc = vertexEntryPoint.c_str()
+    });
 
     std::filesystem::path fragmentShaderPath = getShaderFile(vk::ShaderStageFlagBits::eFragment);
 
@@ -360,12 +441,12 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
     }
     LOG_STREAM(DEBUG) << "Loaded shader: " << fragmentShaderPath << std::endl;
 
-    vk::ShaderModuleCreateInfo fragmentShaderCreateInfo({}, fragmentShaderBinary.size(), reinterpret_cast<const uint32_t*>(fragmentShaderBinary.data()));
-
-    m_CubeFragmentShader           = m_Device.Get().createShaderModule(fragmentShaderCreateInfo);
-    m_CubeFragmentShaderEntryPoint = fragmentEntryPoint;
-
-    m_Device.SetName(m_CubeFragmentShader, "Cube Fragment Shader");
+    m_CubeFragmentShaderHandle = m_RenderContext->createShaderModule({
+        .debugName = "Cube Frag Shader",
+        .byteCode = reinterpret_cast<uint8_t*>(fragmentShaderBinary.data()),
+        .byteSize = static_cast<uint32_t>(fragmentShaderBinary.size()),
+        .entryFunc = fragmentEntryPoint.c_str()
+    });
 }
 
 void RenderSystem::CreateRenderPass()
@@ -427,14 +508,28 @@ void RenderSystem::CreatePipeline()
 
     m_PipelineLayout = m_Device.Get().createPipelineLayout(pipelineLayoutInfo);
 
-    vk::PipelineShaderStageCreateInfo vertexShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *m_CubeVertexShader, m_CubeVertexShaderEntryPoint.c_str());
-    vk::PipelineShaderStageCreateInfo fragmentShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eFragment, *m_CubeFragmentShader, m_CubeFragmentShaderEntryPoint.c_str());
+    auto& vertexShaderModuleDesc = m_RenderContext->getShaderModuleDesc(m_CubeVertexShaderHandle);
+    auto& vertexShaderModule = m_RenderContext->getShaderModule(m_CubeVertexShaderHandle);
+
+    auto& fragmentShaderModuleDesc = m_RenderContext->getShaderModuleDesc(m_CubeFragmentShaderHandle);
+    auto& fragmentShaderModule = m_RenderContext->getShaderModule(m_CubeFragmentShaderHandle);
+
+    vk::PipelineShaderStageCreateInfo vertexShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *vertexShaderModule.sm, vertexShaderModuleDesc.entryFunc);
+    vk::PipelineShaderStageCreateInfo fragmentShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eFragment, *fragmentShaderModule.sm, fragmentShaderModuleDesc.entryFunc);
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStageCreateInfos = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
 
     std::vector<vk::DynamicState> dynamicStates = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
     vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo({}, dynamicStates);
 
-    vk::PipelineVertexInputStateCreateInfo vertexInputInfo({}, {}, {});
+    auto bindingDescription = Vertex::getBindingDescription();
+    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
+    vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+
     vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo({}, vk::PrimitiveTopology::eTriangleList, false);
     vk::PipelineViewportStateCreateInfo viewportStateCreateInfo({}, 1, nullptr, 1, nullptr);
     vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo({}, false, false, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise, false, 0.0f, 0.0f, 0.0f, 1.0f);

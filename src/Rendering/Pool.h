@@ -5,17 +5,17 @@
 
 namespace gore
 {
-template <typename ObjectType, typename ImplObjectType>
+template <typename ObjectDesc, typename ImplObjectType>
 class Pool
 {
     static constexpr uint32_t kListEndSentinel = 0xffffffff;
-    struct PoolEntry
+    struct PoolEntryDesc
     {
-        explicit PoolEntry(ImplObjectType& inObj) :
-            obj(std::move(inObj))
+        explicit PoolEntryDesc(ObjectDesc& inObj) :
+            objDesc(std::move(inObj))
         {
         }
-        ImplObjectType obj = {};
+        ObjectDesc objDesc = {};
         uint32_t gen       = 1;
         uint32_t nextFree  = kListEndSentinel;
     };
@@ -23,69 +23,108 @@ class Pool
     uint32_t _numObjects   = 0;
 
 public:
-    std::vector<PoolEntry> objects;
+    std::vector<PoolEntryDesc> objectDesc;
+    std::vector<ImplObjectType> objects;
 
-    Handle<ObjectType> create(ImplObjectType&& obj)
+    Handle<ImplObjectType> create(ObjectDesc&& desc, ImplObjectType&& obj)
     {
         uint32_t idx = 0;
         if (_freeListHead != kListEndSentinel)
         {
-            idx              = _freeListHead;
-            _freeListHead    = objects[idx].nextFree_;
-            objects[idx].obj = std::move(obj);
+            idx                     = _freeListHead;
+            _freeListHead           = objectDesc[idx].nextFree;
+            objectDesc[idx].objDesc = std::move(desc);
+            objects[idx]            = std::move(obj);
         }
         else
         {
-            idx = (uint32_t)objects.size();
-            objects.emplace_back(obj);
+            idx = (uint32_t)objectDesc.size();
+            objectDesc.emplace_back(PoolEntryDesc(desc));
+            objects.emplace_back(std::move(obj));
         }
         _numObjects++;
-        return Handle<ObjectType>(idx, objects[idx].gen);
+        return Handle<ImplObjectType>(idx, objectDesc[idx].gen);
     }
-    void destroy(Handle<ObjectType> handle)
+    void destroy(Handle<ImplObjectType> handle)
     {
         if (handle.empty())
             return;
         assert(_numObjects > 0); // double deletion
         const uint32_t index = handle.index();
-        assert(index < objects.size());
-        assert(handle.gen() == objects[index].gen); // double deletion
-        objects[index].obj = ImplObjectType{};
-        objects[index].gen++;
-        objects[index].nextFree_ = _freeListHead;
-        _freeListHead            = index;
+        assert(index < objectDesc.size());
+        assert(handle.gen() == objectDesc[index].gen); // double deletion
+        objectDesc[index].objDesc = ObjectDesc{};
+        objectDesc[index].gen++;
+        objectDesc[index].nextFree = _freeListHead;
+        _freeListHead              = index;
         _numObjects--;
     }
-    const ImplObjectType* get(Handle<ObjectType> handle) const
+    const ImplObjectType& getObject(Handle<ImplObjectType> handle)
+    {
+        assert(!handle.empty());
+        const uint32_t index = handle.index();
+        assert(index < objects.size());
+        assert(handle.gen() == objectDesc[index].gen);
+        return objects[index];
+    }
+    const ImplObjectType* getObjectPtr(Handle<ImplObjectType> handle) const
     {
         if (handle.empty())
             return nullptr;
 
         const uint32_t index = handle.index();
-        assert(index < objects.size());
-        assert(handle.gen() == objects[index].gen); // accessing deleted object
-        return &objects[index].obj;
+        assert(index < objectDesc.size());
+        assert(handle.gen() == objectDesc[index].gen); // accessing deleted object
+        return &objects[index];
     }
-    ImplObjectType* get(Handle<ObjectType> handle)
+    ImplObjectType* getObjectPtr(Handle<ImplObjectType> handle)
     {
         if (handle.empty())
             return nullptr;
 
         const uint32_t index = handle.index();
-        assert(index < objects.size());
-        assert(handle.gen() == objects[index].gen); // accessing deleted object
-        return &objects[index].obj;
+        assert(index < objectDesc.size());
+        assert(handle.gen() == objectDesc[index].gen); // accessing deleted object
+        return &objects[index];
     }
-    Handle<ObjectType> findObject(const ImplObjectType* obj)
+    const ObjectDesc& getObjectDesc(Handle<ImplObjectType> handle)
+    {
+        assert(!handle.empty());
+        const uint32_t index = handle.index();
+        assert(index < objectDesc.size());
+        assert(handle.gen() == objectDesc[index].gen);
+        return objectDesc[index].objDesc;
+    }
+    const ObjectDesc* getObjectDescPtr(Handle<ImplObjectType> handle) const
+    {
+        if (handle.empty())
+            return nullptr;
+
+        const uint32_t index = handle.index();
+        assert(index < objectDesc.size());
+        assert(handle.gen() == objectDesc[index].gen); // accessing deleted object
+        return &objectDesc[index].objDesc;
+    }
+    ObjectDesc* getObjectDescPtr(Handle<ImplObjectType> handle)
+    {
+        if (handle.empty())
+            return nullptr;
+
+        const uint32_t index = handle.index();
+        assert(index < objectDesc.size());
+        assert(handle.gen() == objectDesc[index].gen); // accessing deleted object
+        return &objectDesc[index].objDesc;
+    }
+    Handle<ImplObjectType> getObjectHandle(const ImplObjectType* obj)
     {
         if (!obj)
             return {};
 
-        for (size_t idx = 0; idx != objects.size(); idx++)
+        for (size_t idx = 0; idx != objectDesc.size(); idx++)
         {
-            if (objects[idx].obj == *obj)
+            if (objects[idx] == *obj)
             {
-                return Handle<ObjectType>((uint32_t)idx, objects[idx].gen);
+                return Handle<ImplObjectType>((uint32_t)idx, objectDesc[idx].gen);
             }
         }
 
@@ -93,6 +132,7 @@ public:
     }
     void clear()
     {
+        objectDesc.clear();
         objects.clear();
         _freeListHead = kListEndSentinel;
         _numObjects   = 0;
