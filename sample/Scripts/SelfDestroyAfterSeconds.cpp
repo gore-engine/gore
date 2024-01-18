@@ -4,9 +4,9 @@
 #include "Object/GameObject.h"
 #include "Scene/Scene.h"
 
-SelfDestroyAfterSeconds::SelfDestroyAfterSeconds(gore::GameObject* gameObject)
-    : Component(gameObject)
-    , m_SecondsToLive(3.0f)
+SelfDestroyAfterSeconds::SelfDestroyAfterSeconds(gore::GameObject* gameObject) :
+    Component(gameObject),
+    m_SecondsToLive(3.0f)
 {
 }
 
