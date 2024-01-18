@@ -56,12 +56,18 @@ GameObject* Scene::NewObject(std::string name)
 
 void Scene::DestroyObject(GameObject* gameObject)
 {
+    // std::remove_if removes the elements by shifting latter elements to the left and leave the higher indices be
+    // So if we want to delete the objects, we need to delete them BEFORE the predicate function returns true
     auto newLogicalEnd =
         std::remove_if(m_GameObjects.begin(), m_GameObjects.end(), [gameObject](GameObject* pGameObject)
-                       { return pGameObject == gameObject || pGameObject->GetTransform()->IsChildOf(gameObject->GetTransform()); });
-    std::for_each(newLogicalEnd, m_GameObjects.end(), [](GameObject* pGameObject)
-                  { LOG_STREAM(DEBUG) << "Destroying GameObject " << pGameObject->GetName() << std::endl;
-                      delete pGameObject; });
+                       {
+                           if (pGameObject == gameObject || pGameObject->GetTransform()->IsChildOf(gameObject->GetTransform()))
+                           {
+                                LOG_STREAM(DEBUG) << "Destroying GameObject " << pGameObject->GetName() << std::endl;
+                                delete pGameObject;
+                                return true;
+                           }
+                           return false; });
 
     LOG_STREAM(DEBUG) << "Destroyed " << (std::distance(newLogicalEnd, m_GameObjects.end()))
                       << " GameObjects" << std::endl;
