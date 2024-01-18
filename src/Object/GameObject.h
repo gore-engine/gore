@@ -32,6 +32,9 @@ public:
         return m_Transform;
     }
 
+    // Note that this is a "delete this" operation. Use it carefully.
+    void Destroy();
+
 public:
     template <typename T>
     Component::SelfOrDerivedTypePointer<T> AddComponent();
