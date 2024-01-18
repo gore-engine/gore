@@ -21,6 +21,7 @@
 #include "Scripts/SelfMoveBackAndForth.h"
 #include "Scripts/SelfScaleInBetweenRange.h"
 #include "Scripts/PeriodicallyChangeWorldTRS.h"
+#include "Scripts/SelfDestroyAfterSeconds.h"
 
 SampleApp::SampleApp(int argc, char** argv) :
     App(argc, argv)
@@ -107,8 +108,8 @@ void SampleApp::Initialize()
 
     gore::GameObject* childGameObject = scene->NewObject();
     childGameObject->SetName("ChildObject");
-//    childGameObject->GetTransform()->SetParent(pUpObject->GetTransform());
-     childGameObject->GetTransform()->SetParent(nullptr);
+    childGameObject->GetTransform()->SetParent(pUpObject->GetTransform());
+    //    childGameObject->GetTransform()->SetParent(nullptr);
     childGameObject->GetTransform()->SetLocalPosition(gore::Vector3::Up * 1.0f);
     childGameObject->GetTransform()->SetLocalScale(gore::Vector3::One * 0.5f);
 
@@ -128,8 +129,10 @@ void SampleApp::Initialize()
 
     auto pPeriodicallyChangeWorldTRS      = childGameObject->AddComponent<PeriodicallyChangeWorldTRS>();
     pPeriodicallyChangeWorldTRS->m_Period = 0.5f;
-    pSelfScale = childGameObject->AddComponent<SelfScaleInBetweenRange>();
+    pSelfScale                            = childGameObject->AddComponent<SelfScaleInBetweenRange>();
     pSelfScale->SetMinMaxScale(0.5f, 1.5f);
+
+    pUpObject->AddComponent<SelfDestroyAfterSeconds>();
 
     LOG_STREAM(DEBUG) << "Find ChildObject in pUpObject at Initialization, non-recursively: "
                       << pUpObject->GetTransform()->Find("GrandChildObject")
