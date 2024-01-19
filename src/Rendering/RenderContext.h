@@ -34,7 +34,12 @@ public:
     ~RenderContext();
 
     TextureHandle createTexture(const TextureDesc& desc);
-    BufferHandle createBuffer(const BufferDesc& desc);
+
+    BufferHandle CreateBuffer(const BufferDesc& desc);
+    const BufferDesc& GetBufferDesc(BufferHandle handle);
+    const Buffer& GetBuffer(BufferHandle handle);
+    void DestroyBuffer(BufferHandle handle);
+
     SamplerHandle createSampler(const SamplerDesc& desc);
     BindGroupHandle createBindGroup(const BindGroupDesc& desc);
     PipelineHandle createPipeline(const PipelineDesc& desc);
@@ -44,7 +49,6 @@ public:
     void destroyShaderModule(ShaderModuleHandle handle);
 
     void destroyTexture(TextureHandle handle);
-    void destroyBuffer(BufferHandle handle);
     void destroySampler(SamplerHandle handle);
     void destroyBindGroup(BindGroupHandle handle);
     void destroyPipeline(PipelineHandle handle);
@@ -53,8 +57,10 @@ public:
 
 private:
     using ShaderModulePool = Pool<ShaderModuleDesc, ShaderModule>;
+    using BufferPool = Pool<BufferDesc, Buffer>;
 
     ShaderModulePool m_ShaderModulePool;
+    BufferPool m_BufferPool;
 
     const gfx::Device* m_DevicePtr;
 };

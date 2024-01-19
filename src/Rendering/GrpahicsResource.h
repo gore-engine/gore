@@ -7,6 +7,8 @@
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 
+#include "Graphics/VulkanBuffer.h"
+
 namespace gore
 {
 struct Texture
@@ -15,6 +17,12 @@ struct Texture
 
 struct Buffer
 {
+    Buffer(gfx::VulkanBuffer&& inBuffer) :
+        vkBuffer(std::move(inBuffer))
+    {
+    }
+
+    gfx::VulkanBuffer vkBuffer;
 };
 
 struct Sampler
