@@ -42,6 +42,8 @@ public:
     [[nodiscard]] auto rend() { return m_Children.rend(); }
     [[nodiscard]] auto rbegin() const { return m_Children.crbegin(); }
     [[nodiscard]] auto rend() const { return m_Children.crend(); }
+
+    [[nodiscard]] bool IsRootTransform() const { return m_Parent == nullptr;}
     // clang-format on
 
     [[nodiscard]] Transform* GetRoot() const;
