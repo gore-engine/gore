@@ -61,14 +61,14 @@ void Scene::DestroyObject(GameObject* gameObject)
     auto newLogicalEnd =
         std::remove_if(m_GameObjects.begin(), m_GameObjects.end(), [gameObject](GameObject* pGameObject)
                        {
+                           if (pGameObject == gameObject && pGameObject->GetTransform()->GetParent() != nullptr)
+                           {
+                               // If the GameObject is the one we want to destroy, we need to remove it from its parent
+                               // Setting reCalculateLocalTQS to false will prevent unnecessary calculations
+                               pGameObject->GetTransform()->SetParent(nullptr, false);
+                           }
                            if (pGameObject == gameObject || pGameObject->GetTransform()->IsChildOf(gameObject->GetTransform(), true))
                            {
-                               if (pGameObject == gameObject && pGameObject->GetTransform()->GetParent() != nullptr)
-                               {
-                                   // If the GameObject is the one we want to destroy, we need to remove it from its parent
-                                   // Setting reCalculateLocalTQS to false will prevent unnecessary calculations
-                                   pGameObject->GetTransform()->SetParent(nullptr, false);
-                               }
                                LOG_STREAM(DEBUG) << "Destroying GameObject " << pGameObject->GetName() << std::endl;
                                delete pGameObject;
                                return true;
