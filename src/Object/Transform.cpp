@@ -78,7 +78,7 @@ bool Transform::IsChildOf(const Transform* parent, bool recursive /* = false */)
 
 bool Transform::IsParentOf(const Transform* child, bool recursive /* = false */) const
 {
-    return child->IsChildOf(this, true);
+    return child->IsChildOf(this, recursive);
 }
 
 
