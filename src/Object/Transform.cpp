@@ -187,7 +187,7 @@ void Transform::SetParent(Transform* newParent, bool reCalculateLocalTQS /* = tr
 
     auto oldParent = m_Parent;
     
-    if (newParent->IsChildOf(this))
+    if (newParent != nullptr && newParent->IsChildOf(this, true))
     {
         LOG_STREAM(ERROR) << "Cannot set parent to a child of this Transform. "
                           << "This operation will do nothing." << std::endl;
