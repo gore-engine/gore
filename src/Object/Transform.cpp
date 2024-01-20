@@ -213,6 +213,23 @@ void Transform::SetParent(Transform* newParent, bool reCalculateLocalTQS /* = tr
     m_Parent = newParent;
 }
 
+int Transform::GetSiblingIndex() const
+{
+    if (m_Parent == nullptr)
+    {
+        return 0;
+    }
+
+    auto it = std::find(m_Parent->begin(), m_Parent->end(), this);
+    if (it == m_Parent->end())
+    {
+        LOG_STREAM(ERROR) << "Cannot find this Transform in its parent's children. "
+                          << "This operation will return 0." << std::endl;
+        return 0;
+    }
+    return static_cast<int>(std::distance(m_Parent->m_Children.begin(), it));
+}
+
 TQS Transform::GetLocalToWorldTQS() const
 {
     if (m_Parent == nullptr)

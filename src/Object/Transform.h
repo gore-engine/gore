@@ -29,6 +29,7 @@ public:
 
     [[nodiscard]] Transform* GetChild(int index) const { return m_Children[index]; }
     [[nodiscard]] int GetChildCount() const { return static_cast<int>(m_Children.size()); }
+    [[nodiscard]] int GetSiblingIndex() const;
 
     // iterator
     [[nodiscard]] auto begin() { return m_Children.begin(); }
