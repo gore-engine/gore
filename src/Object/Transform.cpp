@@ -54,21 +54,31 @@ Transform* Transform::GetRoot() const
     return pTransform;
 }
 
-bool Transform::IsChildOf(const Transform* parent) const
+bool Transform::IsChildOf(const Transform* parent, bool recursive /* = false */) const
 {
-    auto pTransform = const_cast<Transform*>(this);
-    while (pTransform->m_Parent != nullptr)
+    if (parent == nullptr)
     {
-        if (pTransform->m_Parent == parent)
+        LOG_STREAM(ERROR) << "Cannot check if this Transform is a child of a nullptr. "
+                          << "This operation will return false." << std::endl;
+        return false;
+    }
+
+    auto pTransform = const_cast<Transform*>(this);
+    if (!recursive)
+    {
+        return pTransform->m_Parent == parent;
+    }
+    while ((pTransform = pTransform->m_Parent) != nullptr)
+    {
+        if (pTransform == parent)
             return true;
-        pTransform = pTransform->m_Parent;
     }
     return false;
 }
 
-bool Transform::IsParentOf(const Transform* child) const
+bool Transform::IsParentOf(const Transform* child, bool recursive /* = false */) const
 {
-    return child->IsChildOf(this);
+    return child->IsChildOf(this, true);
 }
 
 
