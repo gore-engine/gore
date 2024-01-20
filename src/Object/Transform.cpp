@@ -58,9 +58,16 @@ bool Transform::IsChildOf(const Transform* parent, bool recursive /* = false */)
 {
     if (parent == nullptr)
     {
-        LOG_STREAM(ERROR) << "Cannot check if this Transform is a child of a nullptr. "
-                          << "This operation will return false." << std::endl;
-        return false;
+        if (recursive)
+        {
+            LOG_STREAM(WARNING) << "Ultimately each object's very last parent is nullptr, i.e. root transform's parent. "
+                                << "This operation will always return true. "
+                                << "Please double check if you really want this" << std::endl;
+            return true;
+        }
+        LOG_STREAM(WARNING) << "IsChildOf(nullptr, false) is effectively the same as IsRootTransform() but with more value checks."
+                            << "Please use IsRootTransform() instead." << std::endl;
+        return m_Parent == nullptr;
     }
 
     auto pTransform = const_cast<Transform*>(this);
