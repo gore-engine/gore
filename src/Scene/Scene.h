@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace gore
 {
@@ -33,24 +34,26 @@ public:
     // If we have time to implement this
     // GameObject* NewObject(std::string name = "New GameObject", Vector3 position = Vector3::Zero);
 
-    void DestroyObject(GameObject* gameObject);
+    void DestroyObject(GameObject * pGameObject);
+    void DestroyMultipleObjects(GameObject * *ppGameObjects, int count);
 
     GameObject* FindObject(const std::string& name);
 
-    [[nodiscard]] const std::vector<GameObject*>& GetGameObjects() const { return m_GameObjects; }
+    [[nodiscard]] const std::vector<GameObject*>& GetGameObjects() const
+    {
+        return m_GameObjects;
+    }
 
     void SetAsActive();
     static Scene* GetActiveScene();
 
-    [[nodiscard]] static std::vector<Scene*> GetScenes()
-    {
-        return s_CurrentScenes;
-    }
+    [[nodiscard]] static std::vector<Scene*> GetScenes() { return s_CurrentScenes; }
 
 private:
     std::string m_Name;
 
     std::vector<GameObject*> m_GameObjects;
+    std::unordered_map<GameObject*, bool> m_GameObjectsToDestroy;
 
     static std::vector<Scene*> s_CurrentScenes;
     static Scene* s_ActiveScene;

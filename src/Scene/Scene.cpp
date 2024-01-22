@@ -51,33 +51,69 @@ GameObject* Scene::NewObject(std::string name)
 {
     auto* gameObject = new GameObject(std::move(name), this);
     m_GameObjects.push_back(gameObject);
+    m_GameObjectsToDestroy[gameObject] = false;
     return gameObject;
 }
 
-void Scene::DestroyObject(GameObject* gameObject)
+void Scene::DestroyObject(GameObject* pGameObject)
 {
-    // std::remove_if removes the elements by shifting latter elements to the left and leave the higher indices be
-    // So if we want to delete the objects, we need to delete them BEFORE the predicate function returns true
-    auto newLogicalEnd =
-        std::remove_if(m_GameObjects.begin(), m_GameObjects.end(), [gameObject](GameObject* pGameObject)
-                       {
-                           if (pGameObject == gameObject && pGameObject->GetTransform()->GetParent() != nullptr)
-                           {
-                               // If the GameObject is the one we want to destroy, we need to remove it from its parent
-                               // Setting reCalculateLocalTQS to false will prevent unnecessary calculations
-                               pGameObject->GetTransform()->SetParent(nullptr, false);
-                           }
-                           if (pGameObject == gameObject || pGameObject->GetTransform()->IsChildOf(gameObject->GetTransform(), true))
-                           {
-                               LOG_STREAM(DEBUG) << "Destroying GameObject " << pGameObject->GetName() << std::endl;
-                               delete pGameObject;
-                               return true;
-                           }
-                           return false; });
+    DestroyMultipleObjects(&pGameObject, 1);
+}
 
-    LOG_STREAM(DEBUG) << "Destroyed " << (std::distance(newLogicalEnd, m_GameObjects.end()))
-                      << " GameObjects" << std::endl;
-    m_GameObjects.erase(newLogicalEnd, m_GameObjects.end());
+void Scene::DestroyMultipleObjects(GameObject** ppGameObjects, int count)
+{
+    if (ppGameObjects == nullptr)
+    {
+        LOG_STREAM(ERROR) << "Cannot destroy nullptr" << std::endl;
+        return;
+    }
+
+    // dfs by a while loop
+    std::vector<GameObject*> stack;
+    for (int i = 0; i < count; ++i)
+    {
+        if (ppGameObjects[i] == nullptr)
+        {
+            LOG_STREAM(ERROR) << "Cannot destroy nullptr" << std::endl;
+            continue;
+        }
+        if (ppGameObjects[i]->GetScene() != this)
+        {
+            LOG_STREAM(ERROR) << "Cannot destroy object" << ppGameObjects[i]->GetName() << "from another scene." << std::endl;
+            continue;
+        }
+        stack.push_back(ppGameObjects[i]);
+        ppGameObjects[i]->GetTransform()->SetParent(nullptr, false);
+    }
+
+    while (!stack.empty())
+    {
+        auto* current = stack.back();
+        stack.pop_back();
+
+        for (auto const& child : *(current->GetTransform()))
+        {
+            stack.push_back(child->GetGameObject());
+        }
+
+        m_GameObjectsToDestroy[current] = true;
+    }
+
+    auto destroyedGameObjectCount = std::erase_if(m_GameObjects, [this](auto& go)
+                                                  { return m_GameObjectsToDestroy[go]; });
+
+    // Now it's time to delete the game object hard
+    std::for_each(m_GameObjectsToDestroy.begin(), m_GameObjectsToDestroy.end(), [](auto& pair)
+                  {if (pair.second)
+                      {
+                          LOG_STREAM(DEBUG) << "Destroying " << pair.first->GetName() << std::endl;
+                          delete pair.first;
+                      } });
+
+    std::erase_if(m_GameObjectsToDestroy, [](auto& pair)
+                  { return pair.second; });
+
+    LOG_STREAM(DEBUG) << "Destroyed " << destroyedGameObjectCount << " game objects" << std::endl;
 }
 
 GameObject* Scene::FindObject(const std::string& name)
