@@ -428,7 +428,7 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
         .debugName = "Cube Vertex Shader",
         .byteCode = reinterpret_cast<uint8_t*>(vertexShaderBinary.data()),
         .byteSize = static_cast<uint32_t>(vertexShaderBinary.size()),
-        .entryFunc = vertexEntryPoint.c_str()
+        .entryFunc = "vs"
     });
 
     std::filesystem::path fragmentShaderPath = getShaderFile(vk::ShaderStageFlagBits::eFragment);
@@ -445,7 +445,7 @@ void RenderSystem::LoadShader(const std::string& name, const std::string& vertex
         .debugName = "Cube Frag Shader",
         .byteCode = reinterpret_cast<uint8_t*>(fragmentShaderBinary.data()),
         .byteSize = static_cast<uint32_t>(fragmentShaderBinary.size()),
-        .entryFunc = fragmentEntryPoint.c_str()
+        .entryFunc = "ps"
     });
 }
 
