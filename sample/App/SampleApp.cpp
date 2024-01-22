@@ -22,6 +22,7 @@
 #include "Scripts/SelfScaleInBetweenRange.h"
 #include "Scripts/PeriodicallyChangeWorldTRS.h"
 #include "Scripts/SelfDestroyAfterSeconds.h"
+#include "Scripts/DeleteMultipleGameObjectsAfterSeconds.h"
 
 SampleApp::SampleApp(int argc, char** argv) :
     App(argc, argv)
@@ -132,7 +133,24 @@ void SampleApp::Initialize()
     pSelfScale                            = childGameObject->AddComponent<SelfScaleInBetweenRange>();
     pSelfScale->SetMinMaxScale(0.5f, 1.5f);
 
-    pUpObject->AddComponent<SelfDestroyAfterSeconds>();
+    childGameObject->AddComponent<SelfDestroyAfterSeconds>();
+
+    auto pLeftChildObject = scene->NewObject();
+    pLeftChildObject->SetName("LeftChildObject");
+    pLeftChildObject->GetTransform()->SetParent(pLeftObject->GetTransform());
+    pLeftChildObject->GetTransform()->SetLocalPosition(gore::Vector3::Left * 1.0f);
+    pLeftChildObject->GetTransform()->SetLocalScale(gore::Vector3::One * 0.5f);
+
+    auto pLeftGrandChildObject = scene->NewObject();
+    pLeftGrandChildObject->SetName("LeftGrandChildObject");
+    pLeftGrandChildObject->GetTransform()->SetParent(pLeftChildObject->GetTransform());
+    pLeftGrandChildObject->GetTransform()->SetLocalPosition((gore::Vector3::Forward + gore::Vector3::Left) * 1.5f);
+    pLeftGrandChildObject->GetTransform()->SetLocalScale(gore::Vector3::One * 0.7f);
+
+    std::vector<gore::GameObject*> destroyList = {pLeftObject, pRightObject, pLeftGrandChildObject};
+    auto pDeleteMultipleGameObjectsAfterSeconds =
+        cameraGameObject->AddComponent<DeleteMultipleGameObjectsAfterSeconds>();
+    pDeleteMultipleGameObjectsAfterSeconds->SetGameObjectsToDelete(destroyList, 3, 2.0f);
 
     LOG_STREAM(DEBUG) << "Find ChildObject in pUpObject at Initialization, non-recursively: "
                       << pUpObject->GetTransform()->Find("GrandChildObject")
