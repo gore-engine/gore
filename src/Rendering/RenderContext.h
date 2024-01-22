@@ -35,7 +35,7 @@ public:
 
     TextureHandle createTexture(const TextureDesc& desc);
 
-    BufferHandle CreateBuffer(const BufferDesc& desc);
+    BufferHandle CreateBuffer(BufferDesc&& desc);
     const BufferDesc& GetBufferDesc(BufferHandle handle);
     const Buffer& GetBuffer(BufferHandle handle);
     void DestroyBuffer(BufferHandle handle);
