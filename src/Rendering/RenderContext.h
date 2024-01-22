@@ -7,7 +7,7 @@
 #include "Graphics/Vulkan/VulkanIncludes.h"
 
 #include "GraphicsResourceDesc.h"
-#include "GrpahicsResource.h"
+#include "GraphicsResource.h"
 
 #include "BindGroup.h"
 

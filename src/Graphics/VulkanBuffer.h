@@ -5,14 +5,10 @@
 
 namespace gore::gfx
 {
-class VulkanBuffer
+struct VulkanBuffer
 {
-public:
-    VulkanBuffer(vk::raii::Buffer&& buffer, VmaAllocation&& allocation, VmaAllocationInfo&& allocationInfo);
-
-private:
-    vk::raii::Buffer m_VkBuffer;
-    VmaAllocation m_VmaAllocation;
-    VmaAllocationInfo m_VmaAllocationInfo;
+    VkBuffer vkBuffer;
+    VmaAllocation vmaAllocation;
+    VmaAllocationInfo vmaAllocationInfo;
 };
 } // namespace gore::gfx
