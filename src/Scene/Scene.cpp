@@ -93,7 +93,11 @@ void Scene::DestroyMultipleObjects(GameObject** ppGameObjects, int count)
 
         for (auto const& child : *(current->GetTransform()))
         {
-            stack.push_back(child->GetGameObject());
+            // m_GameObjectsToDestroy is a comes-for-free visited set, by which the maximum iteration count will be the number of game objects
+            if (!m_GameObjectsToDestroy[child->GetGameObject()])
+            {
+                stack.push_back(child->GetGameObject());
+            }
         }
 
         m_GameObjectsToDestroy[current] = true;
