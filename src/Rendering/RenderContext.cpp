@@ -62,7 +62,7 @@ BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
 
     VmaAllocationCreateInfo allocCreateInfo = {
         .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
-        .usage = VMA_MEMORY_USAGE_GPU_ONLY,
+        .usage = VMA_MEMORY_USAGE_CPU_TO_GPU,
     };
 
     VulkanBuffer buffer;
@@ -74,4 +74,19 @@ BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
         std::move(Buffer(std::move(buffer))));
 }
 
+const BufferDesc& RenderContext::GetBufferDesc(BufferHandle handle)
+{
+    return m_BufferPool.getObjectDesc(handle);
+}
+
+const Buffer& RenderContext::GetBuffer(BufferHandle handle)
+{
+    return m_BufferPool.getObject(handle);
+}
+
+void RenderContext::DestroyBuffer(BufferHandle handle)
+{
+    vmaDestroyBuffer(m_DevicePtr->GetVmaAllocator(), m_BufferPool.getObject(handle).vkBuffer.vkBuffer, m_BufferPool.getObject(handle).vkBuffer.vmaAllocation);
+    m_BufferPool.destroy(handle);
+}
 } // namespace gore
