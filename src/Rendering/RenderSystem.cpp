@@ -63,7 +63,10 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_VertexBuffer(nullptr),
     m_VertexBufferMemory(VK_NULL_HANDLE),
     m_IndexBuffer(nullptr),
-    m_IndexBufferMemory(VK_NULL_HANDLE)
+    m_IndexBufferMemory(VK_NULL_HANDLE),
+    // Imgui
+    m_ImguiWindowData(),
+    m_ImguiDescriptorPool(nullptr)
 {
     g_RenderSystem = this;
 }
@@ -101,6 +104,8 @@ void RenderSystem::Initialize()
     m_Device.SetName(m_CommandPool.Get(2), "CommandPool 2");
 
     CreateSynchronization();
+
+    InitImgui();
 }
 
 struct PushConstant
@@ -111,6 +116,15 @@ struct PushConstant
 
 void RenderSystem::Update()
 {
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    bool show = true;
+    ImGui::ShowDemoWindow(&show);
+
+    ImGui::Render();
+
     Window* window = m_App->GetWindow();
 
     Camera* camera = nullptr;
@@ -184,6 +198,8 @@ void RenderSystem::Update()
         commandBuffer.drawIndexed(36, 1, 0, 0, 0);
     }
 
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *commandBuffer);
+
     commandBuffer.endRenderPass();
 
     std::vector<vk::ImageMemoryBarrier> imageMemoryBarriers2;
@@ -240,6 +256,8 @@ void RenderSystem::Shutdown()
         vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
     }
     m_RenderContext->clear();
+
+    ShutdownImgui();
 }
 
 void RenderSystem::OnResize(Window* window, int width, int height)
@@ -279,9 +297,11 @@ void RenderSystem::InitImgui()
         { vk::DescriptorType::eInputAttachment, 1000 }
     };
 
-    vk::DescriptorPoolCreateInfo pool_info({}, 1000, std::size(pool_sizes), pool_sizes);
+    vk::DescriptorPoolCreateFlags flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
 
-	vk::raii::DescriptorPool imguiPool = m_Device.Get().createDescriptorPool(pool_info);
+    vk::DescriptorPoolCreateInfo pool_info(flags, 1000, 11, pool_sizes);
+
+	m_ImguiDescriptorPool = m_Device.Get().createDescriptorPool(pool_info);
 
 	// 2: initialize imgui library
 
@@ -297,62 +317,21 @@ void RenderSystem::InitImgui()
 	init_info.PhysicalDevice = *m_Device.GetPhysicalDevice().Get();
 	init_info.Device = *m_Device.Get();
 	init_info.Queue = *m_GraphicsQueue;
-	init_info.DescriptorPool = *imguiPool;
+	init_info.DescriptorPool = *m_ImguiDescriptorPool;
 	init_info.MinImageCount = 3;
 	init_info.ImageCount = 3;
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
 	ImGui_ImplVulkan_Init(&init_info, *m_RenderPass);
-
-	// //execute a gpu command to upload imgui font textures
-	// immediate_submit([&](VkCommandBuffer cmd) {
-	// 	ImGui_ImplVulkan_CreateFontsTexture(cmd);
-	// 	});
-
-	// //clear font textures from cpu data
-	// ImGui_ImplVulkan_DestroyFontUploadObjects();
-
-	// //add the destroy the imgui created structures
-	// _mainDeletionQueue.push_function([=]() {
-
-	// 	vkDestroyDescriptorPool(_device, imguiPool, nullptr);
-	// 	ImGui_ImplVulkan_Shutdown();
-	// 	});
 }
 
-void RenderSystem::SetupImguiVulkanWindow()
+void RenderSystem::ShutdownImgui()
 {
-    m_ImguiWindowData.Surface = *m_Swapchain.GetSurface();
-    // Check for WSI support
-    vk::Bool32 res = m_Device.GetPhysicalDevice().Get().getSurfaceSupportKHR(m_GraphicsQueueFamilyIndex, m_ImguiWindowData.Surface);
-    if (res != VK_TRUE)
-    {
-        fprintf(stderr, "Error no WSI support on physical device 0\n");
-        exit(-1);
-    }
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
-    // Select Surface Format
-    const VkFormat requestSurfaceImageFormat[] = { VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8_UNORM, VK_FORMAT_R8G8B8_UNORM };
-    const VkColorSpaceKHR requestSurfaceColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
-
-    m_ImguiWindowData.SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(*m_Device.GetPhysicalDevice().Get(), m_ImguiWindowData.Surface, requestSurfaceImageFormat, (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat), requestSurfaceColorSpace);
-
-    // Select Present Mode
-#ifdef APP_USE_UNLIMITED_FRAME_RATE
-    VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_FIFO_KHR };
-#else
-    VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_FIFO_KHR };
-#endif
-    m_ImguiWindowData.PresentMode = ImGui_ImplVulkanH_SelectPresentMode(*m_Device.GetPhysicalDevice().Get(), m_ImguiWindowData.Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
-    //printf("[vulkan] Selected PresentMode = %d\n", wd->PresentMode);
-
-    // Create SwapChain, RenderPass, Framebuffer, etc.
-    // IM_ASSERT(g_MinImageCount >= 2);
-    int width, height;
-    m_App->GetWindow()->GetSize(&width, &height);
-
-    ImGui_ImplVulkanH_CreateOrResizeWindow(*m_Device.GetInstance()->Get(), *m_Device.GetPhysicalDevice().Get(), *m_Device.Get(), &m_ImguiWindowData, m_GraphicsQueueFamilyIndex, nullptr, width, height, 3);
-
+    m_ImguiDescriptorPool.clear();
 }
 
 void RenderSystem::CreateDepthBuffer()

@@ -34,10 +34,10 @@ public:
 private:
     // Imgui
     void InitImgui();
-    void SetupImguiVulkanWindow();
-
+    void ShutdownImgui();
+    
     ImGui_ImplVulkanH_Window m_ImguiWindowData;
-
+    vk::raii::DescriptorPool m_ImguiDescriptorPool;
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
 
