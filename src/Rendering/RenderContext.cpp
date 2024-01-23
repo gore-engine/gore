@@ -67,7 +67,7 @@ BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
 
     VulkanBuffer buffer;
 
-    VK_CHECK_RESULT(vmaCreateBuffer(m_DevicePtr->GetAllocator(), &bufferInfo, &allocCreateInfo, &buffer.vkBuffer, &buffer.vmaAllocation, &buffer.vmaAllocationInfo));
+    VK_CHECK_RESULT(vmaCreateBuffer(m_DevicePtr->GetVmaAllocator(), &bufferInfo, &allocCreateInfo, &buffer.vkBuffer, &buffer.vmaAllocation, &buffer.vmaAllocationInfo));
 
     return m_BufferPool.create(
         std::move(desc),
