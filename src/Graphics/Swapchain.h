@@ -18,7 +18,7 @@ public:
 
     Swapchain& operator=(Swapchain&& other) noexcept;
 
-    [[nodiscord]] const vk::raii::SurfaceKHR& GetSurface() const { return m_Surface; }
+    [[nodiscard]] const vk::raii::SurfaceKHR& GetSurface() const { return m_Surface; }
     [[nodiscard]] const vk::raii::SwapchainKHR& Get() const { return m_Swapchain; }
     [[nodiscard]] const vk::Extent2D& GetExtent() const { return m_Extent; }
     [[nodiscard]] const vk::SurfaceFormatKHR& GetFormat() const { return m_Format; }
