@@ -280,7 +280,7 @@ Device::Device(PhysicalDevice physicalDevice) :
         .vkGetDeviceProcAddr   = m_Device.getDispatcher()->vkGetDeviceProcAddr
     };
     VmaAllocatorCreateInfo allocatorCreateInfo{
-        .flags                       = 0,              // TODO: check what flags we can use potentially
+        .flags                       = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,              // TODO: check what flags we can use potentially
         .physicalDevice              = *pd,
         .device                      = *m_Device,
         .preferredLargeHeapBlockSize = 0,              // TODO: we are using default value here for now
