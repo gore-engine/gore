@@ -260,6 +260,101 @@ void RenderSystem::OnResize(Window* window, int width, int height)
     CreateFramebuffers();
 }
 
+void RenderSystem::InitImgui()
+{
+    //1: create descriptor pool for IMGUI
+	// the size of the pool is very oversize, but it's copied from imgui demo itself.
+    vk::DescriptorPoolSize pool_sizes[] =
+    {
+        { vk::DescriptorType::eSampler, 1000 },
+        { vk::DescriptorType::eCombinedImageSampler, 1000 },
+        { vk::DescriptorType::eSampledImage, 1000 },
+        { vk::DescriptorType::eStorageImage, 1000 },
+        { vk::DescriptorType::eUniformTexelBuffer, 1000 },
+        { vk::DescriptorType::eStorageTexelBuffer, 1000 },
+        { vk::DescriptorType::eUniformBuffer, 1000 },
+        { vk::DescriptorType::eStorageBuffer, 1000 },
+        { vk::DescriptorType::eUniformBufferDynamic, 1000 },
+        { vk::DescriptorType::eStorageBufferDynamic, 1000 },
+        { vk::DescriptorType::eInputAttachment, 1000 }
+    };
+
+    vk::DescriptorPoolCreateInfo pool_info({}, 1000, std::size(pool_sizes), pool_sizes);
+
+	vk::raii::DescriptorPool imguiPool = m_Device.Get().createDescriptorPool(pool_info);
+
+	// 2: initialize imgui library
+
+	//this initializes the core structures of imgui
+	ImGui::CreateContext();
+
+	//this initializes imgui for SDL
+	ImGui_ImplGlfw_InitForVulkan(m_App->GetWindow()->Get(), true);
+
+	//this initializes imgui for Vulkan
+	ImGui_ImplVulkan_InitInfo init_info = {};
+	init_info.Instance = *m_Device.GetInstance()->Get();
+	init_info.PhysicalDevice = *m_Device.GetPhysicalDevice().Get();
+	init_info.Device = *m_Device.Get();
+	init_info.Queue = *m_GraphicsQueue;
+	init_info.DescriptorPool = *imguiPool;
+	init_info.MinImageCount = 3;
+	init_info.ImageCount = 3;
+	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+	ImGui_ImplVulkan_Init(&init_info, *m_RenderPass);
+
+	// //execute a gpu command to upload imgui font textures
+	// immediate_submit([&](VkCommandBuffer cmd) {
+	// 	ImGui_ImplVulkan_CreateFontsTexture(cmd);
+	// 	});
+
+	// //clear font textures from cpu data
+	// ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+	// //add the destroy the imgui created structures
+	// _mainDeletionQueue.push_function([=]() {
+
+	// 	vkDestroyDescriptorPool(_device, imguiPool, nullptr);
+	// 	ImGui_ImplVulkan_Shutdown();
+	// 	});
+}
+
+void RenderSystem::SetupImguiVulkanWindow()
+{
+    m_ImguiWindowData.Surface = *m_Swapchain.GetSurface();
+    // Check for WSI support
+    vk::Bool32 res = m_Device.GetPhysicalDevice().Get().getSurfaceSupportKHR(m_GraphicsQueueFamilyIndex, m_ImguiWindowData.Surface);
+    if (res != VK_TRUE)
+    {
+        fprintf(stderr, "Error no WSI support on physical device 0\n");
+        exit(-1);
+    }
+
+    // Select Surface Format
+    const VkFormat requestSurfaceImageFormat[] = { VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8_UNORM, VK_FORMAT_R8G8B8_UNORM };
+    const VkColorSpaceKHR requestSurfaceColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
+
+    m_ImguiWindowData.SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(*m_Device.GetPhysicalDevice().Get(), m_ImguiWindowData.Surface, requestSurfaceImageFormat, (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat), requestSurfaceColorSpace);
+
+    // Select Present Mode
+#ifdef APP_USE_UNLIMITED_FRAME_RATE
+    VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_FIFO_KHR };
+#else
+    VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_FIFO_KHR };
+#endif
+    m_ImguiWindowData.PresentMode = ImGui_ImplVulkanH_SelectPresentMode(*m_Device.GetPhysicalDevice().Get(), m_ImguiWindowData.Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
+    //printf("[vulkan] Selected PresentMode = %d\n", wd->PresentMode);
+
+    // Create SwapChain, RenderPass, Framebuffer, etc.
+    // IM_ASSERT(g_MinImageCount >= 2);
+    int width, height;
+    m_App->GetWindow()->GetSize(&width, &height);
+
+    ImGui_ImplVulkanH_CreateOrResizeWindow(*m_Device.GetInstance()->Get(), *m_Device.GetPhysicalDevice().Get(), *m_Device.Get(), &m_ImguiWindowData, m_GraphicsQueueFamilyIndex, nullptr, width, height, 3);
+
+}
+
 void RenderSystem::CreateDepthBuffer()
 {
     std::vector<vk::Format> candidateFormats = {
