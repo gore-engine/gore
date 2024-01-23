@@ -258,16 +258,20 @@ Device::Device(PhysicalDevice physicalDevice) :
     }
 
     // Features
-    vk::PhysicalDeviceFeatures enabledFeatures = pd.getFeatures();
+    vk::PhysicalDeviceFeatures2 enabledFeatures2 = pd.getFeatures2();
+
+    vk::PhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures;
+    bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+
+    enabledFeatures2.pNext = &bufferDeviceAddressFeatures;
 
     // Device extensions
     std::vector<vk::ExtensionProperties> deviceExtensionProperties = pd.enumerateDeviceExtensionProperties();
     m_EnabledDeviceExtensions.set();
     std::vector<const char*> enabledDeviceExtensions = BuildEnabledExtensions<VulkanDeviceExtensionBitset, VulkanDeviceExtension>(deviceExtensionProperties,
                                                                                                                                   m_EnabledDeviceExtensions);
-
     // Create
-    vk::DeviceCreateInfo deviceCreateInfo({}, queueCreateInfos, {}, enabledDeviceExtensions, &enabledFeatures);
+    vk::DeviceCreateInfo deviceCreateInfo({}, queueCreateInfos, {}, enabledDeviceExtensions, nullptr, &enabledFeatures2);
     m_Device = pd.createDevice(deviceCreateInfo);
 
     SetName(m_Device, properties.deviceName);
