@@ -4,7 +4,7 @@
 
 #include <string>
 #include <vector>
-#include <unordered_map>
+#include <unordered_set>
 
 namespace gore
 {
@@ -53,7 +53,6 @@ private:
     std::string m_Name;
 
     std::vector<GameObject*> m_GameObjects;
-    std::unordered_map<GameObject*, bool> m_GameObjectsToDestroy;
 
     static std::vector<Scene*> s_CurrentScenes;
     static Scene* s_ActiveScene;
