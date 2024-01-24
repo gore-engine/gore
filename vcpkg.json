@@ -17,6 +17,11 @@
       "features": ["glfw-binding", "vulkan-binding", "win32-binding"],
       "platform": "windows"
     },
+    {
+      "name": "imgui",
+      "features": ["glfw-binding", "vulkan-binding"],
+      "platform": "linux"
+    },
     "stb",
     "vulkan",
     "vulkan-memory-allocator",
