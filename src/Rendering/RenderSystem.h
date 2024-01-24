@@ -9,6 +9,10 @@
 
 #include "RenderContext.h"
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
+
 namespace gore
 {
 
@@ -27,7 +31,13 @@ public:
     void Shutdown() override;
 
     void OnResize(Window* window, int width, int height);
-
+private:
+    // Imgui
+    void InitImgui();
+    void ShutdownImgui();
+    
+    ImGui_ImplVulkanH_Window m_ImguiWindowData;
+    vk::raii::DescriptorPool m_ImguiDescriptorPool;
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
 

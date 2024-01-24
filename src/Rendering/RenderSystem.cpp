@@ -63,7 +63,10 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_VertexBuffer(nullptr),
     m_VertexBufferMemory(VK_NULL_HANDLE),
     m_IndexBuffer(nullptr),
-    m_IndexBufferMemory(VK_NULL_HANDLE)
+    m_IndexBufferMemory(VK_NULL_HANDLE),
+    // Imgui
+    m_ImguiWindowData(),
+    m_ImguiDescriptorPool(nullptr)
 {
     g_RenderSystem = this;
 }
@@ -101,6 +104,8 @@ void RenderSystem::Initialize()
     m_Device.SetName(m_CommandPool.Get(2), "CommandPool 2");
 
     CreateSynchronization();
+
+    InitImgui();
 }
 
 struct PushConstant
@@ -111,6 +116,15 @@ struct PushConstant
 
 void RenderSystem::Update()
 {
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    bool show = true;
+    ImGui::ShowDemoWindow(&show);
+
+    ImGui::Render();
+
     Window* window = m_App->GetWindow();
 
     Camera* camera = nullptr;
@@ -184,6 +198,8 @@ void RenderSystem::Update()
         commandBuffer.drawIndexed(36, 1, 0, 0, 0);
     }
 
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *commandBuffer);
+
     commandBuffer.endRenderPass();
 
     std::vector<vk::ImageMemoryBarrier> imageMemoryBarriers2;
@@ -240,6 +256,8 @@ void RenderSystem::Shutdown()
         vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
     }
     m_RenderContext->clear();
+
+    ShutdownImgui();
 }
 
 void RenderSystem::OnResize(Window* window, int width, int height)
@@ -258,6 +276,62 @@ void RenderSystem::OnResize(Window* window, int width, int height)
     m_Swapchain.Recreate(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     CreateDepthBuffer();
     CreateFramebuffers();
+}
+
+void RenderSystem::InitImgui()
+{
+    //1: create descriptor pool for IMGUI
+	// the size of the pool is very oversize, but it's copied from imgui demo itself.
+    vk::DescriptorPoolSize pool_sizes[] =
+    {
+        { vk::DescriptorType::eSampler, 1000 },
+        { vk::DescriptorType::eCombinedImageSampler, 1000 },
+        { vk::DescriptorType::eSampledImage, 1000 },
+        { vk::DescriptorType::eStorageImage, 1000 },
+        { vk::DescriptorType::eUniformTexelBuffer, 1000 },
+        { vk::DescriptorType::eStorageTexelBuffer, 1000 },
+        { vk::DescriptorType::eUniformBuffer, 1000 },
+        { vk::DescriptorType::eStorageBuffer, 1000 },
+        { vk::DescriptorType::eUniformBufferDynamic, 1000 },
+        { vk::DescriptorType::eStorageBufferDynamic, 1000 },
+        { vk::DescriptorType::eInputAttachment, 1000 }
+    };
+
+    vk::DescriptorPoolCreateFlags flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+
+    vk::DescriptorPoolCreateInfo pool_info(flags, 1000, 11, pool_sizes);
+
+	m_ImguiDescriptorPool = m_Device.Get().createDescriptorPool(pool_info);
+
+	// 2: initialize imgui library
+
+	//this initializes the core structures of imgui
+	ImGui::CreateContext();
+
+	//this initializes imgui for SDL
+	ImGui_ImplGlfw_InitForVulkan(m_App->GetWindow()->Get(), true);
+
+	//this initializes imgui for Vulkan
+	ImGui_ImplVulkan_InitInfo init_info = {};
+	init_info.Instance = *m_Device.GetInstance()->Get();
+	init_info.PhysicalDevice = *m_Device.GetPhysicalDevice().Get();
+	init_info.Device = *m_Device.Get();
+	init_info.Queue = *m_GraphicsQueue;
+	init_info.DescriptorPool = *m_ImguiDescriptorPool;
+	init_info.MinImageCount = 3;
+	init_info.ImageCount = 3;
+	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+	ImGui_ImplVulkan_Init(&init_info, *m_RenderPass);
+}
+
+void RenderSystem::ShutdownImgui()
+{
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
+    m_ImguiDescriptorPool.clear();
 }
 
 void RenderSystem::CreateDepthBuffer()
