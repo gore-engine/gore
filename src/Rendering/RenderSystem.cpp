@@ -173,7 +173,7 @@ void RenderSystem::Update()
 
         PushConstant pushConstant
         {
-            .m = gameObject->transform->GetLocalToWorldMatrix(),
+            .m = gameObject->GetTransform()->GetLocalToWorldMatrix(),
             .vp = camera->GetViewProjectionMatrix()
         };
         std::array<PushConstant, 1> pushConstantData = {pushConstant};

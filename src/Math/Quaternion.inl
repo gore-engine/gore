@@ -1,5 +1,27 @@
 #pragma once
 
+// Conversion with SIMDValueType
+Quaternion::operator SIMDValueType() const noexcept
+{
+    return m_Q;
+}
+
+Quaternion::Quaternion(const Quaternion::SIMDValueType& F) noexcept :
+    m_Q(F)
+{
+}
+
+Quaternion::Quaternion(Quaternion::SIMDValueType&& F) noexcept :
+    m_Q(std::move(F))
+{
+}
+
+Quaternion& Quaternion::operator=(const Quaternion::SIMDValueType& F) noexcept
+{
+    m_Q = F;
+    return *this;
+}
+
 //------------------------------------------------------------------------------
 // Binary operators
 //------------------------------------------------------------------------------
@@ -106,33 +128,17 @@ inline void Quaternion::Conjugate(Quaternion& q) noexcept
 
 inline Quaternion Quaternion::Inverse() const noexcept
 {
-    Quaternion result;
-    result.m_Q = rtm::quat_conjugate(result.m_Q);
-    result.m_Q = rtm::vector_div(
-        result.m_Q,
-        rtm::vector_set(static_cast<float>(rtm::quat_length_squared(result.m_Q))));
-    return result;
+    return Conjucated();
 }
 
 inline void Quaternion::Invert() noexcept
 {
     m_Q = rtm::quat_conjugate(m_Q);
-    m_Q = rtm::vector_div(
-        m_Q,
-        rtm::vector_set(static_cast<float>(rtm::quat_length_squared(m_Q))));
 }
 
 inline void Quaternion::Invert(Quaternion& q) noexcept
 {
-//    if (q.IsNormalized())
-//    {
-//        q.Conjugate();
-//        return;
-//    }
     q.m_Q = rtm::quat_conjugate(q.m_Q);
-    q.m_Q = rtm::vector_div(
-        q.m_Q,
-        rtm::vector_set(static_cast<float>(rtm::quat_length_squared(q.m_Q))));
 }
 
 inline float Quaternion::Dot(const Quaternion& q) const noexcept
@@ -148,17 +154,17 @@ inline float Quaternion::Dot(const Quaternion& q) const noexcept
 // Static functions
 //------------------------------------------------------------------------------
 
-inline Quaternion Quaternion::CreateFromAxisAngle(const Vector3& axis, float angle) noexcept
+inline Quaternion Quaternion::FromAxisAngle(const Vector3& axis, float angle) noexcept
 {
     return static_cast<Quaternion>(rtm::quat_from_axis_angle(static_cast<Vector3::SIMDValueType>(axis), angle));
 }
 
-inline Quaternion Quaternion::CreateFromYawPitchRoll(float yaw, float pitch, float roll) noexcept
+inline Quaternion Quaternion::FromYawPitchRoll(float yaw, float pitch, float roll) noexcept
 {
     return static_cast<Quaternion>(rtm::quat_from_euler(-yaw, roll, -pitch));
 }
 
-inline Quaternion Quaternion::CreateFromYawPitchRoll(const Vector3& angles) noexcept
+inline Quaternion Quaternion::FromYawPitchRoll(const Vector3& angles) noexcept
 {
     return static_cast<Quaternion>(rtm::quat_from_euler(-angles.y, angles.z, -angles.x));
 }

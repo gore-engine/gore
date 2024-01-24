@@ -27,6 +27,14 @@ public:
         return m_Scene;
     }
 
+    [[nodiscard]] Transform* GetTransform() const
+    {
+        return m_Transform;
+    }
+
+    // Note that this is a "delete this" operation. Use it carefully.
+    void Destroy();
+
 public:
     template <typename T>
     Component::SelfOrDerivedTypePointer<T> AddComponent();
@@ -61,10 +69,8 @@ private:
 
     Scene* m_Scene;
 
+    Transform* m_Transform;
     std::vector<Component*> m_Components;
-
-public:
-    Transform* transform;
 };
 
 #if COMPILER_GCC

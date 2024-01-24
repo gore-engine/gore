@@ -54,14 +54,70 @@ GameObject* Scene::NewObject(std::string name)
     return gameObject;
 }
 
-void Scene::DestroyObject(GameObject* gameObject)
+void Scene::DestroyObject(GameObject* pGameObject)
 {
-    auto it = std::find(m_GameObjects.begin(), m_GameObjects.end(), gameObject);
-    if (it != m_GameObjects.end())
+    DestroyMultipleObjects(&pGameObject, 1);
+}
+
+void Scene::DestroyMultipleObjects(GameObject** ppGameObjects, int count)
+{
+    if (ppGameObjects == nullptr)
     {
-        m_GameObjects.erase(it);
-        delete gameObject;
+        LOG_STREAM(ERROR) << "Cannot destroy nullptr" << std::endl;
+        return;
     }
+
+    // dfs by a while loop
+    std::vector<GameObject*> stack;
+    for (int i = 0; i < count; ++i)
+    {
+        if (ppGameObjects[i] == nullptr)
+        {
+            LOG_STREAM(ERROR) << "Cannot destroy nullptr" << std::endl;
+            continue;
+        }
+        if (ppGameObjects[i]->GetScene() != this)
+        {
+            LOG_STREAM(ERROR) << "Cannot destroy object" << ppGameObjects[i]->GetName() << "from another scene." << std::endl;
+            continue;
+        }
+        stack.push_back(ppGameObjects[i]);
+        ppGameObjects[i]->GetTransform()->SetParent(nullptr, false);
+    }
+
+    std::unordered_set<GameObject*> gameObjectsToDestroy;
+
+    while (!stack.empty())
+    {
+        auto* current = stack.back();
+        stack.pop_back();
+
+        // this prevents the same game object's children from being iterated multiple times
+        if (gameObjectsToDestroy.contains(current))
+        {
+            continue;
+        }
+
+        gameObjectsToDestroy.insert(current);
+        for (auto const& child : *(current->GetTransform()))
+        {
+            // m_GameObjectsToDestroy is a comes-for-free visited set, by which the maximum iteration count will be the number of game objects
+            if (!gameObjectsToDestroy.contains(child->GetGameObject()))
+            {
+                stack.push_back(child->GetGameObject());
+            }
+        }
+    }
+
+    auto destroyedGameObjectCount = std::erase_if(m_GameObjects, [&](auto& go)
+                                                  { return gameObjectsToDestroy.contains(go); });
+
+    // Now it's time to delete the game object hard
+    std::for_each(gameObjectsToDestroy.begin(), gameObjectsToDestroy.end(), [](auto& go)
+                  { LOG_STREAM(DEBUG) << "Destroying " << go->GetName() << std::endl;
+                    delete go; });
+
+    LOG_STREAM(DEBUG) << "Destroyed " << destroyedGameObjectCount << " game objects" << std::endl;
 }
 
 GameObject* Scene::FindObject(const std::string& name)
