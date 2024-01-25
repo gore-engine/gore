@@ -88,7 +88,11 @@ const Buffer& RenderContext::GetBuffer(BufferHandle handle)
 
 void RenderContext::DestroyBuffer(BufferHandle handle)
 {
-    vmaDestroyBuffer(m_DevicePtr->GetVmaAllocator(), m_BufferPool.getObject(handle).vkBuffer.vkBuffer, m_BufferPool.getObject(handle).vkBuffer.vmaAllocation);
+    using namespace gfx;
+    
+    auto buffer = m_BufferPool.getObject(handle).vkBuffer;
+
+    vmaDestroyBuffer(m_DevicePtr->GetVmaAllocator(), buffer.vkBuffer, buffer.vmaAllocation);
     m_BufferPool.destroy(handle);
 }
 } // namespace gore
