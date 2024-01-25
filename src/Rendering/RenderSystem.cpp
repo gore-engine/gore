@@ -62,8 +62,7 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_DepthImageView(nullptr),
     m_VertexBuffer(nullptr),
     m_VertexBufferMemory(VK_NULL_HANDLE),
-    m_IndexBuffer(nullptr),
-    m_IndexBufferMemory(VK_NULL_HANDLE),
+    m_IndexBufferHandle(),
     // Imgui
     m_ImguiWindowData(),
     m_ImguiDescriptorPool(nullptr)
@@ -180,6 +179,8 @@ void RenderSystem::Update()
     vk::Rect2D scissor({0, 0}, surfaceExtent);
     commandBuffer.setScissor(0, {scissor});
 
+    auto& indexBuffer = m_RenderContext->GetBuffer(m_IndexBufferHandle);
+
     for (auto& gameObject : Scene::GetActiveScene()->GetGameObjects())
     {
         if (gameObject == camera->GetGameObject())
@@ -193,7 +194,7 @@ void RenderSystem::Update()
         std::array<PushConstant, 1> pushConstantData = {pushConstant};
         commandBuffer.pushConstants<PushConstant>(*m_PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, pushConstantData);
         commandBuffer.bindVertexBuffers(0, {*m_VertexBuffer}, {0});
-        commandBuffer.bindIndexBuffer(*m_IndexBuffer, 0, vk::IndexType::eUint16);
+        commandBuffer.bindIndexBuffer(indexBuffer.vkBuffer.vkBuffer, 0, vk::IndexType::eUint16);
 
         commandBuffer.drawIndexed(36, 1, 0, 0, 0);
     }
@@ -255,6 +256,8 @@ void RenderSystem::Shutdown()
 
         vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
     }
+    m_RenderContext->DestroyBuffer(m_IndexBufferHandle);
+
     m_RenderContext->clear();
 
     ShutdownImgui();
@@ -457,23 +460,39 @@ void RenderSystem::CreateVertexBuffer()
     memcpy( pData, vertices.data(), sizeof(Vector3) * vertices.size() );
     m_VertexBufferMemory.unmapMemory();
 
-    // create a vk::raii::Buffer indexBuffer, given a vk::raii::Device device and some indexData in host memory
-    vk::BufferCreateInfo indexBufferCreateInfo( {}, sizeof(uint16_t) * indices.size(), vk::BufferUsageFlagBits::eIndexBuffer );
-    m_IndexBuffer = m_Device.Get().createBuffer( indexBufferCreateInfo );
-    
-    // create a vk::raii::DeviceMemory indexDeviceMemory, given a vk::raii::Device device and a uint32_t memoryTypeIndex
-    memoryRequirements = m_IndexBuffer.getMemoryRequirements();
-    memoryTypeIndex = FindMemoryType( memoryRequirements.memoryTypeBits, m_Device.GetPhysicalDevice().Get().getMemoryProperties(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
 
-    memoryAllocateInfo = vk::MemoryAllocateInfo( memoryRequirements.size, memoryTypeIndex );
-    m_IndexBufferMemory = m_Device.Get().allocateMemory( memoryAllocateInfo );
+    m_IndexBufferHandle = m_RenderContext->CreateBuffer({
+        .debugName = "Index Buffer",
+        .byteSize = static_cast<uint32_t>(sizeof(uint16_t) * indices.size()),
+        .usage = BufferUsage::Index,
+        .memUsage = MemoryUsage::CPU_TO_GPU
+    });
+
+
+    auto& indexBuffer = m_RenderContext->GetBuffer(m_IndexBufferHandle);
+
+    void* mappedData;
+    vmaMapMemory(m_Device.GetVmaAllocator(), indexBuffer.vkBuffer.vmaAllocation, &mappedData);
+    memcpy(mappedData, indices.data(), sizeof(uint16_t) * indices.size());
+    vmaUnmapMemory(m_Device.GetVmaAllocator(), indexBuffer.vkBuffer.vmaAllocation);
+
+    // create a vk::raii::Buffer indexBuffer, given a vk::raii::Device device and some indexData in host memory
+    // vk::BufferCreateInfo indexBufferCreateInfo( {}, sizeof(uint16_t) * indices.size(), vk::BufferUsageFlagBits::eIndexBuffer );
+    // m_IndexBuffer = m_Device.Get().createBuffer( indexBufferCreateInfo );
     
-    m_IndexBuffer.bindMemory( *m_IndexBufferMemory, 0 );
+    // // create a vk::raii::DeviceMemory indexDeviceMemory, given a vk::raii::Device device and a uint32_t memoryTypeIndex
+    // memoryRequirements = m_IndexBuffer.getMemoryRequirements();
+    // memoryTypeIndex = FindMemoryType( memoryRequirements.memoryTypeBits, m_Device.GetPhysicalDevice().Get().getMemoryProperties(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
+
+    // memoryAllocateInfo = vk::MemoryAllocateInfo( memoryRequirements.size, memoryTypeIndex );
+    // m_IndexBufferMemory = m_Device.Get().allocateMemory( memoryAllocateInfo );
+    
+    // m_IndexBuffer.bindMemory( *m_IndexBufferMemory, 0 );
 
     // copy the index data into the indexDeviceMemory
-    pData = static_cast<uint8_t*>(m_IndexBufferMemory.mapMemory( 0, memoryRequirements.size ));
-    memcpy( pData, indices.data(), sizeof(uint16_t) * indices.size() );
-    m_IndexBufferMemory.unmapMemory();
+    // pData = static_cast<uint8_t*>(m_IndexBufferMemory.mapMemory( 0, memoryRequirements.size ));
+    // memcpy( pData, indices.data(), sizeof(uint16_t) * indices.size() );
+    // m_IndexBufferMemory.unmapMemory();
 }
 
 void RenderSystem::LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint)

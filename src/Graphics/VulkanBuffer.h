@@ -7,7 +7,14 @@ namespace gore::gfx
 {
 struct VulkanBuffer
 {
+    void Clear()
+    {
+        vmaDestroyBuffer(vmaAllocator, vkBuffer, vmaAllocation);
+    }
+
+    VmaAllocator vmaAllocator;
     VkBuffer vkBuffer;
+    VkDeviceAddress vkDeviceAddress;
     VmaAllocation vmaAllocation;
     VmaAllocationInfo vmaAllocationInfo;
 };

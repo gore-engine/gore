@@ -82,10 +82,13 @@ private:
     VmaAllocation m_DepthImageAllocation;
     vk::raii::ImageView m_DepthImageView;
 
+
+    BufferHandle m_IndexBufferHandle;
+
     vk::raii::Buffer m_VertexBuffer;
     vk::raii::DeviceMemory m_VertexBufferMemory;
-    vk::raii::Buffer m_IndexBuffer;
-    vk::raii::DeviceMemory m_IndexBufferMemory;
+    // vk::raii::Buffer m_IndexBuffer;
+    // vk::raii::DeviceMemory m_IndexBufferMemory;
 
 private:
     uint32_t FindMemoryType(uint32_t typeFilter, vk::PhysicalDeviceMemoryProperties memProperties, vk::MemoryPropertyFlags properties) const;

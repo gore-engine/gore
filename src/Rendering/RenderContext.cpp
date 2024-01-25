@@ -1,6 +1,8 @@
 #include "RenderContext.h"
 #include "Graphics/Device.h"
 
+#include "RenderContextHelper.h"
+
 namespace gore
 {
 RenderContext::RenderContext(const gfx::Device* device) :
@@ -53,21 +55,21 @@ BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
 
     uint32_t byteSize = desc.byteSize;
 
-    VkBufferCreateInfo bufferInfo = {
-        .sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size        = byteSize,
-        .usage       = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-    };
+    VkBufferCreateInfo bufferInfo = vulkanHelper::GetVkBufferCreateInfo(desc);
 
-    VmaAllocationCreateInfo allocCreateInfo = {
-        .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
-        .usage = VMA_MEMORY_USAGE_CPU_TO_GPU,
-    };
+    VmaAllocationCreateInfo allocCreateInfo = vulkanHelper::GetVmaAllocationCreateInfo(desc);
 
     VulkanBuffer buffer;
+    buffer.vmaAllocator = m_DevicePtr->GetVmaAllocator();
 
     VK_CHECK_RESULT(vmaCreateBuffer(m_DevicePtr->GetVmaAllocator(), &bufferInfo, &allocCreateInfo, &buffer.vkBuffer, &buffer.vmaAllocation, &buffer.vmaAllocationInfo));
+
+    VkBufferDeviceAddressInfo bufferDeviceAddressInfo = {
+        .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+        .buffer = buffer.vkBuffer,
+    };
+
+    buffer.vkDeviceAddress = m_DevicePtr->Get().getBufferAddress(bufferDeviceAddressInfo);
 
     return m_BufferPool.create(
         std::move(desc),
