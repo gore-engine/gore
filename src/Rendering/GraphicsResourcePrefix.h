@@ -3,6 +3,7 @@
 
 enum class MemoryUsage
 {
+    AUTO,
     CPU,
     GPU,
     CPU_TO_GPU,

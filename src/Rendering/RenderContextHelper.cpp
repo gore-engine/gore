@@ -5,6 +5,7 @@ namespace gore::vulkanHelper
 VkBufferCreateInfo GetVkBufferCreateInfo(BufferDesc& desc)
 {
     VkBufferUsageFlags flags = 0;
+    // TODO: I don't like switch
     switch (desc.usage)
     {
         case BufferUsage::Vertex:
@@ -16,6 +17,9 @@ VkBufferCreateInfo GetVkBufferCreateInfo(BufferDesc& desc)
             break;
         case BufferUsage::Uniform:
             flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            break;
+        case BufferUsage::Storage:
+            flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             break;
         default:
             break;
@@ -36,15 +40,27 @@ VmaAllocationCreateInfo GetVmaAllocationCreateInfo(BufferDesc& desc)
 {
     VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_AUTO;
 
-    VmaAllocationCreateInfo allocInfo = {
-        .flags          = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-        .usage          = memUsage,
-        .requiredFlags  = 0,
-        .preferredFlags = 0,
-        .memoryTypeBits = 0,
-        .pool           = VK_NULL_HANDLE,
-        .pUserData      = nullptr,
-    };
+    // TODO: I don't like switch
+    switch (desc.memUsage)
+    {
+        case MemoryUsage::GPU:
+            memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+            break;
+        case MemoryUsage::CPU:
+            memUsage = VMA_MEMORY_USAGE_CPU_ONLY;
+            break;
+        case MemoryUsage::CPU_TO_GPU:
+            memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            break;
+        case MemoryUsage::GPU_TO_CPU:
+            memUsage = VMA_MEMORY_USAGE_GPU_TO_CPU;
+            break;
+        default:
+            break;
+    }
+
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage                   = memUsage;
 
     return allocInfo;
 }
