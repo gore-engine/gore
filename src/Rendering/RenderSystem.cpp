@@ -17,6 +17,8 @@
 #include "Object/Camera.h"
 #include "Object/GameObject.h"
 
+#include "Rendering/GPUData/GlobalConstantBuffer.h"
+
 #include <vector>
 #include <string>
 #include <sstream>
@@ -53,6 +55,11 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_PresentQueueFamilyIndex(0),
     // Command Pool & Command Buffer
     m_CommandPool(),
+    // Global Descriptors
+    m_GlobalDescriptorPool(nullptr),
+    m_GlobalDescriptorSetLayout(nullptr),
+    m_GlobalDescriptorSets(),
+    m_GlobalConstantBuffers(),
     // Synchronization
     m_RenderFinishedSemaphores(),
     m_InFlightFences(),
@@ -588,6 +595,36 @@ void RenderSystem::CreateRenderPass()
     m_RenderPass = m_Device.Get().createRenderPass(renderPassCreateInfo);
 
     m_Device.SetName(m_RenderPass, "Cube Color Pass");
+}
+
+void RenderSystem::CreateGlobalDescriptorSets()
+{
+    std::vector<vk::DescriptorPoolSize> poolSizes = {
+        {       vk::DescriptorType::eUniformBuffer, 10},
+        {vk::DescriptorType::eUniformBufferDynamic, 10}
+    };
+
+    vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo({}, 10, poolSizes);
+    m_GlobalDescriptorPool = m_Device.Get().createDescriptorPool(descriptorPoolCreateInfo);
+
+    vk::DescriptorSetLayoutBinding globalConstantBufferBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
+
+    std::vector<vk::DescriptorSetLayoutBinding> bindings = {globalConstantBufferBinding};
+
+    vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo({}, {bindings});
+    m_GlobalDescriptorSetLayout = m_Device.Get().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+
+    m_GlobalDescriptorSets.clear();
+    for (int i = 0; i < m_Swapchain.GetImageCount(); ++i)
+    {
+        m_GlobalConstantBuffers.emplace_back(m_RenderContext->CreateBuffer({.debugName = "Global Constant Buffer",
+                                                                            .byteSize  = sizeof(gfx::GlobalConstantBuffer),
+                                                                            .usage     = BufferUsage::Uniform,
+                                                                            .memUsage  = MemoryUsage::CPU_TO_GPU}));
+
+        vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(*m_GlobalDescriptorPool, *m_GlobalDescriptorSetLayout);
+        m_GlobalDescriptorSets.emplace_back(m_Device.Get().allocateDescriptorSets(descriptorSetAllocateInfo)[0]);
+    }
 }
 
 void RenderSystem::CreatePipeline()

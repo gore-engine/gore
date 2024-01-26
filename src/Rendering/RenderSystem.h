@@ -73,6 +73,13 @@ private:
     // Command Pool & Command Buffer
     gfx::CommandPool m_CommandPool;
 
+    // Global Descriptors
+    vk::raii::DescriptorPool m_GlobalDescriptorPool;
+    vk::raii::DescriptorSetLayout m_GlobalDescriptorSetLayout;
+    std::vector<vk::raii::DescriptorSet> m_GlobalDescriptorSets;
+
+    std::vector<BufferHandle> m_GlobalConstantBuffers;
+
     // Synchronization
     std::vector<vk::raii::Semaphore> m_RenderFinishedSemaphores;
     std::vector<vk::raii::Fence> m_InFlightFences;
@@ -101,6 +108,7 @@ private:
     void CreateVertexBuffer();
     void LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint);
     void CreateRenderPass();
+    void CreateGlobalDescriptorSets();
     void CreatePipeline();
     void CreateFramebuffers();
     void GetQueues();
