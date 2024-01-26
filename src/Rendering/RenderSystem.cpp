@@ -615,6 +615,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
     m_GlobalDescriptorSetLayout = m_Device.Get().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
 
     m_GlobalDescriptorSets.clear();
+    m_GlobalDescriptorSets.reserve(m_Swapchain.GetImageCount());
     for (int i = 0; i < m_Swapchain.GetImageCount(); ++i)
     {
         m_GlobalConstantBuffers.emplace_back(m_RenderContext->CreateBuffer({.debugName = "Global Constant Buffer",
@@ -623,7 +624,8 @@ void RenderSystem::CreateGlobalDescriptorSets()
                                                                             .memUsage  = MemoryUsage::CPU_TO_GPU}));
 
         vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(*m_GlobalDescriptorPool, *m_GlobalDescriptorSetLayout);
-        m_GlobalDescriptorSets.emplace_back(m_Device.Get().allocateDescriptorSets(descriptorSetAllocateInfo)[0]);
+        vk::raii::DescriptorSets descriptorSets(m_Device.Get(), descriptorSetAllocateInfo);
+        m_GlobalDescriptorSets.emplace_back(std::move(descriptorSets[0]));
     }
 }
 
