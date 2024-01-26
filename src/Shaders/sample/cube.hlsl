@@ -2,13 +2,13 @@
 
 struct Attributes
 {
-    uint vertexId : SV_VertexID;
+    float3 positionOS : POSITION;
 };
 
 struct PushConstant
 {
     float4x4 m;
-    float4x4 vp;
+    // float4x4 vp;
 };
 
 [[vk::push_constant]] PushConstant mvpPushConst;
@@ -22,7 +22,7 @@ struct VertOut
 VertOut vs(Attributes IN)
 {
     VertOut vertOut;
-    float4 objVertPos = float4(_VertexDataBuffer[IN.vertexId].positionOS, 1);
+    float4 objVertPos = float4(IN.positionOS, 1);
     vertOut.pos = mul(_VPMatrix, mul(mvpPushConst.m, objVertPos));
     vertOut.pos.y *= -1.0f;
     vertOut.color = objVertPos.xyz + 0.5f;
