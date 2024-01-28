@@ -72,7 +72,9 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_IndexBufferHandle(),
     // Imgui
     m_ImguiWindowData(),
-    m_ImguiDescriptorPool(nullptr)
+    m_ImguiDescriptorPool(nullptr),
+    // Utils
+    m_RenderDeletionQueue()
 {
     g_RenderSystem = this;
 }
@@ -263,7 +265,8 @@ void RenderSystem::Shutdown()
 
         vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
     }
-    m_RenderContext->DestroyBuffer(m_IndexBufferHandle);
+    
+    m_RenderDeletionQueue.flush();
 
     m_RenderContext->clear();
 
@@ -474,7 +477,11 @@ void RenderSystem::CreateVertexBuffer()
         .usage = BufferUsage::Index,
         .memUsage = MemoryUsage::CPU_TO_GPU
     });
-
+    m_RenderDeletionQueue.push_function(
+        [&](){
+            m_RenderContext->DestroyBuffer(m_IndexBufferHandle);
+        }
+    );
 
     auto& indexBuffer = m_RenderContext->GetBuffer(m_IndexBufferHandle);
 

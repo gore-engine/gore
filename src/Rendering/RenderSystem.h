@@ -13,10 +13,30 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 
+#include <functional>
+
 namespace gore
 {
 
 class Window;
+
+struct DeletionQueue
+{
+    std::deque<std::function<void()>> deletors;
+
+    void push_function(std::function<void()>&& function) {
+        deletors.push_back(function);
+    }
+
+    void flush() {
+        // reverse iterate the deletion queue to execute all the functions
+        for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
+            (*it)(); //call functors
+        }
+
+        deletors.clear();
+    }
+};
 
 class RenderSystem final : System
 {
@@ -96,6 +116,8 @@ private:
     vk::raii::DeviceMemory m_VertexBufferMemory;
     // vk::raii::Buffer m_IndexBuffer;
     // vk::raii::DeviceMemory m_IndexBufferMemory;
+
+    DeletionQueue m_RenderDeletionQueue;
 
 private:
     uint32_t FindMemoryType(uint32_t typeFilter, vk::PhysicalDeviceMemoryProperties memProperties, vk::MemoryPropertyFlags properties) const;
