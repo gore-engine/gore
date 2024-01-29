@@ -67,8 +67,7 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_DepthImage(nullptr),
     m_DepthImageAllocation(VK_NULL_HANDLE),
     m_DepthImageView(nullptr),
-    m_VertexBuffer(nullptr),
-    m_VertexBufferMemory(VK_NULL_HANDLE),
+    m_VertexBufferHandle(),
     m_IndexBufferHandle(),
     // Imgui
     m_ImguiWindowData(),
@@ -199,6 +198,7 @@ void RenderSystem::Update()
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_PipelineLayout, 0, {*m_GlobalDescriptorSets[currentSwapchainImageIndex]}, {});
 
     auto& indexBuffer = m_RenderContext->GetBuffer(m_IndexBufferHandle);
+    auto& vertexBuffer = m_RenderContext->GetBuffer(m_VertexBufferHandle);
 
     for (auto& gameObject : Scene::GetActiveScene()->GetGameObjects())
     {
@@ -211,7 +211,7 @@ void RenderSystem::Update()
         };
         std::array<PushConstant, 1> pushConstantData = {pushConstant};
         commandBuffer.pushConstants<PushConstant>(*m_PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, pushConstantData);
-        commandBuffer.bindVertexBuffers(0, {*m_VertexBuffer}, {0});
+        commandBuffer.bindVertexBuffers(0, {vertexBuffer.vkBuffer.vkBuffer}, {0});
         commandBuffer.bindIndexBuffer(indexBuffer.vkBuffer.vkBuffer, 0, vk::IndexType::eUint16);
 
         commandBuffer.drawIndexed(36, 1, 0, 0, 0);
@@ -460,25 +460,18 @@ void RenderSystem::CreateVertexBuffer()
         1, 3, 5, 5, 3, 7  // +Z
     };
 
-    // create a vk::raii::Buffer vertexBuffer, given a vk::raii::Device device and some vertexData in host memory
-    vk::BufferCreateInfo bufferCreateInfo( {}, sizeof(Vector3) * vertices.size(), vk::BufferUsageFlagBits::eVertexBuffer );
-    m_VertexBuffer = m_Device.Get().createBuffer( bufferCreateInfo );
-    
-    // create a vk::raii::DeviceMemory vertexDeviceMemory, given a vk::raii::Device device and a uint32_t memoryTypeIndex
-    vk::MemoryRequirements memoryRequirements = m_VertexBuffer.getMemoryRequirements();
-    uint32_t memoryTypeIndex = FindMemoryType( memoryRequirements.memoryTypeBits, m_Device.GetPhysicalDevice().Get().getMemoryProperties(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
-    
-    vk::MemoryAllocateInfo memoryAllocateInfo( memoryRequirements.size, memoryTypeIndex );
-    m_VertexBufferMemory = m_Device.Get().allocateMemory( memoryAllocateInfo );
+    m_VertexBufferHandle = m_RenderContext->CreateBuffer({
+        .debugName = "Vertex Buffer",
+        .byteSize = static_cast<uint32_t>(sizeof(Vector3) * vertices.size()),
+        .usage = BufferUsage::Vertex,
+        .memUsage = MemoryUsage::CPU_TO_GPU
+    });
 
-    // bind the complete device memory to the vertex buffer
-    m_VertexBuffer.bindMemory( *m_VertexBufferMemory, 0 );
-
-    // copy the vertex data into the vertexDeviceMemory
-    uint8_t* pData = static_cast<uint8_t*>(m_VertexBufferMemory.mapMemory( 0, memoryRequirements.size ));
-    memcpy( pData, vertices.data(), sizeof(Vector3) * vertices.size() );
-    m_VertexBufferMemory.unmapMemory();
-
+    void* mappedData;
+    auto& vertexBuffer = m_RenderContext->GetBuffer(m_VertexBufferHandle);
+    vmaMapMemory(m_Device.GetVmaAllocator(), vertexBuffer.vkBuffer.vmaAllocation, &mappedData);
+    memcpy(mappedData, vertices.data(), sizeof(Vector3) * vertices.size());
+    vmaUnmapMemory(m_Device.GetVmaAllocator(), vertexBuffer.vkBuffer.vmaAllocation);
 
     m_IndexBufferHandle = m_RenderContext->CreateBuffer({
         .debugName = "Index Buffer",
@@ -486,36 +479,19 @@ void RenderSystem::CreateVertexBuffer()
         .usage = BufferUsage::Index,
         .memUsage = MemoryUsage::CPU_TO_GPU
     });
-    m_RenderDeletionQueue.push_function(
-        [&](){
-            m_RenderContext->DestroyBuffer(m_IndexBufferHandle);
-        }
-    );
 
     auto& indexBuffer = m_RenderContext->GetBuffer(m_IndexBufferHandle);
 
-    void* mappedData;
     vmaMapMemory(m_Device.GetVmaAllocator(), indexBuffer.vkBuffer.vmaAllocation, &mappedData);
     memcpy(mappedData, indices.data(), sizeof(uint16_t) * indices.size());
     vmaUnmapMemory(m_Device.GetVmaAllocator(), indexBuffer.vkBuffer.vmaAllocation);
 
-    // create a vk::raii::Buffer indexBuffer, given a vk::raii::Device device and some indexData in host memory
-    // vk::BufferCreateInfo indexBufferCreateInfo( {}, sizeof(uint16_t) * indices.size(), vk::BufferUsageFlagBits::eIndexBuffer );
-    // m_IndexBuffer = m_Device.Get().createBuffer( indexBufferCreateInfo );
-    
-    // // create a vk::raii::DeviceMemory indexDeviceMemory, given a vk::raii::Device device and a uint32_t memoryTypeIndex
-    // memoryRequirements = m_IndexBuffer.getMemoryRequirements();
-    // memoryTypeIndex = FindMemoryType( memoryRequirements.memoryTypeBits, m_Device.GetPhysicalDevice().Get().getMemoryProperties(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
-
-    // memoryAllocateInfo = vk::MemoryAllocateInfo( memoryRequirements.size, memoryTypeIndex );
-    // m_IndexBufferMemory = m_Device.Get().allocateMemory( memoryAllocateInfo );
-    
-    // m_IndexBuffer.bindMemory( *m_IndexBufferMemory, 0 );
-
-    // copy the index data into the indexDeviceMemory
-    // pData = static_cast<uint8_t*>(m_IndexBufferMemory.mapMemory( 0, memoryRequirements.size ));
-    // memcpy( pData, indices.data(), sizeof(uint16_t) * indices.size() );
-    // m_IndexBufferMemory.unmapMemory();
+    m_RenderDeletionQueue.push_function(
+        [&](){
+            m_RenderContext->DestroyBuffer(m_VertexBufferHandle);
+            m_RenderContext->DestroyBuffer(m_IndexBufferHandle);
+        }
+    );
 }
 
 void RenderSystem::LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint)

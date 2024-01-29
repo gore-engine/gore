@@ -9,8 +9,7 @@ VkBufferCreateInfo GetVkBufferCreateInfo(BufferDesc& desc)
     switch (desc.usage)
     {
         case BufferUsage::Vertex:
-            // TODO: On mobile, we should use vertex bit?
-            flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
             break;
         case BufferUsage::Index:
             flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;

@@ -110,13 +110,8 @@ private:
     VmaAllocation m_DepthImageAllocation;
     vk::raii::ImageView m_DepthImageView;
 
-
     BufferHandle m_IndexBufferHandle;
-
-    vk::raii::Buffer m_VertexBuffer;
-    vk::raii::DeviceMemory m_VertexBufferMemory;
-    // vk::raii::Buffer m_IndexBuffer;
-    // vk::raii::DeviceMemory m_IndexBufferMemory;
+    BufferHandle m_VertexBufferHandle;
 
     DeletionQueue m_RenderDeletionQueue;
 
