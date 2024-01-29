@@ -14,6 +14,7 @@
 #include "imgui_impl_vulkan.h"
 
 #include <functional>
+#include <deque>
 
 namespace gore
 {
