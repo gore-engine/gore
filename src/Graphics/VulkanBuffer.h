@@ -13,7 +13,7 @@ struct VulkanBuffer
     }
 
     VmaAllocator vmaAllocator;
-    VkBuffer vkBuffer;
+    VkBuffer vkBuffer; // TODO: better name!
     VkDeviceAddress vkDeviceAddress;
     VmaAllocation vmaAllocation;
     VmaAllocationInfo vmaAllocationInfo;
