@@ -275,7 +275,7 @@ void RenderSystem::Shutdown()
         vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
     }
     
-    m_RenderDeletionQueue.flush();
+    m_RenderDeletionQueue.Flush();
 
     m_RenderContext->clear();
 
@@ -486,7 +486,7 @@ void RenderSystem::CreateVertexBuffer()
     memcpy(mappedData, indices.data(), sizeof(uint16_t) * indices.size());
     vmaUnmapMemory(m_Device.GetVmaAllocator(), indexBuffer.vkBuffer.vmaAllocation);
 
-    m_RenderDeletionQueue.push_function(
+    m_RenderDeletionQueue.PushFunction(
         [&](){
             m_RenderContext->DestroyBuffer(m_VertexBufferHandle);
             m_RenderContext->DestroyBuffer(m_IndexBufferHandle);
@@ -625,7 +625,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
         m_Device.Get().updateDescriptorSets({globalConstantBufferWrite}, {});
     }
 
-    m_RenderDeletionQueue.push_function(
+    m_RenderDeletionQueue.PushFunction(
         [&](){
             for (auto& globalConstantBuffer : m_GlobalConstantBuffers)
             {
