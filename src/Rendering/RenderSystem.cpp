@@ -102,6 +102,7 @@ void RenderSystem::Initialize()
     CreateVertexBuffer();
     LoadShader("sample/cube", "vs", "ps");
     CreateRenderPass();
+    CreateGlobalDescriptorSets();
     CreatePipeline();
     CreateFramebuffers();
     GetQueues();
@@ -187,6 +188,16 @@ void RenderSystem::Update()
 
     vk::Rect2D scissor({0, 0}, surfaceExtent);
     commandBuffer.setScissor(0, {scissor});
+
+    auto& globalConstantBuffer = m_RenderContext->GetBuffer(m_GlobalConstantBuffers[currentSwapchainImageIndex]);
+
+    void* mappedData;
+    vmaMapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vkBuffer.vmaAllocation, &mappedData);
+    auto& globalConstantBufferData = *reinterpret_cast<gfx::GlobalConstantBuffer*>(mappedData);
+    globalConstantBufferData.vpMatrix = camera->GetViewProjectionMatrix();
+    vmaUnmapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vkBuffer.vmaAllocation);
+
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_PipelineLayout, 0, {*m_GlobalDescriptorSets[currentSwapchainImageIndex]}, {});
 
     auto& indexBuffer = m_RenderContext->GetBuffer(m_IndexBufferHandle);
 
@@ -611,7 +622,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
         {vk::DescriptorType::eUniformBufferDynamic, 10}
     };
 
-    vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo({}, 10, poolSizes);
+    vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo( vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 10, poolSizes);
     m_GlobalDescriptorPool = m_Device.Get().createDescriptorPool(descriptorPoolCreateInfo);
 
     vk::DescriptorSetLayoutBinding globalConstantBufferBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
@@ -633,7 +644,21 @@ void RenderSystem::CreateGlobalDescriptorSets()
         vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(*m_GlobalDescriptorPool, *m_GlobalDescriptorSetLayout);
         vk::raii::DescriptorSets descriptorSets(m_Device.Get(), descriptorSetAllocateInfo);
         m_GlobalDescriptorSets.emplace_back(std::move(descriptorSets[0]));
+
+        vk::DescriptorBufferInfo globalConstantBufferInfo(m_RenderContext->GetBuffer(m_GlobalConstantBuffers[i]).vkBuffer.vkBuffer, 0, sizeof(gfx::GlobalConstantBuffer));
+        vk::WriteDescriptorSet globalConstantBufferWrite(*m_GlobalDescriptorSets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &globalConstantBufferInfo, nullptr);
+
+        m_Device.Get().updateDescriptorSets({globalConstantBufferWrite}, {});
     }
+
+    m_RenderDeletionQueue.push_function(
+        [&](){
+            for (auto& globalConstantBuffer : m_GlobalConstantBuffers)
+            {
+                m_RenderContext->DestroyBuffer(globalConstantBuffer);
+            }
+        }
+    );
 }
 
 void RenderSystem::CreatePipeline()
@@ -643,7 +668,7 @@ void RenderSystem::CreatePipeline()
     std::vector<vk::PushConstantRange> pushConstantRanges = {pushConstantRange};
 
     // TODO: change this when we have a working descriptor management system
-    vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, {}, pushConstantRanges);
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, *m_GlobalDescriptorSetLayout, pushConstantRanges);
 
     m_PipelineLayout = m_Device.Get().createPipelineLayout(pipelineLayoutInfo);
 
