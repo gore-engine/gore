@@ -120,7 +120,6 @@ void RenderSystem::Initialize()
 struct PushConstant
 {
     Matrix4x4 m;
-    Matrix4x4 vp;
 };
 
 void RenderSystem::Update()
@@ -208,8 +207,7 @@ void RenderSystem::Update()
 
         PushConstant pushConstant
         {
-            .m = gameObject->GetTransform()->GetLocalToWorldMatrix(),
-            .vp = camera->GetViewProjectionMatrix()
+            .m = gameObject->GetTransform()->GetLocalToWorldMatrix()
         };
         std::array<PushConstant, 1> pushConstantData = {pushConstant};
         commandBuffer.pushConstants<PushConstant>(*m_PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, pushConstantData);

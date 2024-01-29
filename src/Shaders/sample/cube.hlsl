@@ -8,7 +8,6 @@ struct Attributes
 struct PushConstant
 {
     float4x4 m;
-    // float4x4 vp;
 };
 
 [[vk::push_constant]] PushConstant mvpPushConst;
