@@ -87,6 +87,22 @@ struct RasterizationState final
 
 static_assert(sizeof(RasterizationState) == 2, "RasterizationState is too big");
 
+struct ViewPortState final
+{
+    int x;
+    int y;
+    int width;
+    int height;
+};
+
+struct ScissorState final
+{
+    int x;
+    int y;
+    int width;
+    int height;
+};
+
 struct BlendState final
 {
 };
