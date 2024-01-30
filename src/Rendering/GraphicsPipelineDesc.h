@@ -135,6 +135,9 @@ struct PipelineDesc final
     std::vector<BindGroupHandle> bindGroups;
     std::vector<VertexBufferBinding> vertexBufferBindings;
 
+    ViewPortState viewPortState;
+    ScissorState scissorState;
+
     MultisampleState multisampleState;
     DepthStencilState depthStencilState;
     RasterizationState renderState;
