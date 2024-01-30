@@ -137,8 +137,76 @@ struct ScissorState final
     int height;
 };
 
+enum class BlendFactor : uint8_t
+{
+    Zero,
+    One,
+    SrcColor,
+    OneMinusSrcColor,
+    DstColor,
+    OneMinusDstColor,
+    SrcAlpha,
+    OneMinusSrcAlpha,
+    DstAlpha,
+    OneMinusDstAlpha,
+    ConstantColor,
+    OneMinusConstantColor,
+    ConstantAlpha,
+    OneMinusConstantAlpha,
+    SrcAlphaSaturate,
+    Src1Color,
+    OneMinusSrc1Color,
+    Src1Alpha,
+    OneMinusSrc1Alpha,
+    Count
+};
+
+// Symplified version of BlendOp
+enum class BlendOp : uint8_t
+{
+    Add,
+    Subtract,
+    ReverseSubtract,
+    Min,
+    Max,
+    Count
+};
+
+enum class ColorComponent : uint8_t
+{
+    R = 1 << 0,
+    G = 1 << 1,
+    B = 1 << 2,
+    A = 1 << 3,
+    Count
+};
+
+inline ColorComponent operator|(ColorComponent a, ColorComponent b)
+{
+    return static_cast<ColorComponent>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
+}
+
+inline ColorComponent operator&(ColorComponent a, ColorComponent b)
+{
+    return static_cast<ColorComponent>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
+}
+
+inline ColorComponent operator~(ColorComponent a)
+{
+    return static_cast<ColorComponent>(~static_cast<uint8_t>(a));
+}
+
 struct BlendState final
 {
+    bool enable = false;
+    BlendOp colorBlendOp = BlendOp::Add;
+    BlendFactor srcColorFactor = BlendFactor::One;
+    BlendFactor dstColorFactor = BlendFactor::Zero;
+    BlendOp alphaBlendOp = BlendOp::Add;
+    BlendFactor srcAlphaFactor = BlendFactor::One;
+    BlendFactor dstAlphaFactor = BlendFactor::Zero;
+
+    ColorComponent colorWriteMask = ColorComponent::R | ColorComponent::G | ColorComponent::B | ColorComponent::A;
 };
 
 struct PipelineDesc final
