@@ -85,9 +85,28 @@ struct MultisampleState final
     uint32_t sampleMask          = 0;
 };
 
+enum class StencilOp : uint8_t
+{
+    Keep,
+    Zero,
+    Replace,
+    IncrementAndClamp,
+    DecrementAndClamp,
+    Invert,
+    IncrementAndWrap,
+    DecrementAndWrap,
+    Count
+};
+
 struct DepthStencilState final
 {
-    CompareOp depthTest = CompareOp::LessEqual;
+    // reverse depth buffer
+    CompareOp depthTest          = CompareOp::GreaterEqual;
+    bool depthWrite              = true;
+    bool depthBoundsTestEnable   = false;
+    bool stencilTestEnable       = false;
+    StencilOp frontStencilFailOp = StencilOp::Keep;
+    StencilOp frontStencilPassOp = StencilOp::Keep;
 };
 
 struct RasterizationState final
