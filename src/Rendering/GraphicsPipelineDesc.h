@@ -65,9 +65,24 @@ enum class CompareOp : uint8_t
     Count
 };
 
+// 1, 2, 4, 8 enough for everyone
+enum class MultiSampleCount : uint8_t
+{
+    One,
+    Two,
+    Four,
+    Eight,
+    Count
+};
+
 struct MultisampleState final
 {
-    uint32_t sampleCount = 1;
+    MultiSampleCount sampleCount = MultiSampleCount::One;
+    bool sampleShadingEnable     = false;
+    bool alphaToCoverageEnable   = false;
+    bool alphaToOneEnable        = false;
+    float minSampleShading       = 0.0f;
+    uint32_t sampleMask          = 0;
 };
 
 struct DepthStencilState final
