@@ -8,12 +8,29 @@
 
 namespace gore
 {
-enum class TopologyType
+enum class TopologyType : uint8_t
 {
     Point,
     Line,
     TriangleList,
     // FIXME: Other are deprecated
+    Count
+};
+
+enum class PolygonMode : uint8_t
+{
+    Fill,
+    Line,
+    Point,
+    Count
+};
+
+enum class CullMode : uint8_t
+{
+    None,
+    Front,
+    Back,
+    FrontAndBack, // TODO: support it?
     Count
 };
 
@@ -35,7 +52,7 @@ struct VertexBufferBinding final
     std::vector<VertexAttributeDesc> attributes;
 };
 
-enum class CompareOp
+enum class CompareOp : uint8_t
 {
     Never,
     Less,
@@ -58,9 +75,17 @@ struct DepthStencilState final
     CompareOp depthTest = CompareOp::LessEqual;
 };
 
-struct RenderState final
+struct RasterizationState final
 {
+    bool depthClamp : 1            = false;
+    bool rasterizerDiscard : 1     = false;
+    bool frontCounterClockwise : 1 = false;
+    bool depthBiasEnable : 1       = false;
+    CullMode cullMode : 4          = CullMode::None;
+    PolygonMode polygonMode : 8    = PolygonMode::Fill;
 };
+
+static_assert(sizeof(RasterizationState) == 2, "RasterizationState is too big");
 
 struct BlendState final
 {
@@ -96,7 +121,7 @@ struct PipelineDesc final
 
     MultisampleState multisampleState;
     DepthStencilState depthStencilState;
-    RenderState renderState;
+    RasterizationState renderState;
     BlendState blendState;
 };
 } // namespace gore
