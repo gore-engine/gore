@@ -12,7 +12,7 @@
 #include "BindGroup.h"
 
 #include "GraphicsPipelineDesc.h"
-#include "GraphicsPipeline.h"
+#include "Pipeline.h"
 
 #include "Pool.h"
 
@@ -21,7 +21,7 @@ namespace gore
 
 namespace gfx
 {
-    class Device;
+class Device;
 }
 
 class RenderContext final
@@ -42,22 +42,24 @@ public:
 
     SamplerHandle createSampler(const SamplerDesc& desc);
     BindGroupHandle createBindGroup(const BindGroupDesc& desc);
-    PipelineHandle createPipeline(const GraphicsPipelineDesc& desc);
+
     ShaderModuleHandle createShaderModule(ShaderModuleDesc&& desc);
-    const ShaderModuleDesc& getShaderModuleDesc(ShaderModuleHandle handle); 
+    const ShaderModuleDesc& getShaderModuleDesc(ShaderModuleHandle handle);
     const ShaderModule& getShaderModule(ShaderModuleHandle handle);
     void destroyShaderModule(ShaderModuleHandle handle);
+
+    GraphicsPipelineHandle createGraphicsPipeline(const GraphicsPipelineDesc& desc);
 
     void destroyTexture(TextureHandle handle);
     void destroySampler(SamplerHandle handle);
     void destroyBindGroup(BindGroupHandle handle);
-    void destroyPipeline(PipelineHandle handle);
+    void destroyPipeline(GraphicsPipelineHandle handle);
 
     void clear();
 
 private:
     using ShaderModulePool = Pool<ShaderModuleDesc, ShaderModule>;
-    using BufferPool = Pool<BufferDesc, Buffer>;
+    using BufferPool       = Pool<BufferDesc, Buffer>;
 
     ShaderModulePool m_ShaderModulePool;
     BufferPool m_BufferPool;

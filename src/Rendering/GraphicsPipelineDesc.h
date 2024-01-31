@@ -3,7 +3,7 @@
 #include "Prefix.h"
 #include "GraphicsFormat.h"
 #include "BindGroup.h"
-
+#include "BindLayout.h"
 #include <vector>
 
 namespace gore
@@ -241,6 +241,8 @@ struct GraphicsPipelineDesc final
     std::vector<BindGroupHandle> bindGroups;
 
     std::vector<VertexBufferBinding> vertexBufferBindings;
+
+    std::vector<BindLayout> bindLayouts;
 
     InputAssemblyState assemblyState;
 
