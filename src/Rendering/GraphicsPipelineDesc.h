@@ -40,6 +40,12 @@ struct ShaderBinding final
     const char* entryFunc;
 };
 
+struct InputAssemblyState final
+{
+    TopologyType topology : 7       = TopologyType::TriangleList;
+    bool primitiveRestartEnable : 1 = false;
+};
+
 struct VertexAttributeDesc final
 {
     uint32_t byteOffset;
@@ -198,22 +204,20 @@ inline ColorComponent operator~(ColorComponent a)
 
 struct BlendState final
 {
-    bool enable = false;
-    BlendOp colorBlendOp = BlendOp::Add;
+    bool enable                = false;
+    BlendOp colorBlendOp       = BlendOp::Add;
     BlendFactor srcColorFactor = BlendFactor::One;
     BlendFactor dstColorFactor = BlendFactor::Zero;
-    BlendOp alphaBlendOp = BlendOp::Add;
+    BlendOp alphaBlendOp       = BlendOp::Add;
     BlendFactor srcAlphaFactor = BlendFactor::One;
     BlendFactor dstAlphaFactor = BlendFactor::Zero;
 
     ColorComponent colorWriteMask = ColorComponent::R | ColorComponent::G | ColorComponent::B | ColorComponent::A;
 };
 
-struct PipelineDesc final
+struct GraphicsPipelineDesc final
 {
-    const char* debugName = "Noname Pipeline";
-
-    TopologyType topology = TopologyType::TriangleList;
+    const char* debugName = "Noname Graphics Pipeline";
 
     // Vertex shader
     ShaderBinding VS;
@@ -235,7 +239,10 @@ struct PipelineDesc final
     ShaderBinding MS;
 
     std::vector<BindGroupHandle> bindGroups;
+
     std::vector<VertexBufferBinding> vertexBufferBindings;
+
+    InputAssemblyState assemblyState;
 
     ViewPortState viewPortState;
     ScissorState scissorState;

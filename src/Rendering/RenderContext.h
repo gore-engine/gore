@@ -42,7 +42,7 @@ public:
 
     SamplerHandle createSampler(const SamplerDesc& desc);
     BindGroupHandle createBindGroup(const BindGroupDesc& desc);
-    PipelineHandle createPipeline(const PipelineDesc& desc);
+    PipelineHandle createPipeline(const GraphicsPipelineDesc& desc);
     ShaderModuleHandle createShaderModule(ShaderModuleDesc&& desc);
     const ShaderModuleDesc& getShaderModuleDesc(ShaderModuleHandle handle); 
     const ShaderModule& getShaderModule(ShaderModuleHandle handle);
