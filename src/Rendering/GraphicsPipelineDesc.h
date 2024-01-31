@@ -217,7 +217,7 @@ struct BlendState final
 
 struct GraphicsPipelineDesc final
 {
-    const char* debugName = "Noname Graphics Pipeline";
+    const char* debugName = "Noname Graphics GraphicsPipeline";
 
     // Vertex shader
     ShaderBinding VS;
