@@ -13,7 +13,7 @@
 
 #include "GraphicsPipelineDesc.h"
 #include "Pipeline.h"
-
+#include "RenderPass.h"
 #include "Pool.h"
 
 namespace gore
@@ -33,6 +33,12 @@ public:
     RenderContext(const gfx::Device* device);
     ~RenderContext();
 
+    // RenderPass
+    RenderPass* CreateRenderPass(const RenderPassDesc& desc);
+    RenderPass& GetCurrentRenderPass();
+    void DestroyRenderPass(RenderPass* renderPass);
+    void BeginRenderPass(RenderPass* renderPass);
+    void EndRenderPass();
     TextureHandle createTexture(const TextureDesc& desc);
 
     BufferHandle CreateBuffer(BufferDesc&& desc);
