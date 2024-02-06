@@ -39,6 +39,13 @@ public:
     void DestroyRenderPass(RenderPass* renderPass);
     void BeginRenderPass(RenderPass* renderPass);
     void EndRenderPass();
+
+    // Draw Call
+    void DrawMesh(int instanceCount = 1, int firstInstance = 0);
+    void DrawMeshIndirect();
+    void DrawProcedural();
+    void DrawProceduralIndirect();
+
     TextureHandle createTexture(const TextureDesc& desc);
 
     BufferHandle CreateBuffer(BufferDesc&& desc);
