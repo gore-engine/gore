@@ -4,6 +4,9 @@
 #include "GraphicsFormat.h"
 #include "BindGroup.h"
 #include "BindLayout.h"
+
+#include "Math/Rect.h"
+
 #include <vector>
 
 namespace gore
@@ -129,18 +132,14 @@ static_assert(sizeof(RasterizationState) == 2, "RasterizationState is too big");
 
 struct ViewPortState final
 {
-    int x;
-    int y;
-    int width;
-    int height;
+    int count       = 1;
+    Rect* viewPorts = nullptr;
 };
 
 struct ScissorState final
 {
-    int x;
-    int y;
-    int width;
-    int height;
+    int count      = 1;
+    Rect* scissors = nullptr;
 };
 
 enum class BlendFactor : uint8_t
