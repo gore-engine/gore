@@ -635,8 +635,35 @@ void RenderSystem::CreateGlobalDescriptorSets()
     );
 }
 
+static std::vector<char> LoadShaderBytecode(const std::string& name, const std::string& entryPoint)
+{
+    static const std::filesystem::path kShaderSourceFolder = FileSystem::GetResourceFolder() / "Shaders";
+
+    auto getShaderFile = [&name](vk::ShaderStageFlagBits stage) -> std::filesystem::path
+    {
+        std::filesystem::path path(name);
+        auto shaderPath = kShaderSourceFolder / path.parent_path() / path.filename().stem();
+        shaderPath += std::string(".") + (stage == vk::ShaderStageFlagBits::eVertex ? "vert" : "frag") + ".spv";
+        return shaderPath;
+    };
+
+    std::filesystem::path shaderPath = getShaderFile(vk::ShaderStageFlagBits::eVertex);
+
+    return FileSystem::ReadAllBinary(shaderPath);
+}
+
 void RenderSystem::CreatePipeline()
 {
+    std::vector<char> vertBytecode = LoadShaderBytecode("sample/cube", "vs");
+    std::vector<char> fragBytecode = LoadShaderBytecode("sample/cube", "ps");
+
+    GraphicsPipelineHandle pipelineHandle = m_RenderContext->createGraphicsPipeline(
+        {
+            .VS{.byteCode = reinterpret_cast<uint8_t*>(vertBytecode.data()), .byteSize = static_cast<uint32_t>(vertBytecode.size()), .entryFunc = "main"},
+            .PS{.byteCode = reinterpret_cast<uint8_t*>(fragBytecode.data()), .byteSize = static_cast<uint32_t>(fragBytecode.size()), .entryFunc = "main"},
+        }
+    );
+
     // TODO: this is temporary now!
     vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstant));
     std::vector<vk::PushConstantRange> pushConstantRanges = {pushConstantRange};
