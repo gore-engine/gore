@@ -4,6 +4,7 @@
 #include "GraphicsFormat.h"
 #include "BindGroup.h"
 #include "BindLayout.h"
+#include "PipelineLayout.h"
 
 #include "Math/Rect.h"
 
@@ -39,7 +40,8 @@ enum class CullMode : uint8_t
 
 struct ShaderBinding final
 {
-    ShaderModuleHandle smHandle;
+    uint8_t* byteCode;
+    uint32_t byteSize;
     const char* entryFunc;
 };
 
@@ -124,7 +126,7 @@ struct RasterizationState final
     bool rasterizerDiscard : 1     = false;
     bool frontCounterClockwise : 1 = false;
     bool depthBiasEnable : 1       = false;
-    CullMode cullMode : 4          = CullMode::None;
+    CullMode cullMode : 4          = CullMode::Back;
     PolygonMode polygonMode : 8    = PolygonMode::Fill;
 };
 
@@ -230,7 +232,7 @@ struct GraphicsPipelineDesc final
     ShaderBinding DS;
     */
     // Compute shader
-    ShaderBinding CS;
+    // ShaderBinding CS;
 
     // Amplification shader
     ShaderBinding AS;
@@ -252,5 +254,7 @@ struct GraphicsPipelineDesc final
     DepthStencilState depthStencilState;
     RasterizationState renderState;
     BlendState blendState;
+
+    PipelineLayout pipelineLayout;
 };
 } // namespace gore
