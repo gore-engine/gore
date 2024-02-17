@@ -49,6 +49,23 @@ void RenderContext::destroyShaderModule(ShaderModuleHandle handle)
     m_ShaderModulePool.destroy(handle);
 }
 
+GraphicsPipelineHandle RenderContext::createGraphicsPipeline(const GraphicsPipelineDesc& desc)
+{
+    vk::raii::ShaderModule vs = m_DevicePtr->Get().createShaderModule(vk::ShaderModuleCreateInfo(
+        {},
+        desc.VS.byteSize,
+        reinterpret_cast<const uint32_t*>(desc.VS.byteCode)));
+
+    vk::raii::ShaderModule ps = m_DevicePtr->Get().createShaderModule(vk::ShaderModuleCreateInfo(
+        {},
+        desc.PS.byteSize,
+        reinterpret_cast<const uint32_t*>(desc.PS.byteCode)));
+
+    
+
+    return GraphicsPipelineHandle();
+}
+
 BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
 {
     using namespace gfx;
