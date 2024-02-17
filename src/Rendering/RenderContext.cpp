@@ -51,6 +51,8 @@ void RenderContext::destroyShaderModule(ShaderModuleHandle handle)
 
 GraphicsPipelineHandle RenderContext::createGraphicsPipeline(const GraphicsPipelineDesc& desc)
 {
+    using namespace std;
+
     vk::raii::ShaderModule vs = m_DevicePtr->Get().createShaderModule(vk::ShaderModuleCreateInfo(
         {},
         desc.VS.byteSize,
@@ -61,7 +63,22 @@ GraphicsPipelineHandle RenderContext::createGraphicsPipeline(const GraphicsPipel
         desc.PS.byteSize,
         reinterpret_cast<const uint32_t*>(desc.PS.byteCode)));
 
-    
+    vector<vk::PipelineShaderStageCreateInfo> shaderStages = {
+        vk::PipelineShaderStageCreateInfo(
+            {},
+            vk::ShaderStageFlagBits::eVertex,
+            *vs,
+            desc.VS.entryFunc),
+        vk::PipelineShaderStageCreateInfo(
+            {},
+            vk::ShaderStageFlagBits::eFragment,
+            *ps,
+            desc.PS.entryFunc)};
+
+    vk::GraphicsPipelineCreateInfo createInfo;
+    createInfo.stageCount = 2;
+    createInfo.pStages = shaderStages.data();
+
 
     return GraphicsPipelineHandle();
 }
