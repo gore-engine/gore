@@ -2,6 +2,36 @@
 
 namespace gore::vulkanHelper
 {
+vk::Format GetVkFormat(GraphicsFormat format)
+{
+    switch (format)
+    {
+        case GraphicsFormat::R11G11B10_UNORM:
+            return vk::Format::eB10G11R11UfloatPack32;
+        case GraphicsFormat::RGB32_FLOAT:
+            return vk::Format::eR32G32B32Sfloat;
+        case GraphicsFormat::RGB8_SRGB:
+            return vk::Format::eR8G8B8Srgb;
+        case GraphicsFormat::RGB8_UNORM:
+            return vk::Format::eR8G8B8Unorm;
+        case GraphicsFormat::RGBA8_SRGB:
+            return vk::Format::eR8G8B8A8Srgb;
+        case GraphicsFormat::RGBA8_UNORM:
+            return vk::Format::eR8G8B8A8Unorm;
+        case GraphicsFormat::RGB16_FLOAT:
+            return vk::Format::eR16G16B16Sfloat;
+        case GraphicsFormat::RG32_FLOAT:
+            return vk::Format::eR32G32Sfloat;
+        case GraphicsFormat::RG16_FLOAT:
+            return vk::Format::eR16G16Sfloat;
+        case GraphicsFormat::D32_FLOAT:
+            return vk::Format::eD32Sfloat;
+        default:
+            std::runtime_error("Unknown format");
+            return;
+    }
+}
+
 VkBufferCreateInfo GetVkBufferCreateInfo(BufferDesc& desc)
 {
     VkBufferUsageFlags flags = 0;
@@ -62,6 +92,40 @@ VmaAllocationCreateInfo GetVmaAllocationCreateInfo(BufferDesc& desc)
     allocInfo.usage                   = memUsage;
 
     return allocInfo;
+}
+
+
+std::pair<std::vector<vk::VertexInputAttributeDescription>, std::vector<vk::VertexInputBindingDescription>> GetVkVertexInputState(const std::vector<VertexBufferBinding>& vertexBufferBindings)
+{
+    using namespace std;
+
+    const int bindingSize = vertexBufferBindings.size();
+    int attributeSize     = 0;
+    for (auto& binding : vertexBufferBindings)
+    {
+        attributeSize += binding.attributes.size();
+    }
+
+    vector<vk::VertexInputAttributeDescription> attributeDescriptions(attributeSize);
+    vector<vk::VertexInputBindingDescription> bindingDescriptions(bindingSize);
+
+    // TODO: Parrallelize this
+    for (int bindingIndex = 0; bindingIndex < bindingSize; bindingIndex++)
+    {
+        bindingDescriptions[bindingIndex].binding   = bindingIndex;
+        bindingDescriptions[bindingIndex].stride    = vertexBufferBindings[bindingIndex].byteStride;
+        bindingDescriptions[bindingIndex].inputRate = vk::VertexInputRate::eVertex;
+
+        for (int attributeIndex = 0; attributeIndex < vertexBufferBindings[bindingIndex].attributes.size(); attributeIndex++)
+        {
+            attributeDescriptions[bindingIndex * attributeIndex + attributeIndex].binding  = bindingIndex;
+            attributeDescriptions[bindingIndex * attributeIndex + attributeIndex].location = attributeIndex;
+            attributeDescriptions[bindingIndex * attributeIndex + attributeIndex].format   = GetVkFormat(vertexBufferBindings[bindingIndex].attributes[attributeIndex].format);
+            attributeDescriptions[bindingIndex * attributeIndex + attributeIndex].offset   = vertexBufferBindings[bindingIndex].attributes[attributeIndex].byteOffset;
+        }
+    }
+
+    return std::pair<std::vector<vk::VertexInputAttributeDescription>, std::vector<vk::VertexInputBindingDescription>>();
 }
 
 } // namespace gore::vulkanHelper
