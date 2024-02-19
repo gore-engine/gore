@@ -659,8 +659,21 @@ void RenderSystem::CreatePipeline()
 
     GraphicsPipelineHandle pipelineHandle = m_RenderContext->createGraphicsPipeline(
         {
-            .VS{.byteCode = reinterpret_cast<uint8_t*>(vertBytecode.data()), .byteSize = static_cast<uint32_t>(vertBytecode.size()), .entryFunc = "main"},
-            .PS{.byteCode = reinterpret_cast<uint8_t*>(fragBytecode.data()), .byteSize = static_cast<uint32_t>(fragBytecode.size()), .entryFunc = "main"},
+            .VS 
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(vertBytecode.data()),
+                .byteSize = static_cast<uint32_t>(vertBytecode.size()), 
+                .entryFunc = "vs"
+            },
+            .PS
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(fragBytecode.data()), 
+                .byteSize = static_cast<uint32_t>(fragBytecode.size()), 
+                .entryFunc = "ps"
+            },
+            .renderPass{ *m_RenderPass },
+            .pipelineLayout{ *m_PipelineLayout },
+            .subpassIndex{ 0 }
         }
     );
 

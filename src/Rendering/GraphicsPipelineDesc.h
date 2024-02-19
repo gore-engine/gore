@@ -265,6 +265,8 @@ struct GraphicsPipelineDesc final
     RasterizationState rasterizeState;
     BlendState blendState;
 
-    PipelineLayout pipelineLayout;
+    VkPipelineLayout pipelineLayout;
+    VkRenderPass renderPass;
+    uint32_t subpassIndex;
 };
 } // namespace gore
