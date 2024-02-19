@@ -132,10 +132,20 @@ struct RasterizationState final
 
 static_assert(sizeof(RasterizationState) == 2, "RasterizationState is too big");
 
+struct ViewPort final
+{
+    float x;
+    float y;
+    float width;
+    float height;
+    float minDepth;
+    float maxDepth;
+};
+
 struct ViewPortState final
 {
-    int count       = 1;
-    Rect* viewPorts = nullptr;
+    int count           = 1;
+    ViewPort* viewPorts = nullptr;
 };
 
 struct ScissorState final
@@ -252,7 +262,7 @@ struct GraphicsPipelineDesc final
 
     MultisampleState multisampleState;
     DepthStencilState depthStencilState;
-    RasterizationState renderState;
+    RasterizationState rasterizeState;
     BlendState blendState;
 
     PipelineLayout pipelineLayout;

@@ -125,7 +125,98 @@ std::pair<std::vector<vk::VertexInputAttributeDescription>, std::vector<vk::Vert
         }
     }
 
-    return std::pair<std::vector<vk::VertexInputAttributeDescription>, std::vector<vk::VertexInputBindingDescription>>();
+    return {attributeDescriptions, bindingDescriptions};
+}
+
+vk::PipelineInputAssemblyStateCreateInfo GetVkInputAssemblyState(const GraphicsPipelineDesc& desc)
+{
+    auto& assemblyState = desc.assemblyState;
+
+    vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList;
+    switch (assemblyState.topology)
+    {
+        case TopologyType::Point:
+            topology = vk::PrimitiveTopology::ePointList;
+            break;
+        case TopologyType::Line:
+            topology = vk::PrimitiveTopology::eLineList;
+            break;
+        case TopologyType::TriangleList:
+            topology = vk::PrimitiveTopology::eTriangleList;
+            break;
+        default:
+            break;
+    }
+
+    return vk::PipelineInputAssemblyStateCreateInfo({}, topology, assemblyState.primitiveRestartEnable);
+}
+
+vk::PipelineViewportStateCreateInfo GetVkViewportState(const GraphicsPipelineDesc& desc)
+{
+    int viewPortCount   = desc.viewPortState.count;
+    ViewPort* viewPorts = desc.viewPortState.viewPorts;
+
+    int scissorCount = desc.scissorState.count;
+    Rect* scissors   = desc.scissorState.scissors;
+
+    return vk::PipelineViewportStateCreateInfo(
+        {},
+        viewPortCount,
+        reinterpret_cast<vk::Viewport*>(viewPorts),
+        scissorCount,
+        reinterpret_cast<vk::Rect2D*>(scissors));
+}
+
+vk::PipelineRasterizationStateCreateInfo GetVkRasterizeState(const GraphicsPipelineDesc& desc)
+{
+    auto& rasterizeState = desc.rasterizeState;
+
+    vk::PolygonMode polygonMode = vk::PolygonMode::eFill;
+    switch (rasterizeState.polygonMode)
+    {
+        case PolygonMode::Fill:
+            polygonMode = vk::PolygonMode::eFill;
+            break;
+        case PolygonMode::Line:
+            polygonMode = vk::PolygonMode::eLine;
+            break;
+        case PolygonMode::Point:
+            polygonMode = vk::PolygonMode::ePoint;
+            break;
+        default:
+            break;
+    }
+
+    vk::CullModeFlags cullMode = vk::CullModeFlagBits::eNone;
+    switch (rasterizeState.cullMode)
+    {
+        case CullMode::None:
+            cullMode = vk::CullModeFlagBits::eNone;
+            break;
+        case CullMode::Front:
+            cullMode = vk::CullModeFlagBits::eFront;
+            break;
+        case CullMode::Back:
+            cullMode = vk::CullModeFlagBits::eBack;
+            break;
+        default:
+            break;
+    }
+
+    vk::FrontFace frontFace = rasterizeState.frontCounterClockwise ? vk::FrontFace::eCounterClockwise : vk::FrontFace::eClockwise;
+
+    return vk::PipelineRasterizationStateCreateInfo(
+        {},
+        rasterizeState.depthClamp,
+        rasterizeState.rasterizerDiscard,
+        polygonMode,
+        cullMode,
+        frontFace,
+        rasterizeState.depthBiasEnable,
+        0.0f,
+        1.0f,
+        1.0f,
+        1.0f);
 }
 
 } // namespace gore::vulkanHelper

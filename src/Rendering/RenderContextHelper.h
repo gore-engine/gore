@@ -15,4 +15,6 @@ namespace gore::vulkanHelper
     VmaAllocationCreateInfo GetVmaAllocationCreateInfo(BufferDesc& desc);
 
     std::pair<std::vector<vk::VertexInputAttributeDescription>, std::vector<vk::VertexInputBindingDescription>> GetVkVertexInputState(const std::vector<VertexBufferBinding>& vertexBufferBindings);
+    vk::PipelineInputAssemblyStateCreateInfo GetVkInputAssemblyState(const GraphicsPipelineDesc& desc);
+    vk::PipelineViewportStateCreateInfo GetVkViewportState(const GraphicsPipelineDesc& desc);
 } // namespace gore

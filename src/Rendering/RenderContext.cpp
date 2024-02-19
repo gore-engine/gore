@@ -77,8 +77,20 @@ GraphicsPipelineHandle RenderContext::createGraphicsPipeline(const GraphicsPipel
 
     vk::GraphicsPipelineCreateInfo createInfo;
     createInfo.stageCount = 2;
-    createInfo.pStages = shaderStages.data();
+    createInfo.pStages    = shaderStages.data();
 
+    auto [attributes, bindings] = vulkanHelper::GetVkVertexInputState(desc.vertexBufferBindings);
+    vk::PipelineVertexInputStateCreateInfo vertexInputState({}, bindings, attributes, nullptr);
+    createInfo.pVertexInputState = &vertexInputState;
+    
+    vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState = vulkanHelper::GetVkInputAssemblyState(desc);
+    createInfo.pInputAssemblyState = &inputAssemblyState;
+
+    vk::PipelineViewportStateCreateInfo viewportState = vulkanHelper::GetVkViewportState(desc);
+    createInfo.pViewportState = &viewportState;
+
+    vk::PipelineRasterizationStateCreateInfo rasterizeState = vulkanHelper::GetVkRasterizeState(desc);
+    createInfo.pRasterizationState = &rasterizeState;
 
     return GraphicsPipelineHandle();
 }
@@ -123,7 +135,7 @@ const Buffer& RenderContext::GetBuffer(BufferHandle handle)
 void RenderContext::DestroyBuffer(BufferHandle handle)
 {
     using namespace gfx;
-    
+
     auto buffer = m_BufferPool.getObject(handle).vkBuffer;
 
     vmaDestroyBuffer(m_DevicePtr->GetVmaAllocator(), buffer.vkBuffer, buffer.vmaAllocation);
