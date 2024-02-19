@@ -28,7 +28,7 @@ vk::Format GetVkFormat(GraphicsFormat format)
             return vk::Format::eD32Sfloat;
         default:
             std::runtime_error("Unknown format");
-            return;
+            return vk::Format::eR8G8B8A8Srgb;
     }
 }
 
