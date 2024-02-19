@@ -9,12 +9,15 @@
 #include <vector>
 namespace gore::vulkanHelper
 {
-    vk::Format GetVkFormat(GraphicsFormat format);
+vk::Format GetVkFormat(GraphicsFormat format);
 
-    VkBufferCreateInfo GetVkBufferCreateInfo(BufferDesc& desc);
-    VmaAllocationCreateInfo GetVmaAllocationCreateInfo(BufferDesc& desc);
+VkBufferCreateInfo GetVkBufferCreateInfo(BufferDesc& desc);
+VmaAllocationCreateInfo GetVmaAllocationCreateInfo(BufferDesc& desc);
 
-    std::pair<std::vector<vk::VertexInputAttributeDescription>, std::vector<vk::VertexInputBindingDescription>> GetVkVertexInputState(const std::vector<VertexBufferBinding>& vertexBufferBindings);
-    vk::PipelineInputAssemblyStateCreateInfo GetVkInputAssemblyState(const GraphicsPipelineDesc& desc);
-    vk::PipelineViewportStateCreateInfo GetVkViewportState(const GraphicsPipelineDesc& desc);
-} // namespace gore
+/// What kind of vertex input state we need to create a pipeline?
+/// To simplify the process, we will always return only one verterInputBindingDescription and one vertexInputAttributeDescription array.
+/// Maybe, multiple bindings and attributes are better for mobile devices, but for now, we will keep it simple.
+std::pair<std::vector<vk::VertexInputAttributeDescription>, std::vector<vk::VertexInputBindingDescription>> GetVkVertexInputState(const std::vector<VertexBufferBinding>& vertexBufferBindings);
+vk::PipelineInputAssemblyStateCreateInfo GetVkInputAssemblyState(const GraphicsPipelineDesc& desc);
+vk::PipelineViewportStateCreateInfo GetVkViewportState(const GraphicsPipelineDesc& desc);
+} // namespace gore::vulkanHelper
