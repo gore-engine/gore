@@ -7,7 +7,7 @@
 #include "GraphicsPipelineDesc.h"
 
 #include <vector>
-namespace gore::vulkanHelper
+namespace gore::VulkanHelper
 {
 vk::Format GetVkFormat(GraphicsFormat format);
 
@@ -21,4 +21,4 @@ std::pair<std::vector<vk::VertexInputAttributeDescription>, std::vector<vk::Vert
 vk::PipelineInputAssemblyStateCreateInfo GetVkInputAssemblyState(const GraphicsPipelineDesc& desc);
 vk::PipelineViewportStateCreateInfo GetVkViewportState(const GraphicsPipelineDesc& desc);
 vk::PipelineRasterizationStateCreateInfo GetVkRasterizeState(const GraphicsPipelineDesc& desc);
-} // namespace gore::vulkanHelper
+} // namespace gore::VulkanHelper

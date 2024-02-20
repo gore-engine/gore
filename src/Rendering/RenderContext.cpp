@@ -101,9 +101,9 @@ BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
 
     uint32_t byteSize = desc.byteSize;
 
-    VkBufferCreateInfo bufferInfo = vulkanHelper::GetVkBufferCreateInfo(desc);
+    VkBufferCreateInfo bufferInfo = VulkanHelper::GetVkBufferCreateInfo(desc);
 
-    VmaAllocationCreateInfo allocCreateInfo = vulkanHelper::GetVmaAllocationCreateInfo(desc);
+    VmaAllocationCreateInfo allocCreateInfo = VulkanHelper::GetVmaAllocationCreateInfo(desc);
 
     VulkanBuffer buffer;
     buffer.vmaAllocator = m_DevicePtr->GetVmaAllocator();

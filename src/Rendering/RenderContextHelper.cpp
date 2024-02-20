@@ -1,6 +1,6 @@
 #include "RenderContextHelper.h"
 
-namespace gore::vulkanHelper
+namespace gore::VulkanHelper
 {
 vk::Format GetVkFormat(GraphicsFormat format)
 {
@@ -219,4 +219,3 @@ vk::PipelineRasterizationStateCreateInfo GetVkRasterizeState(const GraphicsPipel
         1.0f);
 }
 
-} // namespace gore::vulkanHelper
