@@ -61,7 +61,7 @@ public:
     const ShaderModule& getShaderModule(ShaderModuleHandle handle);
     void destroyShaderModule(ShaderModuleHandle handle);
 
-    GraphicsPipelineHandle createGraphicsPipeline(const GraphicsPipelineDesc& desc);
+    GraphicsPipelineHandle createGraphicsPipeline(GraphicsPipelineDesc&& desc);
 
     void destroyTexture(TextureHandle handle);
     void destroySampler(SamplerHandle handle);
@@ -73,9 +73,11 @@ public:
 private:
     using ShaderModulePool = Pool<ShaderModuleDesc, ShaderModule>;
     using BufferPool       = Pool<BufferDesc, Buffer>;
+    using GraphicsPipelinePool = Pool<GraphicsPipelineDesc, GraphicsPipeline>;
 
     ShaderModulePool m_ShaderModulePool;
     BufferPool m_BufferPool;
+    GraphicsPipelinePool m_GraphicsPipelinePool;
 
     const gfx::Device* m_DevicePtr;
 };

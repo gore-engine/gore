@@ -1,5 +1,7 @@
 #include "RenderContextHelper.h"
 
+#include <array>
+
 namespace gore::VulkanHelper
 {
 inline vk::StencilOpState GetVkStencilOpState(const StencilOpState& state)
@@ -167,7 +169,7 @@ vk::PipelineViewportStateCreateInfo GetVkViewportState(const GraphicsPipelineDes
 
 vk::PipelineRasterizationStateCreateInfo GetVkRasterizeState(const GraphicsPipelineDesc& desc)
 {
-    auto& rasterizeState = desc.rasterizeState;   
+    auto& rasterizeState = desc.rasterizeState;
 
     return vk::PipelineRasterizationStateCreateInfo(
         {},
@@ -244,6 +246,16 @@ vk::PipelineColorBlendStateCreateInfo GetVkColorBlendState(const GraphicsPipelin
         colorBlendState.attachments.size(),
         reinterpret_cast<const vk::PipelineColorBlendAttachmentState*>(colorBlendState.attachments.data()),
         {1.0f, 1.0f, 1.0f, 1.0f});
+}
+
+static std::vector<vk::DynamicState> s_DynamicStates = {vk::DynamicState::eViewport, vk::DynamicState::eScissor, vk::DynamicState::eLineWidth, vk::DynamicState::eDepthBias, vk::DynamicState::eBlendConstants, vk::DynamicState::eDepthBounds, vk::DynamicState::eStencilCompareMask, vk::DynamicState::eStencilWriteMask, vk::DynamicState::eStencilReference};
+
+vk::PipelineDynamicStateCreateInfo GetVkDynamicState(const GraphicsPipelineDesc& desc)
+{
+    return vk::PipelineDynamicStateCreateInfo(
+        {},
+        s_DynamicStates.size(),
+        s_DynamicStates.data());
 }
 
 } // namespace gore::VulkanHelper

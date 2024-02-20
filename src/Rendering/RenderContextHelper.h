@@ -79,6 +79,19 @@ inline vk::LogicOp GetVkLogicOp(LogicOp op)
     return static_cast<vk::LogicOp>(op);
 }
 
+inline vk::PipelineColorBlendAttachmentState GetVkColorBlendAttachmentState(const ColorAttachmentBlendState& state)
+{
+    return vk::PipelineColorBlendAttachmentState(
+        state.enable,
+        GetVkBlendFactor(state.srcColorFactor),
+        GetVkBlendFactor(state.dstColorFactor),
+        GetVkBlendOp(state.colorBlendOp),
+        GetVkBlendFactor(state.srcAlphaFactor),
+        GetVkBlendFactor(state.dstAlphaFactor),
+        GetVkBlendOp(state.alphaBlendOp),
+        static_cast<vk::ColorComponentFlagBits>(state.colorWriteMask));
+}
+
 vk::Format GetVkFormat(GraphicsFormat format);
 
 VkBufferCreateInfo GetVkBufferCreateInfo(BufferDesc& desc);

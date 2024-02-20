@@ -635,27 +635,36 @@ void RenderSystem::CreateGlobalDescriptorSets()
     );
 }
 
-static std::vector<char> LoadShaderBytecode(const std::string& name, const std::string& entryPoint)
+static std::vector<char> LoadShaderBytecode(const std::string& name, const ShaderStage& stage, const std::string& entryPoint)
 {
     static const std::filesystem::path kShaderSourceFolder = FileSystem::GetResourceFolder() / "Shaders";
 
-    auto getShaderFile = [&name](vk::ShaderStageFlagBits stage) -> std::filesystem::path
+    auto getShaderFile = [&name](ShaderStage stage) -> std::filesystem::path
     {
         std::filesystem::path path(name);
         auto shaderPath = kShaderSourceFolder / path.parent_path() / path.filename().stem();
-        shaderPath += std::string(".") + (stage == vk::ShaderStageFlagBits::eVertex ? "vert" : "frag") + ".spv";
+        shaderPath += std::string(".") + (stage == ShaderStage::Vertex ? "vert" : "frag") + ".spv";
         return shaderPath;
     };
 
-    std::filesystem::path shaderPath = getShaderFile(vk::ShaderStageFlagBits::eVertex);
+    std::filesystem::path shaderPath = getShaderFile(stage);
 
     return FileSystem::ReadAllBinary(shaderPath);
 }
 
 void RenderSystem::CreatePipeline()
 {
-    std::vector<char> vertBytecode = LoadShaderBytecode("sample/cube", "vs");
-    std::vector<char> fragBytecode = LoadShaderBytecode("sample/cube", "ps");
+    std::vector<char> vertBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Vertex, "vs");
+    std::vector<char> fragBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Fragment, "ps");
+
+    // TODO: this is temporary now!
+    vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstant));
+    std::vector<vk::PushConstantRange> pushConstantRanges = {pushConstantRange};
+
+    // TODO: change this when we have a working descriptor management system
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, *m_GlobalDescriptorSetLayout, pushConstantRanges);
+
+    m_PipelineLayout = m_Device.Get().createPipelineLayout(pipelineLayoutInfo);
 
     GraphicsPipelineHandle pipelineHandle = m_RenderContext->createGraphicsPipeline(
         {
@@ -673,18 +682,9 @@ void RenderSystem::CreatePipeline()
             },
             .renderPass{ *m_RenderPass },
             .pipelineLayout{ *m_PipelineLayout },
-            .subpassIndex{ 0 }
+            .subpassIndex = 0
         }
     );
-
-    // TODO: this is temporary now!
-    vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstant));
-    std::vector<vk::PushConstantRange> pushConstantRanges = {pushConstantRange};
-
-    // TODO: change this when we have a working descriptor management system
-    vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, *m_GlobalDescriptorSetLayout, pushConstantRanges);
-
-    m_PipelineLayout = m_Device.Get().createPipelineLayout(pipelineLayoutInfo);
 
     auto& vertexShaderModuleDesc = m_RenderContext->getShaderModuleDesc(m_CubeVertexShaderHandle);
     auto& vertexShaderModule = m_RenderContext->getShaderModule(m_CubeVertexShaderHandle);

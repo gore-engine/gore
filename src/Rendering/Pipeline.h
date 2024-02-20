@@ -9,17 +9,25 @@ namespace gore
 
 struct Pipeline
 {
+    Pipeline(vk::raii::Pipeline&& inPipeline) :
+        pipeline(std::move(inPipeline))
+    {
+    }
+
     VkPipelineLayout layout;
-    VkPipeline pipeline;
+    vk::raii::Pipeline pipeline;
 };
 
 struct GraphicsPipeline final : Pipeline
 {
+    using Pipeline::Pipeline;
+
     VkRenderPass renderPass;
 };
 
 struct ComputePipeline final : Pipeline
 {
+    using Pipeline::Pipeline;
 };
 
 using GraphicsPipelineHandle = Handle<GraphicsPipeline>;

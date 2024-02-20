@@ -49,7 +49,7 @@ void RenderContext::destroyShaderModule(ShaderModuleHandle handle)
     m_ShaderModulePool.destroy(handle);
 }
 
-GraphicsPipelineHandle RenderContext::createGraphicsPipeline(const GraphicsPipelineDesc& desc)
+GraphicsPipelineHandle RenderContext::createGraphicsPipeline(GraphicsPipelineDesc&& desc)
 {
     using namespace std;
 
@@ -78,7 +78,7 @@ GraphicsPipelineHandle RenderContext::createGraphicsPipeline(const GraphicsPipel
 
     auto [attributes, bindings] = VulkanHelper::GetVkVertexInputState(desc.vertexBufferBindings);
     vk::PipelineVertexInputStateCreateInfo vertexInputState({}, bindings, attributes, nullptr);
-    
+
     vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState = VulkanHelper::GetVkInputAssemblyState(desc);
 
     vk::PipelineViewportStateCreateInfo viewportState = VulkanHelper::GetVkViewportState(desc);
@@ -89,7 +89,22 @@ GraphicsPipelineHandle RenderContext::createGraphicsPipeline(const GraphicsPipel
 
     vk::PipelineDepthStencilStateCreateInfo depthStencilState = VulkanHelper::GetVkDepthStencilState(desc);
 
-    vk::PipelineColorBlendStateCreateInfo colorBlendState = VulkanHelper::GetVkColorBlendState(desc);
+    std::vector<vk::PipelineColorBlendAttachmentState> vkColorBlendAttachments(desc.blendState.attachments.size());
+    for (int i = 0; i < desc.blendState.attachments.size(); i++)
+    {
+        vkColorBlendAttachments[i] = VulkanHelper::GetVkColorBlendAttachmentState(desc.blendState.attachments[i]);
+    }
+
+    vk::PipelineColorBlendStateCreateInfo colorBlendState = {
+        {},
+        desc.blendState.enable,
+        VulkanHelper::GetVkLogicOp(desc.blendState.logicOp),
+        static_cast<uint32_t>(vkColorBlendAttachments.size()),
+        vkColorBlendAttachments.data(),
+        {1.0f, 1.0f, 1.0f, 1.0f}
+    };
+
+    vk::PipelineDynamicStateCreateInfo dynamicState = VulkanHelper::GetVkDynamicState(desc);
 
     vk::GraphicsPipelineCreateInfo createInfo;
     createInfo.stageCount          = 2;
@@ -101,8 +116,19 @@ GraphicsPipelineHandle RenderContext::createGraphicsPipeline(const GraphicsPipel
     createInfo.pMultisampleState   = &multisampleState;
     createInfo.pDepthStencilState  = &depthStencilState;
     createInfo.pColorBlendState    = &colorBlendState;
+    createInfo.pDynamicState       = &dynamicState;
 
-    return GraphicsPipelineHandle();
+    createInfo.layout     = desc.pipelineLayout;
+    createInfo.renderPass = desc.renderPass;
+    createInfo.subpass    = desc.subpassIndex;
+
+    GraphicsPipeline graphicsPipeline(std::move(m_DevicePtr->Get().createGraphicsPipeline(nullptr, createInfo)));
+    graphicsPipeline.renderPass = desc.renderPass;
+    graphicsPipeline.layout     = desc.pipelineLayout;
+
+    return m_GraphicsPipelinePool.create(
+        std::move(desc),
+        std::move(graphicsPipeline));
 }
 
 BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)

@@ -295,16 +295,16 @@ struct GraphicsPipelineDesc final
 
     InputAssemblyState assemblyState;
 
-    ViewPortState viewPortState;
-    ScissorState scissorState;
+    ViewPortState viewPortState = {};
+    ScissorState scissorState   = {};
 
-    MultisampleState multisampleState;
-    DepthStencilState depthStencilState;
-    RasterizationState rasterizeState;
-    BlendState blendState;
+    MultisampleState multisampleState   = {};
+    DepthStencilState depthStencilState = {};
+    RasterizationState rasterizeState   = {};
+    BlendState blendState               = {};
 
-    VkPipelineLayout pipelineLayout;
-    VkRenderPass renderPass;
-    uint32_t subpassIndex;
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    VkRenderPass renderPass         = VK_NULL_HANDLE;
+    uint32_t subpassIndex           = 0;
 };
 } // namespace gore
