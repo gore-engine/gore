@@ -109,15 +109,26 @@ enum class StencilOp : uint8_t
     Count
 };
 
+struct StencilOpState final
+{
+    StencilOp failOp      = StencilOp::Replace;
+    StencilOp passOp      = StencilOp::Replace;
+    StencilOp depthFailOp = StencilOp::Replace;
+    CompareOp compareOp   = CompareOp::Never;
+};
+
 struct DepthStencilState final
 {
     // reverse depth buffer
-    CompareOp depthTest          = CompareOp::GreaterEqual;
-    bool depthWrite              = true;
-    bool depthBoundsTestEnable   = false;
-    bool stencilTestEnable       = false;
-    StencilOp frontStencilFailOp = StencilOp::Keep;
-    StencilOp frontStencilPassOp = StencilOp::Keep;
+    bool depthTestEnable       = true;
+    bool depthWriteEnable      = true;
+    CompareOp depthTestOp      = CompareOp::GreaterEqual;
+    bool depthBoundsTestEnable = false;
+    bool stencilTestEnable     = false;
+    StencilOpState front       = StencilOpState();
+    StencilOpState back        = StencilOpState();
+    float minDepthBounds       = 0.0f;
+    float maxDepthBounds       = 0.0f;
 };
 
 struct RasterizationState final

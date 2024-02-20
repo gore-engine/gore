@@ -2,6 +2,25 @@
 
 namespace gore::VulkanHelper
 {
+inline vk::CompareOp GetVkCompareOp(CompareOp op)
+{
+    return static_cast<vk::CompareOp>(op);
+}
+
+inline vk::StencilOpState GetVkStencilOpState(const StencilOpState& state)
+{
+    vk::StencilOpState opState;
+    opState.failOp      = static_cast<vk::StencilOp>(state.failOp);
+    opState.passOp      = static_cast<vk::StencilOp>(state.passOp);
+    opState.depthFailOp = static_cast<vk::StencilOp>(state.depthFailOp);
+    opState.compareOp   = static_cast<vk::CompareOp>(state.compareOp);
+    opState.compareMask = ~0;
+    opState.writeMask   = ~0;
+    opState.reference   = ~0;
+
+    return opState;
+}
+
 vk::Format GetVkFormat(GraphicsFormat format)
 {
     switch (format)
@@ -219,3 +238,54 @@ vk::PipelineRasterizationStateCreateInfo GetVkRasterizeState(const GraphicsPipel
         1.0f);
 }
 
+vk::PipelineMultisampleStateCreateInfo GetVkMultisampleState(const GraphicsPipelineDesc& desc)
+{
+    auto& multisampleState = desc.multisampleState;
+
+    vk::SampleCountFlagBits sampleCount = vk::SampleCountFlagBits::e1;
+    switch (multisampleState.sampleCount)
+    {
+        case MultiSampleCount::One:
+            sampleCount = vk::SampleCountFlagBits::e1;
+            break;
+        case MultiSampleCount::Two:
+            sampleCount = vk::SampleCountFlagBits::e2;
+            break;
+        case MultiSampleCount::Four:
+            sampleCount = vk::SampleCountFlagBits::e4;
+            break;
+        case MultiSampleCount::Eight:
+            sampleCount = vk::SampleCountFlagBits::e8;
+            break;
+        default:
+            break;
+    }
+
+    return vk::PipelineMultisampleStateCreateInfo(
+        {},
+        sampleCount,
+        multisampleState.sampleShadingEnable,
+        multisampleState.minSampleShading,
+        &multisampleState.sampleMask,
+        multisampleState.alphaToCoverageEnable,
+        multisampleState.alphaToOneEnable);
+}
+
+vk::PipelineDepthStencilStateCreateInfo GetVkDepthStencilState(const GraphicsPipelineDesc& desc)
+{
+    auto& depthStencilState = desc.depthStencilState;
+
+    return vk::PipelineDepthStencilStateCreateInfo(
+        {},
+        depthStencilState.depthTestEnable,
+        depthStencilState.depthWriteEnable,
+        GetVkCompareOp(depthStencilState.depthTestOp),
+        depthStencilState.depthBoundsTestEnable,
+        depthStencilState.stencilTestEnable,
+        GetVkStencilOpState(depthStencilState.front),
+        GetVkStencilOpState(depthStencilState.back),
+        depthStencilState.minDepthBounds,
+        depthStencilState.maxDepthBounds);
+}
+
+} // namespace gore::VulkanHelper
