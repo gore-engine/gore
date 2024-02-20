@@ -63,6 +63,27 @@ struct VertexBufferBinding final
     std::vector<VertexAttributeDesc> attributes;
 };
 
+enum class LogicOp : uint8_t
+{
+    Clear,
+    And,
+    AndReverse,
+    Copy,
+    AndInverted,
+    NoOp,
+    Xor,
+    Or,
+    Nor,
+    Equivalent,
+    Invert,
+    OrReverse,
+    CopyInverted,
+    OrInverted,
+    Nand,
+    Set,
+    Count
+};
+
 enum class CompareOp : uint8_t
 {
     Never,
@@ -192,12 +213,11 @@ enum class BlendFactor : uint8_t
 // Symplified version of BlendOp
 enum class BlendOp : uint8_t
 {
-    Add,
-    Subtract,
-    ReverseSubtract,
-    Min,
-    Max,
-    Count
+    Add             = 0,
+    Subtract        = 1,
+    ReverseSubtract = 2,
+    Min             = 3,
+    Max             = 4
 };
 
 enum class ColorComponent : uint8_t
@@ -224,17 +244,24 @@ inline ColorComponent operator~(ColorComponent a)
     return static_cast<ColorComponent>(~static_cast<uint8_t>(a));
 }
 
+struct ColorAttachmentBlendState final
+{
+    bool enable                   = false;
+    LogicOp logicOp               = LogicOp::Clear;
+    BlendFactor srcColorFactor    = BlendFactor::One;
+    BlendFactor dstColorFactor    = BlendFactor::Zero;
+    BlendOp colorBlendOp          = BlendOp::Add;
+    BlendFactor srcAlphaFactor    = BlendFactor::One;
+    BlendFactor dstAlphaFactor    = BlendFactor::Zero;
+    BlendOp alphaBlendOp          = BlendOp::Add;
+    ColorComponent colorWriteMask = ColorComponent::R | ColorComponent::G | ColorComponent::B | ColorComponent::A;
+};
+
 struct BlendState final
 {
-    bool enable                = false;
-    BlendOp colorBlendOp       = BlendOp::Add;
-    BlendFactor srcColorFactor = BlendFactor::One;
-    BlendFactor dstColorFactor = BlendFactor::Zero;
-    BlendOp alphaBlendOp       = BlendOp::Add;
-    BlendFactor srcAlphaFactor = BlendFactor::One;
-    BlendFactor dstAlphaFactor = BlendFactor::Zero;
-
-    ColorComponent colorWriteMask = ColorComponent::R | ColorComponent::G | ColorComponent::B | ColorComponent::A;
+    bool enable                                        = false;
+    LogicOp logicOp                                    = LogicOp::Clear;
+    std::vector<ColorAttachmentBlendState> attachments = {ColorAttachmentBlendState()};
 };
 
 struct GraphicsPipelineDesc final

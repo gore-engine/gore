@@ -64,6 +64,21 @@ inline vk::FrontFace GetVkFrontFace(bool frontCounterClockwise)
     return frontCounterClockwise ? vk::FrontFace::eCounterClockwise : vk::FrontFace::eClockwise;
 }
 
+inline vk::BlendOp GetVkBlendOp(BlendOp op)
+{
+    return static_cast<vk::BlendOp>(op);
+}
+
+inline vk::BlendFactor GetVkBlendFactor(BlendFactor factor)
+{
+    return static_cast<vk::BlendFactor>(factor);
+}
+
+inline vk::LogicOp GetVkLogicOp(LogicOp op)
+{
+    return static_cast<vk::LogicOp>(op);
+}
+
 vk::Format GetVkFormat(GraphicsFormat format);
 
 VkBufferCreateInfo GetVkBufferCreateInfo(BufferDesc& desc);
@@ -78,4 +93,5 @@ vk::PipelineViewportStateCreateInfo GetVkViewportState(const GraphicsPipelineDes
 vk::PipelineRasterizationStateCreateInfo GetVkRasterizeState(const GraphicsPipelineDesc& desc);
 vk::PipelineMultisampleStateCreateInfo GetVkMultisampleState(const GraphicsPipelineDesc& desc);
 vk::PipelineDepthStencilStateCreateInfo GetVkDepthStencilState(const GraphicsPipelineDesc& desc);
+vk::PipelineColorBlendStateCreateInfo GetVkColorBlendState(const GraphicsPipelineDesc& desc);
 } // namespace gore::VulkanHelper

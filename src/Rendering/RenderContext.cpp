@@ -89,14 +89,18 @@ GraphicsPipelineHandle RenderContext::createGraphicsPipeline(const GraphicsPipel
 
     vk::PipelineDepthStencilStateCreateInfo depthStencilState = VulkanHelper::GetVkDepthStencilState(desc);
 
+    vk::PipelineColorBlendStateCreateInfo colorBlendState = VulkanHelper::GetVkColorBlendState(desc);
+
     vk::GraphicsPipelineCreateInfo createInfo;
-    createInfo.stageCount = 2;
-    createInfo.pStages    = shaderStages.data();
-    createInfo.pVertexInputState = &vertexInputState;
+    createInfo.stageCount          = 2;
+    createInfo.pStages             = shaderStages.data();
+    createInfo.pVertexInputState   = &vertexInputState;
     createInfo.pInputAssemblyState = &inputAssemblyState;
-    createInfo.pViewportState = &viewportState;
+    createInfo.pViewportState      = &viewportState;
     createInfo.pRasterizationState = &rasterizeState;
-    createInfo.pMultisampleState = &multisampleState;
+    createInfo.pMultisampleState   = &multisampleState;
+    createInfo.pDepthStencilState  = &depthStencilState;
+    createInfo.pColorBlendState    = &colorBlendState;
 
     return GraphicsPipelineHandle();
 }

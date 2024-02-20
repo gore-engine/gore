@@ -233,4 +233,17 @@ vk::PipelineDepthStencilStateCreateInfo GetVkDepthStencilState(const GraphicsPip
         depthStencilState.maxDepthBounds);
 }
 
+vk::PipelineColorBlendStateCreateInfo GetVkColorBlendState(const GraphicsPipelineDesc& desc)
+{
+    auto& colorBlendState = desc.blendState;
+
+    return vk::PipelineColorBlendStateCreateInfo(
+        {},
+        colorBlendState.enable,
+        GetVkLogicOp(colorBlendState.logicOp),
+        colorBlendState.attachments.size(),
+        reinterpret_cast<const vk::PipelineColorBlendAttachmentState*>(colorBlendState.attachments.data()),
+        {1.0f, 1.0f, 1.0f, 1.0f});
+}
+
 } // namespace gore::VulkanHelper
