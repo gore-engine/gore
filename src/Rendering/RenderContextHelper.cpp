@@ -2,11 +2,6 @@
 
 namespace gore::VulkanHelper
 {
-inline vk::CompareOp GetVkCompareOp(CompareOp op)
-{
-    return static_cast<vk::CompareOp>(op);
-}
-
 inline vk::StencilOpState GetVkStencilOpState(const StencilOpState& state)
 {
     vk::StencilOpState opState;
@@ -151,23 +146,7 @@ vk::PipelineInputAssemblyStateCreateInfo GetVkInputAssemblyState(const GraphicsP
 {
     auto& assemblyState = desc.assemblyState;
 
-    vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList;
-    switch (assemblyState.topology)
-    {
-        case TopologyType::Point:
-            topology = vk::PrimitiveTopology::ePointList;
-            break;
-        case TopologyType::Line:
-            topology = vk::PrimitiveTopology::eLineList;
-            break;
-        case TopologyType::TriangleList:
-            topology = vk::PrimitiveTopology::eTriangleList;
-            break;
-        default:
-            break;
-    }
-
-    return vk::PipelineInputAssemblyStateCreateInfo({}, topology, assemblyState.primitiveRestartEnable);
+    return vk::PipelineInputAssemblyStateCreateInfo({}, GetVkPrimitiveTopology(assemblyState.topology), assemblyState.primitiveRestartEnable);
 }
 
 vk::PipelineViewportStateCreateInfo GetVkViewportState(const GraphicsPipelineDesc& desc)
@@ -188,49 +167,15 @@ vk::PipelineViewportStateCreateInfo GetVkViewportState(const GraphicsPipelineDes
 
 vk::PipelineRasterizationStateCreateInfo GetVkRasterizeState(const GraphicsPipelineDesc& desc)
 {
-    auto& rasterizeState = desc.rasterizeState;
-
-    vk::PolygonMode polygonMode = vk::PolygonMode::eFill;
-    switch (rasterizeState.polygonMode)
-    {
-        case PolygonMode::Fill:
-            polygonMode = vk::PolygonMode::eFill;
-            break;
-        case PolygonMode::Line:
-            polygonMode = vk::PolygonMode::eLine;
-            break;
-        case PolygonMode::Point:
-            polygonMode = vk::PolygonMode::ePoint;
-            break;
-        default:
-            break;
-    }
-
-    vk::CullModeFlags cullMode = vk::CullModeFlagBits::eNone;
-    switch (rasterizeState.cullMode)
-    {
-        case CullMode::None:
-            cullMode = vk::CullModeFlagBits::eNone;
-            break;
-        case CullMode::Front:
-            cullMode = vk::CullModeFlagBits::eFront;
-            break;
-        case CullMode::Back:
-            cullMode = vk::CullModeFlagBits::eBack;
-            break;
-        default:
-            break;
-    }
-
-    vk::FrontFace frontFace = rasterizeState.frontCounterClockwise ? vk::FrontFace::eCounterClockwise : vk::FrontFace::eClockwise;
+    auto& rasterizeState = desc.rasterizeState;   
 
     return vk::PipelineRasterizationStateCreateInfo(
         {},
         rasterizeState.depthClamp,
         rasterizeState.rasterizerDiscard,
-        polygonMode,
-        cullMode,
-        frontFace,
+        GetVkPolygonMode(rasterizeState.polygonMode),
+        GetVkCullMode(rasterizeState.cullMode),
+        GetVkFrontFace(rasterizeState.frontCounterClockwise),
         rasterizeState.depthBiasEnable,
         0.0f,
         1.0f,

@@ -9,6 +9,61 @@
 #include <vector>
 namespace gore::VulkanHelper
 {
+inline vk::CompareOp GetVkCompareOp(CompareOp op)
+{
+    return static_cast<vk::CompareOp>(op);
+}
+
+inline vk::PrimitiveTopology GetVkPrimitiveTopology(TopologyType topology)
+{
+    switch (topology)
+    {
+        case TopologyType::Point:
+            return vk::PrimitiveTopology::ePointList;
+        case TopologyType::Line:
+            return vk::PrimitiveTopology::eLineList;
+        case TopologyType::TriangleList:
+            return vk::PrimitiveTopology::eTriangleList;
+        default:
+            return vk::PrimitiveTopology::eTriangleList;
+    }
+}
+
+inline vk::PolygonMode GetVkPolygonMode(PolygonMode mode)
+{
+    switch (mode)
+    {
+        case PolygonMode::Fill:
+            return vk::PolygonMode::eFill;
+        case PolygonMode::Line:
+            return vk::PolygonMode::eLine;
+        case PolygonMode::Point:
+            return vk::PolygonMode::ePoint;
+        default:
+            return vk::PolygonMode::eFill;
+    }
+}
+
+inline vk::CullModeFlags GetVkCullMode(CullMode mode)
+{
+    switch (mode)
+    {
+        case CullMode::None:
+            return vk::CullModeFlagBits::eNone;
+        case CullMode::Front:
+            return vk::CullModeFlagBits::eFront;
+        case CullMode::Back:
+            return vk::CullModeFlagBits::eBack;
+        default:
+            return vk::CullModeFlagBits::eNone;
+    }
+}
+
+inline vk::FrontFace GetVkFrontFace(bool frontCounterClockwise)
+{
+    return frontCounterClockwise ? vk::FrontFace::eCounterClockwise : vk::FrontFace::eClockwise;
+}
+
 vk::Format GetVkFormat(GraphicsFormat format);
 
 VkBufferCreateInfo GetVkBufferCreateInfo(BufferDesc& desc);
