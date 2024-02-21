@@ -11,7 +11,7 @@ struct Varyings
 
 static const float2 triangle_pos[3] = 
 {
-    float2(.5f, -.5f),
+    float2(.0f, -.5f),
     float2(.5f, .5f),
     float2(-.5f, .5f)
 };
