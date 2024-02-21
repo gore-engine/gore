@@ -19,6 +19,7 @@ RenderContext::~RenderContext()
 void RenderContext::clear()
 {
     m_ShaderModulePool.clear();
+    m_GraphicsPipelinePool.clear();
 }
 
 ShaderModuleHandle RenderContext::createShaderModule(ShaderModuleDesc&& desc)

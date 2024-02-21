@@ -680,8 +680,8 @@ void RenderSystem::CreatePipeline()
                 .byteSize = static_cast<uint32_t>(fragBytecode.size()), 
                 .entryFunc = "ps"
             },
-            .renderPass{ *m_RenderPass },
             .pipelineLayout{ *m_PipelineLayout },
+            .renderPass{ *m_RenderPass },
             .subpassIndex = 0
         }
     );
