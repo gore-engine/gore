@@ -680,6 +680,15 @@ void RenderSystem::CreatePipeline()
                 .byteSize = static_cast<uint32_t>(fragBytecode.size()), 
                 .entryFunc = "ps"
             },
+            .vertexBufferBindings{
+                {
+                    .byteStride = sizeof(Vector3), 
+                    .attributes = 
+                    {
+                        { .byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT }
+                    }
+                }
+            },
             .pipelineLayout{ *m_PipelineLayout },
             .renderPass{ *m_RenderPass },
             .subpassIndex = 0
