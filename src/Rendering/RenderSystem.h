@@ -78,11 +78,15 @@ private:
     ShaderModuleHandle m_CubeVertexShaderHandle;
     ShaderModuleHandle m_CubeFragmentShaderHandle;
 
+    GraphicsPipelineHandle m_CubePipelineHandle;
+    GraphicsPipelineHandle m_TrianglePipelineHandle;
+
     // Render pass
     vk::raii::RenderPass m_RenderPass;
 
     // Pipeline
     vk::raii::PipelineLayout m_PipelineLayout;
+    vk::raii::PipelineLayout m_BlankPipelineLayout;
     vk::raii::Pipeline m_Pipeline;
 
     // Framebuffer
@@ -119,6 +123,7 @@ private:
     DeletionQueue m_RenderDeletionQueue;
 
 private:
+    void UploadPerframeGlobalConstantBuffer(uint32_t imageIndex);
 
     void CreateInstance();
     void CreateDevice();

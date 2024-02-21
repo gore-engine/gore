@@ -18,6 +18,7 @@
 #include "Object/GameObject.h"
 
 #include "Rendering/GPUData/GlobalConstantBuffer.h"
+#include "RenderContextHelper.h"
 
 #include <vector>
 #include <string>
@@ -44,6 +45,7 @@ RenderSystem::RenderSystem(gore::App* app) :
     // Render Pass
     m_RenderPass(nullptr),
     // Pipeline
+    m_BlankPipelineLayout(nullptr),
     m_PipelineLayout(nullptr),
     m_Pipeline(nullptr),
     // Framebuffers
@@ -179,7 +181,11 @@ void RenderSystem::Update()
     vk::RenderPassBeginInfo renderPassBeginInfo(*m_RenderPass, *m_Framebuffers[currentSwapchainImageIndex], {{0, 0}, surfaceExtent}, clearValues);
     commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_Pipeline);
+    const vk::Pipeline& vkPipeline = *m_RenderContext->GetGraphicsPipeline(m_CubePipelineHandle).pipeline;
+
+    // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, vkPipeline);
+
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
 
     vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(surfaceExtent.width), static_cast<float>(surfaceExtent.height), 0.0f, 1.0f);
     commandBuffer.setViewport(0, {viewport});
@@ -187,6 +193,7 @@ void RenderSystem::Update()
     vk::Rect2D scissor({0, 0}, surfaceExtent);
     commandBuffer.setScissor(0, {scissor});
 
+    commandBuffer.draw(3, 1, 0, 0);
     auto& globalConstantBuffer = m_RenderContext->GetBuffer(m_GlobalConstantBuffers[currentSwapchainImageIndex]);
 
     void* mappedData;
@@ -194,6 +201,7 @@ void RenderSystem::Update()
     auto& globalConstantBufferData = *reinterpret_cast<gfx::GlobalConstantBuffer*>(mappedData);
     globalConstantBufferData.vpMatrix = camera->GetViewProjectionMatrix();
     vmaUnmapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vkBuffer.vmaAllocation);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_Pipeline);
 
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_PipelineLayout, 0, {*m_GlobalDescriptorSets[currentSwapchainImageIndex]}, {});
 
@@ -354,6 +362,10 @@ void RenderSystem::ShutdownImgui()
     ImGui::DestroyContext();
 
     m_ImguiDescriptorPool.clear();
+}
+
+void RenderSystem::UploadPerframeGlobalConstantBuffer(uint32_t imageIndex)
+{
 }
 
 void RenderSystem::CreateDepthBuffer()
@@ -643,8 +655,11 @@ static std::vector<char> LoadShaderBytecode(const std::string& name, const Shade
 
 void RenderSystem::CreatePipeline()
 {
-    std::vector<char> vertBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Vertex, "vs");
-    std::vector<char> fragBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Fragment, "ps");
+    std::vector<char> cubeVertBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Vertex, "vs");
+    std::vector<char> cubeFragBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Fragment, "ps");
+
+    std::vector<char> triangleVertBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Vertex, "vs");
+    std::vector<char> triangleFragBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Fragment, "ps");
 
     // TODO: this is temporary now!
     vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstant));
@@ -654,19 +669,20 @@ void RenderSystem::CreatePipeline()
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, *m_GlobalDescriptorSetLayout, pushConstantRanges);
 
     m_PipelineLayout = m_Device.Get().createPipelineLayout(pipelineLayoutInfo);
+    m_BlankPipelineLayout = m_Device.Get().createPipelineLayout({});
 
-    GraphicsPipelineHandle pipelineHandle = m_RenderContext->createGraphicsPipeline(
+    m_CubePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
         {
             .VS 
             {
-                .byteCode = reinterpret_cast<uint8_t*>(vertBytecode.data()),
-                .byteSize = static_cast<uint32_t>(vertBytecode.size()), 
+                .byteCode = reinterpret_cast<uint8_t*>(cubeVertBytecode.data()),
+                .byteSize = static_cast<uint32_t>(cubeVertBytecode.size()), 
                 .entryFunc = "vs"
             },
             .PS
             {
-                .byteCode = reinterpret_cast<uint8_t*>(fragBytecode.data()), 
-                .byteSize = static_cast<uint32_t>(fragBytecode.size()), 
+                .byteCode = reinterpret_cast<uint8_t*>(cubeFragBytecode.data()), 
+                .byteSize = static_cast<uint32_t>(cubeFragBytecode.size()), 
                 .entryFunc = "ps"
             },
             .vertexBufferBindings{
@@ -679,6 +695,26 @@ void RenderSystem::CreatePipeline()
                 }
             },
             .pipelineLayout{ *m_PipelineLayout },
+            .renderPass{ *m_RenderPass },
+            .subpassIndex = 0
+        }
+    );
+
+    m_TrianglePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
+        {
+            .VS 
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(triangleVertBytecode.data()),
+                .byteSize = static_cast<uint32_t>(triangleVertBytecode.size()), 
+                .entryFunc = "vs"
+            },
+            .PS
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(triangleFragBytecode.data()), 
+                .byteSize = static_cast<uint32_t>(triangleFragBytecode.size()), 
+                .entryFunc = "ps"
+            },            
+            .pipelineLayout{ *m_BlankPipelineLayout },
             .renderPass{ *m_RenderPass },
             .subpassIndex = 0
         }
