@@ -181,10 +181,6 @@ void RenderSystem::Update()
     vk::RenderPassBeginInfo renderPassBeginInfo(*m_RenderPass, *m_Framebuffers[currentSwapchainImageIndex], {{0, 0}, surfaceExtent}, clearValues);
     commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
-    const vk::Pipeline& vkPipeline = *m_RenderContext->GetGraphicsPipeline(m_CubePipelineHandle).pipeline;
-
-    // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, vkPipeline);
-
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
 
     vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(surfaceExtent.width), static_cast<float>(surfaceExtent.height), 0.0f, 1.0f);
@@ -194,6 +190,7 @@ void RenderSystem::Update()
     commandBuffer.setScissor(0, {scissor});
 
     commandBuffer.draw(3, 1, 0, 0);
+
     auto& globalConstantBuffer = m_RenderContext->GetBuffer(m_GlobalConstantBuffers[currentSwapchainImageIndex]);
 
     void* mappedData;
@@ -201,7 +198,8 @@ void RenderSystem::Update()
     auto& globalConstantBufferData = *reinterpret_cast<gfx::GlobalConstantBuffer*>(mappedData);
     globalConstantBufferData.vpMatrix = camera->GetViewProjectionMatrix();
     vmaUnmapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vkBuffer.vmaAllocation);
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_Pipeline);
+
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_CubePipelineHandle).pipeline);
 
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_PipelineLayout, 0, {*m_GlobalDescriptorSets[currentSwapchainImageIndex]}, {});
 
