@@ -114,7 +114,7 @@ struct MultisampleState final
     bool alphaToCoverageEnable   = false;
     bool alphaToOneEnable        = false;
     float minSampleShading       = 0.0f;
-    uint32_t sampleMask          = 0;
+    uint32_t sampleMask          = ~0u;
 };
 
 enum class StencilOp : uint8_t
@@ -156,7 +156,7 @@ struct RasterizationState final
 {
     bool depthClamp : 1            = false;
     bool rasterizerDiscard : 1     = false;
-    bool frontCounterClockwise : 1 = true;
+    bool frontCounterClockwise : 1 = false;
     bool depthBiasEnable : 1       = false;
     CullMode cullMode : 4          = CullMode::Back;
     PolygonMode polygonMode : 8    = PolygonMode::Fill;
