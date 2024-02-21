@@ -61,7 +61,8 @@ public:
     const ShaderModule& getShaderModule(ShaderModuleHandle handle);
     void destroyShaderModule(ShaderModuleHandle handle);
 
-    GraphicsPipelineHandle createGraphicsPipeline(GraphicsPipelineDesc&& desc);
+    GraphicsPipelineHandle CreateGraphicsPipeline(GraphicsPipelineDesc&& desc);
+    const GraphicsPipeline& GetGraphicsPipeline(GraphicsPipelineHandle handle);
 
     void destroyTexture(TextureHandle handle);
     void destroySampler(SamplerHandle handle);

@@ -107,5 +107,4 @@ vk::PipelineRasterizationStateCreateInfo GetVkRasterizeState(const GraphicsPipel
 vk::PipelineMultisampleStateCreateInfo GetVkMultisampleState(const GraphicsPipelineDesc& desc);
 vk::PipelineDepthStencilStateCreateInfo GetVkDepthStencilState(const GraphicsPipelineDesc& desc);
 vk::PipelineColorBlendStateCreateInfo GetVkColorBlendState(const GraphicsPipelineDesc& desc);
-vk::PipelineDynamicStateCreateInfo GetVkDynamicState(const GraphicsPipelineDesc& desc);
 } // namespace gore::VulkanHelper

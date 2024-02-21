@@ -248,14 +248,4 @@ vk::PipelineColorBlendStateCreateInfo GetVkColorBlendState(const GraphicsPipelin
         {1.0f, 1.0f, 1.0f, 1.0f});
 }
 
-static std::vector<vk::DynamicState> s_DynamicStates = {vk::DynamicState::eViewport, vk::DynamicState::eScissor, vk::DynamicState::eLineWidth, vk::DynamicState::eDepthBias, vk::DynamicState::eBlendConstants, vk::DynamicState::eDepthBounds, vk::DynamicState::eStencilCompareMask, vk::DynamicState::eStencilWriteMask, vk::DynamicState::eStencilReference};
-
-vk::PipelineDynamicStateCreateInfo GetVkDynamicState(const GraphicsPipelineDesc& desc)
-{
-    return vk::PipelineDynamicStateCreateInfo(
-        {},
-        s_DynamicStates.size(),
-        s_DynamicStates.data());
-}
-
 } // namespace gore::VulkanHelper

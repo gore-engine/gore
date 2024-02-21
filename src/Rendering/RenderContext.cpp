@@ -50,7 +50,7 @@ void RenderContext::destroyShaderModule(ShaderModuleHandle handle)
     m_ShaderModulePool.destroy(handle);
 }
 
-GraphicsPipelineHandle RenderContext::createGraphicsPipeline(GraphicsPipelineDesc&& desc)
+GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDesc&& desc)
 {
     using namespace std;
 
@@ -105,8 +105,12 @@ GraphicsPipelineHandle RenderContext::createGraphicsPipeline(GraphicsPipelineDes
         {1.0f, 1.0f, 1.0f, 1.0f}
     };
 
-    vk::PipelineDynamicStateCreateInfo dynamicState = VulkanHelper::GetVkDynamicState(desc);
+    std::vector<vk::DynamicState> dynamicStates = {vk::DynamicState::eViewport, vk::DynamicState::eScissor, vk::DynamicState::eLineWidth, vk::DynamicState::eDepthBias, vk::DynamicState::eBlendConstants, vk::DynamicState::eDepthBounds, vk::DynamicState::eStencilCompareMask, vk::DynamicState::eStencilWriteMask, vk::DynamicState::eStencilReference};
 
+    vk::PipelineDynamicStateCreateInfo dynamicState = {
+        {},
+        dynamicStates};
+        
     vk::GraphicsPipelineCreateInfo createInfo;
     createInfo.stageCount          = 2;
     createInfo.pStages             = shaderStages.data();
@@ -130,6 +134,11 @@ GraphicsPipelineHandle RenderContext::createGraphicsPipeline(GraphicsPipelineDes
     return m_GraphicsPipelinePool.create(
         std::move(desc),
         std::move(graphicsPipeline));
+}
+
+const GraphicsPipeline& RenderContext::GetGraphicsPipeline(GraphicsPipelineHandle handle)
+{
+    return m_GraphicsPipelinePool.getObject(handle);
 }
 
 BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
