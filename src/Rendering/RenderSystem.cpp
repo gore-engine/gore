@@ -427,17 +427,6 @@ void RenderSystem::CreateDepthBuffer()
     m_Device.SetName(m_DepthImageView, "Depth Buffer ImageView");
 }
 
-uint32_t RenderSystem::FindMemoryType(uint32_t typeFilter, vk::PhysicalDeviceMemoryProperties memProperties, vk::MemoryPropertyFlags properties) const
-{
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-    {
-        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
-            return i;
-    }
-
-    throw std::runtime_error("failed to find suitable memory type");
-}
-
 void RenderSystem::CreateVertexBuffer()
 {
     std::vector<Vector3> vertices = {

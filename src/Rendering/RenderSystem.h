@@ -119,7 +119,6 @@ private:
     DeletionQueue m_RenderDeletionQueue;
 
 private:
-    uint32_t FindMemoryType(uint32_t typeFilter, vk::PhysicalDeviceMemoryProperties memProperties, vk::MemoryPropertyFlags properties) const;
 
     void CreateInstance();
     void CreateDevice();
