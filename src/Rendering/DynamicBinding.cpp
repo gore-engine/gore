@@ -1,6 +1,8 @@
 #include "Core/Log.h"
 #include "DynamicBinding.h"
 
+#include <cstring>
+
 namespace gore
 {
 DynamicBinding::DynamicBinding(ShaderStage stage, uint32_t size, uint8_t* data, uint32_t offset)
