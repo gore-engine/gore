@@ -618,20 +618,21 @@ void RenderSystem::CreatePipeline()
     m_BlankPipelineLayout = m_Device.Get().createPipelineLayout({});
 
     m_CubePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
+        GraphicsPipelineDesc
         {
-            .VS =
+            .VS
             {
                 .byteCode = reinterpret_cast<uint8_t*>(cubeVertBytecode.data()),
                 .byteSize = static_cast<uint32_t>(cubeVertBytecode.size()), 
                 .entryFunc = "vs"
             },
-            .PS =
+            .PS
             {
                 .byteCode = reinterpret_cast<uint8_t*>(cubeFragBytecode.data()), 
                 .byteSize = static_cast<uint32_t>(cubeFragBytecode.size()), 
                 .entryFunc = "ps"
             },
-            .vertexBufferBindings = 
+            .vertexBufferBindings
             {
                 {
                     .byteStride = sizeof(Vector3), 
@@ -641,28 +642,29 @@ void RenderSystem::CreatePipeline()
                     }
                 }
             },
-            .pipelineLayout = { *m_PipelineLayout },
-            .renderPass = { *m_RenderPass },
+            .pipelineLayout { *m_PipelineLayout },
+            .renderPass { *m_RenderPass },
             .subpassIndex = 0
         }
     );
 
     m_TrianglePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
+        GraphicsPipelineDesc
         {
-            .VS = 
+            .VS
             {
                 .byteCode = reinterpret_cast<uint8_t*>(triangleVertBytecode.data()),
                 .byteSize = static_cast<uint32_t>(triangleVertBytecode.size()), 
                 .entryFunc = "vs"
             },
-            .PS =
+            .PS
             {
                 .byteCode = reinterpret_cast<uint8_t*>(triangleFragBytecode.data()), 
                 .byteSize = static_cast<uint32_t>(triangleFragBytecode.size()), 
                 .entryFunc = "ps"
             },            
-            .pipelineLayout = { *m_BlankPipelineLayout },
-            .renderPass = { *m_RenderPass },
+            .pipelineLayout { *m_BlankPipelineLayout },
+            .renderPass { *m_RenderPass },
             .subpassIndex = 0
         }
     );
