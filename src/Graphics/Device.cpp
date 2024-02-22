@@ -258,16 +258,20 @@ Device::Device(PhysicalDevice physicalDevice) :
     }
 
     // Features
-    vk::PhysicalDeviceFeatures enabledFeatures = pd.getFeatures();
+    vk::PhysicalDeviceFeatures2 enabledFeatures2 = pd.getFeatures2();
+
+    vk::PhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures;
+    bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+
+    enabledFeatures2.pNext = &bufferDeviceAddressFeatures;
 
     // Device extensions
     std::vector<vk::ExtensionProperties> deviceExtensionProperties = pd.enumerateDeviceExtensionProperties();
     m_EnabledDeviceExtensions.set();
     std::vector<const char*> enabledDeviceExtensions = BuildEnabledExtensions<VulkanDeviceExtensionBitset, VulkanDeviceExtension>(deviceExtensionProperties,
                                                                                                                                   m_EnabledDeviceExtensions);
-
     // Create
-    vk::DeviceCreateInfo deviceCreateInfo({}, queueCreateInfos, {}, enabledDeviceExtensions, &enabledFeatures);
+    vk::DeviceCreateInfo deviceCreateInfo({}, queueCreateInfos, {}, enabledDeviceExtensions, nullptr, &enabledFeatures2);
     m_Device = pd.createDevice(deviceCreateInfo);
 
     SetName(m_Device, properties.deviceName);
@@ -280,7 +284,7 @@ Device::Device(PhysicalDevice physicalDevice) :
         .vkGetDeviceProcAddr   = m_Device.getDispatcher()->vkGetDeviceProcAddr
     };
     VmaAllocatorCreateInfo allocatorCreateInfo{
-        .flags                       = 0,              // TODO: check what flags we can use potentially
+        .flags                       = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,              // TODO: check what flags we can use potentially
         .physicalDevice              = *pd,
         .device                      = *m_Device,
         .preferredLargeHeapBlockSize = 0,              // TODO: we are using default value here for now

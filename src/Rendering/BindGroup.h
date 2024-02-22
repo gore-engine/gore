@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Handle.h"
-#include "GrpahicsResource.h"
+#include "GraphicsResource.h"
 
 #include <vector>
 

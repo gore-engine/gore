@@ -17,6 +17,9 @@
 #include "Object/Camera.h"
 #include "Object/GameObject.h"
 
+#include "Rendering/GPUData/GlobalConstantBuffer.h"
+#include "RenderContextHelper.h"
+
 #include <vector>
 #include <string>
 #include <sstream>
@@ -36,14 +39,11 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_Device(),
     // Surface & Swapchain
     m_Swapchain(),
-    // Shader
-    m_CubeVertexShaderHandle(),
-    m_CubeFragmentShaderHandle(),
     // Render Pass
     m_RenderPass(nullptr),
     // Pipeline
+    m_BlankPipelineLayout(nullptr),
     m_PipelineLayout(nullptr),
-    m_Pipeline(nullptr),
     // Framebuffers
     m_Framebuffers(),
     // Queue
@@ -53,6 +53,11 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_PresentQueueFamilyIndex(0),
     // Command Pool & Command Buffer
     m_CommandPool(),
+    // Global Descriptors
+    m_GlobalDescriptorPool(nullptr),
+    m_GlobalDescriptorSetLayout(nullptr),
+    m_GlobalDescriptorSets(),
+    m_GlobalConstantBuffers(),
     // Synchronization
     m_RenderFinishedSemaphores(),
     m_InFlightFences(),
@@ -60,13 +65,13 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_DepthImage(nullptr),
     m_DepthImageAllocation(VK_NULL_HANDLE),
     m_DepthImageView(nullptr),
-    m_VertexBuffer(nullptr),
-    m_VertexBufferMemory(VK_NULL_HANDLE),
-    m_IndexBuffer(nullptr),
-    m_IndexBufferMemory(VK_NULL_HANDLE),
+    m_VertexBufferHandle(),
+    m_IndexBufferHandle(),
     // Imgui
     m_ImguiWindowData(),
-    m_ImguiDescriptorPool(nullptr)
+    m_ImguiDescriptorPool(nullptr),
+    // Utils
+    m_RenderDeletionQueue()
 {
     g_RenderSystem = this;
 }
@@ -92,8 +97,8 @@ void RenderSystem::Initialize()
 
     CreateDepthBuffer();
     CreateVertexBuffer();
-    LoadShader("sample/cube", "vs", "ps");
     CreateRenderPass();
+    CreateGlobalDescriptorSets();
     CreatePipeline();
     CreateFramebuffers();
     GetQueues();
@@ -111,7 +116,6 @@ void RenderSystem::Initialize()
 struct PushConstant
 {
     Matrix4x4 m;
-    Matrix4x4 vp;
 };
 
 void RenderSystem::Update()
@@ -172,13 +176,30 @@ void RenderSystem::Update()
     vk::RenderPassBeginInfo renderPassBeginInfo(*m_RenderPass, *m_Framebuffers[currentSwapchainImageIndex], {{0, 0}, surfaceExtent}, clearValues);
     commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_Pipeline);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
 
     vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(surfaceExtent.width), static_cast<float>(surfaceExtent.height), 0.0f, 1.0f);
     commandBuffer.setViewport(0, {viewport});
 
     vk::Rect2D scissor({0, 0}, surfaceExtent);
     commandBuffer.setScissor(0, {scissor});
+
+    commandBuffer.draw(3, 1, 0, 0);
+
+    auto& globalConstantBuffer = m_RenderContext->GetBuffer(m_GlobalConstantBuffers[currentSwapchainImageIndex]);
+
+    void* mappedData;
+    vmaMapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vkBuffer.vmaAllocation, &mappedData);
+    auto& globalConstantBufferData = *reinterpret_cast<gfx::GlobalConstantBuffer*>(mappedData);
+    globalConstantBufferData.vpMatrix = camera->GetViewProjectionMatrix();
+    vmaUnmapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vkBuffer.vmaAllocation);
+
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_CubePipelineHandle).pipeline);
+
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_PipelineLayout, 0, {*m_GlobalDescriptorSets[currentSwapchainImageIndex]}, {});
+
+    auto& indexBuffer = m_RenderContext->GetBuffer(m_IndexBufferHandle);
+    auto& vertexBuffer = m_RenderContext->GetBuffer(m_VertexBufferHandle);
 
     for (auto& gameObject : Scene::GetActiveScene()->GetGameObjects())
     {
@@ -187,13 +208,12 @@ void RenderSystem::Update()
 
         PushConstant pushConstant
         {
-            .m = gameObject->GetTransform()->GetLocalToWorldMatrix(),
-            .vp = camera->GetViewProjectionMatrix()
+            .m = gameObject->GetTransform()->GetLocalToWorldMatrix()
         };
         std::array<PushConstant, 1> pushConstantData = {pushConstant};
         commandBuffer.pushConstants<PushConstant>(*m_PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, pushConstantData);
-        commandBuffer.bindVertexBuffers(0, {*m_VertexBuffer}, {0});
-        commandBuffer.bindIndexBuffer(*m_IndexBuffer, 0, vk::IndexType::eUint16);
+        commandBuffer.bindVertexBuffers(0, {vertexBuffer.vkBuffer.vkBuffer}, {0});
+        commandBuffer.bindIndexBuffer(indexBuffer.vkBuffer.vkBuffer, 0, vk::IndexType::eUint16);
 
         commandBuffer.drawIndexed(36, 1, 0, 0, 0);
     }
@@ -255,6 +275,9 @@ void RenderSystem::Shutdown()
 
         vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
     }
+    
+    m_RenderDeletionQueue.Flush();
+
     m_RenderContext->clear();
 
     ShutdownImgui();
@@ -334,6 +357,10 @@ void RenderSystem::ShutdownImgui()
     m_ImguiDescriptorPool.clear();
 }
 
+void RenderSystem::UploadPerframeGlobalConstantBuffer(uint32_t imageIndex)
+{
+}
+
 void RenderSystem::CreateDepthBuffer()
 {
     std::vector<vk::Format> candidateFormats = {
@@ -405,17 +432,6 @@ void RenderSystem::CreateDepthBuffer()
     m_Device.SetName(m_DepthImageView, "Depth Buffer ImageView");
 }
 
-uint32_t RenderSystem::FindMemoryType(uint32_t typeFilter, vk::PhysicalDeviceMemoryProperties memProperties, vk::MemoryPropertyFlags properties) const
-{
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-    {
-        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
-            return i;
-    }
-
-    throw std::runtime_error("failed to find suitable memory type");
-}
-
 void RenderSystem::CreateVertexBuffer()
 {
     std::vector<Vector3> vertices = {
@@ -438,89 +454,38 @@ void RenderSystem::CreateVertexBuffer()
         1, 3, 5, 5, 3, 7  // +Z
     };
 
-    // create a vk::raii::Buffer vertexBuffer, given a vk::raii::Device device and some vertexData in host memory
-    vk::BufferCreateInfo bufferCreateInfo( {}, sizeof(Vector3) * vertices.size(), vk::BufferUsageFlagBits::eVertexBuffer );
-    m_VertexBuffer = m_Device.Get().createBuffer( bufferCreateInfo );
-    
-    // create a vk::raii::DeviceMemory vertexDeviceMemory, given a vk::raii::Device device and a uint32_t memoryTypeIndex
-    vk::MemoryRequirements memoryRequirements = m_VertexBuffer.getMemoryRequirements();
-    uint32_t memoryTypeIndex = FindMemoryType( memoryRequirements.memoryTypeBits, m_Device.GetPhysicalDevice().Get().getMemoryProperties(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
-    
-    vk::MemoryAllocateInfo memoryAllocateInfo( memoryRequirements.size, memoryTypeIndex );
-    m_VertexBufferMemory = m_Device.Get().allocateMemory( memoryAllocateInfo );
-
-    // bind the complete device memory to the vertex buffer
-    m_VertexBuffer.bindMemory( *m_VertexBufferMemory, 0 );
-
-    // copy the vertex data into the vertexDeviceMemory
-    uint8_t* pData = static_cast<uint8_t*>(m_VertexBufferMemory.mapMemory( 0, memoryRequirements.size ));
-    memcpy( pData, vertices.data(), sizeof(Vector3) * vertices.size() );
-    m_VertexBufferMemory.unmapMemory();
-
-    // create a vk::raii::Buffer indexBuffer, given a vk::raii::Device device and some indexData in host memory
-    vk::BufferCreateInfo indexBufferCreateInfo( {}, sizeof(uint16_t) * indices.size(), vk::BufferUsageFlagBits::eIndexBuffer );
-    m_IndexBuffer = m_Device.Get().createBuffer( indexBufferCreateInfo );
-    
-    // create a vk::raii::DeviceMemory indexDeviceMemory, given a vk::raii::Device device and a uint32_t memoryTypeIndex
-    memoryRequirements = m_IndexBuffer.getMemoryRequirements();
-    memoryTypeIndex = FindMemoryType( memoryRequirements.memoryTypeBits, m_Device.GetPhysicalDevice().Get().getMemoryProperties(), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
-
-    memoryAllocateInfo = vk::MemoryAllocateInfo( memoryRequirements.size, memoryTypeIndex );
-    m_IndexBufferMemory = m_Device.Get().allocateMemory( memoryAllocateInfo );
-    
-    m_IndexBuffer.bindMemory( *m_IndexBufferMemory, 0 );
-
-    // copy the index data into the indexDeviceMemory
-    pData = static_cast<uint8_t*>(m_IndexBufferMemory.mapMemory( 0, memoryRequirements.size ));
-    memcpy( pData, indices.data(), sizeof(uint16_t) * indices.size() );
-    m_IndexBufferMemory.unmapMemory();
-}
-
-void RenderSystem::LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint)
-{
-    static const std::filesystem::path kShaderSourceFolder = FileSystem::GetResourceFolder() / "Shaders";
-
-    auto getShaderFile = [&name](vk::ShaderStageFlagBits stage) -> std::filesystem::path
-    {
-        std::filesystem::path path(name);
-        auto shaderPath = kShaderSourceFolder / path.parent_path() / path.filename().stem();
-        shaderPath += std::string(".") + (stage == vk::ShaderStageFlagBits::eVertex ? "vert" : "frag") + ".spv";
-        return shaderPath;
-    };
-
-    std::filesystem::path vertexShaderPath = getShaderFile(vk::ShaderStageFlagBits::eVertex);
-
-    std::vector<char> vertexShaderBinary = FileSystem::ReadAllBinary(vertexShaderPath);
-    if (vertexShaderBinary.empty())
-    {
-        LOG_STREAM(ERROR) << "Failed to load shader: " << vertexShaderPath << std::endl;
-        return;
-    }
-    LOG_STREAM(DEBUG) << "Loaded shader: " << vertexShaderPath << std::endl;
-
-    m_CubeVertexShaderHandle = m_RenderContext->createShaderModule({
-        .debugName = "Cube Vertex Shader",
-        .byteCode = reinterpret_cast<uint8_t*>(vertexShaderBinary.data()),
-        .byteSize = static_cast<uint32_t>(vertexShaderBinary.size()),
-        .entryFunc = "vs"
+    m_VertexBufferHandle = m_RenderContext->CreateBuffer({
+        .debugName = "Vertex Buffer",
+        .byteSize = static_cast<uint32_t>(sizeof(Vector3) * vertices.size()),
+        .usage = BufferUsage::Vertex,
+        .memUsage = MemoryUsage::CPU_TO_GPU
     });
 
-    std::filesystem::path fragmentShaderPath = getShaderFile(vk::ShaderStageFlagBits::eFragment);
+    void* mappedData;
+    auto& vertexBuffer = m_RenderContext->GetBuffer(m_VertexBufferHandle);
+    vmaMapMemory(m_Device.GetVmaAllocator(), vertexBuffer.vkBuffer.vmaAllocation, &mappedData);
+    memcpy(mappedData, vertices.data(), sizeof(Vector3) * vertices.size());
+    vmaUnmapMemory(m_Device.GetVmaAllocator(), vertexBuffer.vkBuffer.vmaAllocation);
 
-    std::vector<char> fragmentShaderBinary = FileSystem::ReadAllBinary(fragmentShaderPath);
-    if (fragmentShaderBinary.empty())
-    {
-        LOG_STREAM(ERROR) << "Failed to load shader: " << fragmentShaderPath << std::endl;
-        return;
-    }
-    LOG_STREAM(DEBUG) << "Loaded shader: " << fragmentShaderPath << std::endl;
-
-    m_CubeFragmentShaderHandle = m_RenderContext->createShaderModule({
-        .debugName = "Cube Frag Shader",
-        .byteCode = reinterpret_cast<uint8_t*>(fragmentShaderBinary.data()),
-        .byteSize = static_cast<uint32_t>(fragmentShaderBinary.size()),
-        .entryFunc = "ps"
+    m_IndexBufferHandle = m_RenderContext->CreateBuffer({
+        .debugName = "Index Buffer",
+        .byteSize = static_cast<uint32_t>(sizeof(uint16_t) * indices.size()),
+        .usage = BufferUsage::Index,
+        .memUsage = MemoryUsage::CPU_TO_GPU
     });
+
+    auto& indexBuffer = m_RenderContext->GetBuffer(m_IndexBufferHandle);
+
+    vmaMapMemory(m_Device.GetVmaAllocator(), indexBuffer.vkBuffer.vmaAllocation, &mappedData);
+    memcpy(mappedData, indices.data(), sizeof(uint16_t) * indices.size());
+    vmaUnmapMemory(m_Device.GetVmaAllocator(), indexBuffer.vkBuffer.vmaAllocation);
+
+    m_RenderDeletionQueue.PushFunction(
+        [&](){
+            m_RenderContext->DestroyBuffer(m_VertexBufferHandle);
+            m_RenderContext->DestroyBuffer(m_IndexBufferHandle);
+        }
+    );
 }
 
 void RenderSystem::CreateRenderPass()
@@ -571,77 +536,138 @@ void RenderSystem::CreateRenderPass()
     m_Device.SetName(m_RenderPass, "Cube Color Pass");
 }
 
+void RenderSystem::CreateGlobalDescriptorSets()
+{
+    std::vector<vk::DescriptorPoolSize> poolSizes = {
+        {       vk::DescriptorType::eUniformBuffer, 10},
+        {vk::DescriptorType::eUniformBufferDynamic, 10}
+    };
+
+    vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo( vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 10, poolSizes);
+    m_GlobalDescriptorPool = m_Device.Get().createDescriptorPool(descriptorPoolCreateInfo);
+
+    vk::DescriptorSetLayoutBinding globalConstantBufferBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
+
+    std::vector<vk::DescriptorSetLayoutBinding> bindings = {globalConstantBufferBinding};
+
+    vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo({}, {bindings});
+    m_GlobalDescriptorSetLayout = m_Device.Get().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+
+    m_GlobalDescriptorSets.clear();
+    m_GlobalDescriptorSets.reserve(m_Swapchain.GetImageCount());
+    for (int i = 0; i < m_Swapchain.GetImageCount(); ++i)
+    {
+        m_GlobalConstantBuffers.emplace_back(m_RenderContext->CreateBuffer({.debugName = "Global Constant Buffer",
+                                                                            .byteSize  = sizeof(gfx::GlobalConstantBuffer),
+                                                                            .usage     = BufferUsage::Uniform,
+                                                                            .memUsage  = MemoryUsage::CPU_TO_GPU}));
+
+        vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(*m_GlobalDescriptorPool, *m_GlobalDescriptorSetLayout);
+        vk::raii::DescriptorSets descriptorSets(m_Device.Get(), descriptorSetAllocateInfo);
+        m_GlobalDescriptorSets.emplace_back(std::move(descriptorSets[0]));
+
+        vk::DescriptorBufferInfo globalConstantBufferInfo(m_RenderContext->GetBuffer(m_GlobalConstantBuffers[i]).vkBuffer.vkBuffer, 0, sizeof(gfx::GlobalConstantBuffer));
+        vk::WriteDescriptorSet globalConstantBufferWrite(*m_GlobalDescriptorSets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &globalConstantBufferInfo, nullptr);
+
+        m_Device.Get().updateDescriptorSets({globalConstantBufferWrite}, {});
+    }
+
+    m_RenderDeletionQueue.PushFunction(
+        [&](){
+            for (auto& globalConstantBuffer : m_GlobalConstantBuffers)
+            {
+                m_RenderContext->DestroyBuffer(globalConstantBuffer);
+            }
+        }
+    );
+}
+
+static std::vector<char> LoadShaderBytecode(const std::string& name, const ShaderStage& stage, const std::string& entryPoint)
+{
+    static const std::filesystem::path kShaderSourceFolder = FileSystem::GetResourceFolder() / "Shaders";
+
+    auto getShaderFile = [&name](ShaderStage stage) -> std::filesystem::path
+    {
+        std::filesystem::path path(name);
+        auto shaderPath = kShaderSourceFolder / path.parent_path() / path.filename().stem();
+        shaderPath += std::string(".") + (stage == ShaderStage::Vertex ? "vert" : "frag") + ".spv";
+        return shaderPath;
+    };
+
+    std::filesystem::path shaderPath = getShaderFile(stage);
+
+    return FileSystem::ReadAllBinary(shaderPath);
+}
+
 void RenderSystem::CreatePipeline()
 {
+    std::vector<char> cubeVertBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Vertex, "vs");
+    std::vector<char> cubeFragBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Fragment, "ps");
+
+    std::vector<char> triangleVertBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Vertex, "vs");
+    std::vector<char> triangleFragBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Fragment, "ps");
+
     // TODO: this is temporary now!
     vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstant));
     std::vector<vk::PushConstantRange> pushConstantRanges = {pushConstantRange};
 
     // TODO: change this when we have a working descriptor management system
-    vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, {}, pushConstantRanges);
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, *m_GlobalDescriptorSetLayout, pushConstantRanges);
 
     m_PipelineLayout = m_Device.Get().createPipelineLayout(pipelineLayoutInfo);
+    m_BlankPipelineLayout = m_Device.Get().createPipelineLayout({});
 
-    auto& vertexShaderModuleDesc = m_RenderContext->getShaderModuleDesc(m_CubeVertexShaderHandle);
-    auto& vertexShaderModule = m_RenderContext->getShaderModule(m_CubeVertexShaderHandle);
+    m_CubePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
+        GraphicsPipelineDesc
+        {
+            .VS
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(cubeVertBytecode.data()),
+                .byteSize = static_cast<uint32_t>(cubeVertBytecode.size()), 
+                .entryFunc = "vs"
+            },
+            .PS
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(cubeFragBytecode.data()), 
+                .byteSize = static_cast<uint32_t>(cubeFragBytecode.size()), 
+                .entryFunc = "ps"
+            },
+            .vertexBufferBindings
+            {
+                {
+                    .byteStride = sizeof(Vector3), 
+                    .attributes = 
+                    {
+                        { .byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT }
+                    }
+                }
+            },
+            .pipelineLayout { *m_PipelineLayout },
+            .renderPass { *m_RenderPass },
+            .subpassIndex = 0
+        }
+    );
 
-    auto& fragmentShaderModuleDesc = m_RenderContext->getShaderModuleDesc(m_CubeFragmentShaderHandle);
-    auto& fragmentShaderModule = m_RenderContext->getShaderModule(m_CubeFragmentShaderHandle);
-
-    vk::PipelineShaderStageCreateInfo vertexShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *vertexShaderModule.sm, vertexShaderModuleDesc.entryFunc);
-    vk::PipelineShaderStageCreateInfo fragmentShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eFragment, *fragmentShaderModule.sm, fragmentShaderModuleDesc.entryFunc);
-    std::vector<vk::PipelineShaderStageCreateInfo> shaderStageCreateInfos = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
-
-    std::vector<vk::DynamicState> dynamicStates = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
-    vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo({}, dynamicStates);
-
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
-
-    vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-
-    vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo({}, vk::PrimitiveTopology::eTriangleList, false);
-    vk::PipelineViewportStateCreateInfo viewportStateCreateInfo({}, 1, nullptr, 1, nullptr);
-    vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo({}, false, false, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise, false, 0.0f, 0.0f, 0.0f, 1.0f);
-    vk::PipelineMultisampleStateCreateInfo multisampleStateCreateInfo({}, vk::SampleCountFlagBits::e1, false, 0.0f, nullptr, false, false);
-    vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo({}, true, true, vk::CompareOp::eGreaterOrEqual, false, false, {}, {}, 0.0f, 1.0f);
-
-    vk::PipelineColorBlendAttachmentState colorBlendAttachmentState(false,
-                                                                    vk::BlendFactor::eOne,
-                                                                    vk::BlendFactor::eZero,
-                                                                    vk::BlendOp::eAdd,
-                                                                    vk::BlendFactor::eOne,
-                                                                    vk::BlendFactor::eZero,
-                                                                    vk::BlendOp::eAdd,
-                                                                    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-    std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachmentStates = {colorBlendAttachmentState};
-
-    vk::PipelineColorBlendStateCreateInfo colorBlendStateCreateInfo({}, false, vk::LogicOp::eCopy, colorBlendAttachmentStates, {0.0f, 0.0f, 0.0f, 0.0f});
-
-    vk::GraphicsPipelineCreateInfo pipelineCreateInfo({},
-                                                      shaderStageCreateInfos,
-                                                      &vertexInputInfo,
-                                                      &inputAssemblyInfo,
-                                                      nullptr, // tessellation
-                                                      &viewportStateCreateInfo,
-                                                      &rasterizationStateCreateInfo,
-                                                      &multisampleStateCreateInfo,
-                                                      &depthStencilStateCreateInfo,
-                                                      &colorBlendStateCreateInfo,
-                                                      &dynamicStateCreateInfo,
-                                                      *m_PipelineLayout,
-                                                      *m_RenderPass,
-                                                      0,       // subpass
-                                                      nullptr, // basePipelineHandle
-                                                      -1);     // basePipelineIndex
-
-    m_Pipeline = m_Device.Get().createGraphicsPipeline(nullptr, pipelineCreateInfo);
-
-    m_Device.SetName(m_Pipeline, "Cube Pipeline");
+    m_TrianglePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
+        GraphicsPipelineDesc
+        {
+            .VS
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(triangleVertBytecode.data()),
+                .byteSize = static_cast<uint32_t>(triangleVertBytecode.size()), 
+                .entryFunc = "vs"
+            },
+            .PS
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(triangleFragBytecode.data()), 
+                .byteSize = static_cast<uint32_t>(triangleFragBytecode.size()), 
+                .entryFunc = "ps"
+            },            
+            .pipelineLayout { *m_BlankPipelineLayout },
+            .renderPass { *m_RenderPass },
+            .subpassIndex = 0
+        }
+    );
 }
 
 void RenderSystem::CreateFramebuffers()

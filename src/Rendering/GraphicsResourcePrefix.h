@@ -3,6 +3,7 @@
 
 enum class MemoryUsage
 {
+    AUTO,
     CPU,
     GPU,
     CPU_TO_GPU,
@@ -75,22 +76,31 @@ enum class SamplerMipmapMode
     Count
 };
 
-enum class ShaderStage
+enum class ShaderStage : uint8_t
 {
-    Vertex,
-    Fragment,
+    Vertex = 1 << 0,
+    Fragment = 1 << 1,
 
-    Compute,
+    Compute = 1 << 2,
 
-    Geometry,
+    // Geometry,
 
     // tessellation    
-    Hull,
-    Domain,
+    // Hull,
+    // Domain,
     
     // mesh shading
-    Task,
-    Mesh,
+    Task = 1 << 3,
+    Mesh = 1 << 4
     // TODO: RayTracing
-    Count
 };
+
+inline ShaderStage operator|(ShaderStage a, ShaderStage b)
+{
+    return static_cast<ShaderStage>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
+}
+
+inline ShaderStage operator&(ShaderStage a, ShaderStage b)
+{
+    return static_cast<ShaderStage>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
+}

@@ -21,11 +21,11 @@ enum class GraphicsFormat
     RG16_FLOAT,  // uv
     RG32_FLOAT,  // uv for large texture sample
 
-    AttributePosition = RGB32_FLOAT,
-    AttributeNormal   = RGB16_FLOAT,
-    AttributeTangent  = RGB16_FLOAT,
-    AttributeColor    = RGB8_UNORM,
-    AttributeUV0      = RG16_FLOAT,
+    // AttributePosition = RGB32_FLOAT,
+    // AttributeNormal   = RGB16_FLOAT,
+    // AttributeTangent  = RGB16_FLOAT,
+    // AttributeColor    = RGB8_UNORM,
+    // AttributeUV0      = RG16_FLOAT,
 
     // Depth Stencil Format
     D32_FLOAT, // depth 24 bits, stencil 8 bits

@@ -8,5 +8,8 @@ namespace gore
 struct BindLayout final
 {
     const char* debugName = "Noname BindLayout";
+    
+    /// @brief Vulkan : DescriptorSetLayout
+    VkDescriptorSetLayout layout;
 };
 } // namespace gore

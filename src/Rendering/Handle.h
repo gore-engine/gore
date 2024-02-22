@@ -60,5 +60,5 @@ private:
 // using BufferHandle = Handle<struct Buffer>;
 // using TextureHandle = Handle<struct Texture>;
 // using ShaderModuleHandle = Handle<struct ShaderModule>;
-// using PipelineHandle = Handle<struct Pipeline>;
+// using GraphicsPipelineHandle = Handle<struct GraphicsPipeline>;
 } // namespace gore
