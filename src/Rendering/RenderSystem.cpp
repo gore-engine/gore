@@ -39,15 +39,11 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_Device(),
     // Surface & Swapchain
     m_Swapchain(),
-    // Shader
-    m_CubeVertexShaderHandle(),
-    m_CubeFragmentShaderHandle(),
     // Render Pass
     m_RenderPass(nullptr),
     // Pipeline
     m_BlankPipelineLayout(nullptr),
     m_PipelineLayout(nullptr),
-    m_Pipeline(nullptr),
     // Framebuffers
     m_Framebuffers(),
     // Queue
@@ -101,7 +97,6 @@ void RenderSystem::Initialize()
 
     CreateDepthBuffer();
     CreateVertexBuffer();
-    LoadShader("sample/cube", "vs", "ps");
     CreateRenderPass();
     CreateGlobalDescriptorSets();
     CreatePipeline();
@@ -493,53 +488,6 @@ void RenderSystem::CreateVertexBuffer()
     );
 }
 
-void RenderSystem::LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint)
-{
-    static const std::filesystem::path kShaderSourceFolder = FileSystem::GetResourceFolder() / "Shaders";
-
-    auto getShaderFile = [&name](vk::ShaderStageFlagBits stage) -> std::filesystem::path
-    {
-        std::filesystem::path path(name);
-        auto shaderPath = kShaderSourceFolder / path.parent_path() / path.filename().stem();
-        shaderPath += std::string(".") + (stage == vk::ShaderStageFlagBits::eVertex ? "vert" : "frag") + ".spv";
-        return shaderPath;
-    };
-
-    std::filesystem::path vertexShaderPath = getShaderFile(vk::ShaderStageFlagBits::eVertex);
-
-    std::vector<char> vertexShaderBinary = FileSystem::ReadAllBinary(vertexShaderPath);
-    if (vertexShaderBinary.empty())
-    {
-        LOG_STREAM(ERROR) << "Failed to load shader: " << vertexShaderPath << std::endl;
-        return;
-    }
-    LOG_STREAM(DEBUG) << "Loaded shader: " << vertexShaderPath << std::endl;
-
-    m_CubeVertexShaderHandle = m_RenderContext->createShaderModule({
-        .debugName = "Cube Vertex Shader",
-        .byteCode = reinterpret_cast<uint8_t*>(vertexShaderBinary.data()),
-        .byteSize = static_cast<uint32_t>(vertexShaderBinary.size()),
-        .entryFunc = "vs"
-    });
-
-    std::filesystem::path fragmentShaderPath = getShaderFile(vk::ShaderStageFlagBits::eFragment);
-
-    std::vector<char> fragmentShaderBinary = FileSystem::ReadAllBinary(fragmentShaderPath);
-    if (fragmentShaderBinary.empty())
-    {
-        LOG_STREAM(ERROR) << "Failed to load shader: " << fragmentShaderPath << std::endl;
-        return;
-    }
-    LOG_STREAM(DEBUG) << "Loaded shader: " << fragmentShaderPath << std::endl;
-
-    m_CubeFragmentShaderHandle = m_RenderContext->createShaderModule({
-        .debugName = "Cube Frag Shader",
-        .byteCode = reinterpret_cast<uint8_t*>(fragmentShaderBinary.data()),
-        .byteSize = static_cast<uint32_t>(fragmentShaderBinary.size()),
-        .entryFunc = "ps"
-    });
-}
-
 void RenderSystem::CreateRenderPass()
 {
     vk::SurfaceFormatKHR surfaceFormat = m_Swapchain.GetFormat();
@@ -717,67 +665,6 @@ void RenderSystem::CreatePipeline()
             .subpassIndex = 0
         }
     );
-
-    auto& vertexShaderModuleDesc = m_RenderContext->getShaderModuleDesc(m_CubeVertexShaderHandle);
-    auto& vertexShaderModule = m_RenderContext->getShaderModule(m_CubeVertexShaderHandle);
-
-    auto& fragmentShaderModuleDesc = m_RenderContext->getShaderModuleDesc(m_CubeFragmentShaderHandle);
-    auto& fragmentShaderModule = m_RenderContext->getShaderModule(m_CubeFragmentShaderHandle);
-
-    vk::PipelineShaderStageCreateInfo vertexShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *vertexShaderModule.sm, vertexShaderModuleDesc.entryFunc);
-    vk::PipelineShaderStageCreateInfo fragmentShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eFragment, *fragmentShaderModule.sm, fragmentShaderModuleDesc.entryFunc);
-    std::vector<vk::PipelineShaderStageCreateInfo> shaderStageCreateInfos = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
-
-    std::vector<vk::DynamicState> dynamicStates = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
-    vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo({}, dynamicStates);
-
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
-
-    vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-
-    vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo({}, vk::PrimitiveTopology::eTriangleList, false);
-    vk::PipelineViewportStateCreateInfo viewportStateCreateInfo({}, 1, nullptr, 1, nullptr);
-    vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo({}, false, false, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise, false, 0.0f, 0.0f, 0.0f, 1.0f);
-    vk::PipelineMultisampleStateCreateInfo multisampleStateCreateInfo({}, vk::SampleCountFlagBits::e1, false, 0.0f, nullptr, false, false);
-    vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo({}, true, true, vk::CompareOp::eGreaterOrEqual, false, false, {}, {}, 0.0f, 1.0f);
-
-    vk::PipelineColorBlendAttachmentState colorBlendAttachmentState(false,
-                                                                    vk::BlendFactor::eOne,
-                                                                    vk::BlendFactor::eZero,
-                                                                    vk::BlendOp::eAdd,
-                                                                    vk::BlendFactor::eOne,
-                                                                    vk::BlendFactor::eZero,
-                                                                    vk::BlendOp::eAdd,
-                                                                    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-    std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachmentStates = {colorBlendAttachmentState};
-
-    vk::PipelineColorBlendStateCreateInfo colorBlendStateCreateInfo({}, false, vk::LogicOp::eCopy, colorBlendAttachmentStates, {0.0f, 0.0f, 0.0f, 0.0f});
-
-    vk::GraphicsPipelineCreateInfo pipelineCreateInfo({},
-                                                      shaderStageCreateInfos,
-                                                      &vertexInputInfo,
-                                                      &inputAssemblyInfo,
-                                                      nullptr, // tessellation
-                                                      &viewportStateCreateInfo,
-                                                      &rasterizationStateCreateInfo,
-                                                      &multisampleStateCreateInfo,
-                                                      &depthStencilStateCreateInfo,
-                                                      &colorBlendStateCreateInfo,
-                                                      &dynamicStateCreateInfo,
-                                                      *m_PipelineLayout,
-                                                      *m_RenderPass,
-                                                      0,       // subpass
-                                                      nullptr, // basePipelineHandle
-                                                      -1);     // basePipelineIndex
-
-    m_Pipeline = m_Device.Get().createGraphicsPipeline(nullptr, pipelineCreateInfo);
-
-    m_Device.SetName(m_Pipeline, "Cube Pipeline");
 }
 
 void RenderSystem::CreateFramebuffers()

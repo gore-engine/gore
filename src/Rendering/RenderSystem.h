@@ -74,10 +74,6 @@ private:
     // Surface & Swapchain
     gfx::Swapchain m_Swapchain;
 
-    // Shader
-    ShaderModuleHandle m_CubeVertexShaderHandle;
-    ShaderModuleHandle m_CubeFragmentShaderHandle;
-
     GraphicsPipelineHandle m_CubePipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
 
@@ -87,7 +83,6 @@ private:
     // Pipeline
     vk::raii::PipelineLayout m_PipelineLayout;
     vk::raii::PipelineLayout m_BlankPipelineLayout;
-    vk::raii::Pipeline m_Pipeline;
 
     // Framebuffer
     std::vector<vk::raii::Framebuffer> m_Framebuffers;
@@ -131,7 +126,6 @@ private:
     void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
     void CreateDepthBuffer();
     void CreateVertexBuffer();
-    void LoadShader(const std::string& name, const std::string& vertexEntryPoint, const std::string& fragmentEntryPoint);
     void CreateRenderPass();
     void CreateGlobalDescriptorSets();
     void CreatePipeline();
