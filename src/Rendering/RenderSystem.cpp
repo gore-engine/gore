@@ -110,7 +110,7 @@ void RenderSystem::Initialize()
 
     CreateSynchronization();
 
-    InitImgui();
+    // InitImgui();
 }
 
 struct PushConstant
@@ -120,14 +120,14 @@ struct PushConstant
 
 void RenderSystem::Update()
 {
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+    // ImGui_ImplVulkan_NewFrame();
+    // ImGui_ImplGlfw_NewFrame();
+    // ImGui::NewFrame();
 
     bool show = true;
-    ImGui::ShowDemoWindow(&show);
+    // ImGui::ShowDemoWindow(&show);
 
-    ImGui::Render();
+    // ImGui::Render();
 
     Window* window = m_App->GetWindow();
 
@@ -142,6 +142,7 @@ void RenderSystem::Update()
     uint32_t currentSwapchainImageIndex = m_Swapchain.GetCurrentImageIndex();
     vk::Extent2D surfaceExtent = m_Swapchain.GetExtent();
     const std::vector<vk::Image>& swapchainImages = m_Swapchain.GetImages();
+    const std::vector<vk::raii::ImageView>& swapchainImageViews = m_Swapchain.GetImageViews();
 
     vk::Fence inFlightFence = *m_InFlightFences[currentSwapchainImageIndex];
 
@@ -174,7 +175,20 @@ void RenderSystem::Update()
     vk::ClearValue clearValueDepth(vk::ClearDepthStencilValue(0.0f, 0));
     std::vector<vk::ClearValue> clearValues = {clearValueColor, clearValueDepth};
     vk::RenderPassBeginInfo renderPassBeginInfo(*m_RenderPass, *m_Framebuffers[currentSwapchainImageIndex], {{0, 0}, surfaceExtent}, clearValues);
-    commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+    // commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+
+    vk::RenderingAttachmentInfoKHR renderingAttachmentInfo(*swapchainImageViews[currentSwapchainImageIndex], vk::ImageLayout::eColorAttachmentOptimal);
+    renderingAttachmentInfo.setClearValue(clearValueColor); 
+    renderingAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
+    renderingAttachmentInfo.setStoreOp(vk::AttachmentStoreOp::eStore);
+
+    vk::RenderingAttachmentInfoKHR depthStencilAttachmentInfo(*m_DepthImageView, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+    depthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
+    depthStencilAttachmentInfo.setStoreOp(vk::AttachmentStoreOp::eDontCare);
+
+    vk::RenderingInfoKHR renderingInfo({}, vk::Rect2D{{0, 0}, surfaceExtent}, 1, 0, 1, &renderingAttachmentInfo, &depthStencilAttachmentInfo);
+
+    commandBuffer.beginRenderingKHR(renderingInfo);
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
 
@@ -218,9 +232,10 @@ void RenderSystem::Update()
         commandBuffer.drawIndexed(36, 1, 0, 0, 0);
     }
 
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *commandBuffer);
+    // ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *commandBuffer);
 
-    commandBuffer.endRenderPass();
+    commandBuffer.endRenderingKHR();
+    // commandBuffer.endRenderPass();
 
     std::vector<vk::ImageMemoryBarrier> imageMemoryBarriers2;
     imageMemoryBarriers2.emplace_back(vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eMemoryRead,
@@ -280,7 +295,7 @@ void RenderSystem::Shutdown()
 
     m_RenderContext->clear();
 
-    ShutdownImgui();
+    // ShutdownImgui();
 }
 
 void RenderSystem::OnResize(Window* window, int width, int height)
@@ -632,6 +647,9 @@ void RenderSystem::CreatePipeline()
                 .byteSize = static_cast<uint32_t>(cubeFragBytecode.size()), 
                 .entryFunc = "ps"
             },
+            .colorFormats = { GraphicsFormat::BGRA8_SRGB },
+            .depthFormat = GraphicsFormat::D32_FLOAT,
+            .stencilFormat = GraphicsFormat::Undefined,
             .vertexBufferBindings
             {
                 {
@@ -643,7 +661,7 @@ void RenderSystem::CreatePipeline()
                 }
             },
             .pipelineLayout { *m_PipelineLayout },
-            .renderPass { *m_RenderPass },
+            .renderPass { nullptr },
             .subpassIndex = 0
         }
     );
@@ -663,8 +681,11 @@ void RenderSystem::CreatePipeline()
                 .byteSize = static_cast<uint32_t>(triangleFragBytecode.size()), 
                 .entryFunc = "ps"
             },            
+            .colorFormats = {GraphicsFormat::BGRA8_SRGB},
+            .depthFormat = GraphicsFormat::D32_FLOAT,
+            .stencilFormat = GraphicsFormat::Undefined,
             .pipelineLayout { *m_BlankPipelineLayout },
-            .renderPass { *m_RenderPass },
+            .renderPass { nullptr },
             .subpassIndex = 0
         }
     );
