@@ -260,8 +260,13 @@ Device::Device(PhysicalDevice physicalDevice) :
     // Features
     vk::PhysicalDeviceFeatures2 enabledFeatures2 = pd.getFeatures2();
 
+    vk::PhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures;
+    dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
+
     vk::PhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures;
-    bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+    bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;    
+
+    bufferDeviceAddressFeatures.pNext = &dynamicRenderingFeatures;
 
     enabledFeatures2.pNext = &bufferDeviceAddressFeatures;
 
