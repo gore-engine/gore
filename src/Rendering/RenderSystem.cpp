@@ -39,8 +39,6 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_Device(),
     // Surface & Swapchain
     m_Swapchain(),
-    // Render Pass
-    m_RenderPass(nullptr),
     // Pipeline
     m_BlankPipelineLayout(nullptr),
     m_PipelineLayout(nullptr),
@@ -97,7 +95,6 @@ void RenderSystem::Initialize()
 
     CreateDepthBuffer();
     CreateVertexBuffer();
-    CreateRenderPass();
     CreateGlobalDescriptorSets();
     CreatePipeline();
     CreateFramebuffers();
@@ -110,7 +107,7 @@ void RenderSystem::Initialize()
 
     CreateSynchronization();
 
-    // InitImgui();
+    InitImgui();
 }
 
 struct PushConstant
@@ -120,14 +117,14 @@ struct PushConstant
 
 void RenderSystem::Update()
 {
-    // ImGui_ImplVulkan_NewFrame();
-    // ImGui_ImplGlfw_NewFrame();
-    // ImGui::NewFrame();
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 
     bool show = true;
-    // ImGui::ShowDemoWindow(&show);
+    ImGui::ShowDemoWindow(&show);
 
-    // ImGui::Render();
+    ImGui::Render();
 
     Window* window = m_App->GetWindow();
 
@@ -174,9 +171,7 @@ void RenderSystem::Update()
     vk::ClearValue clearValueColor(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
     vk::ClearValue clearValueDepth(vk::ClearDepthStencilValue(0.0f, 0));
     std::vector<vk::ClearValue> clearValues = {clearValueColor, clearValueDepth};
-    vk::RenderPassBeginInfo renderPassBeginInfo(*m_RenderPass, *m_Framebuffers[currentSwapchainImageIndex], {{0, 0}, surfaceExtent}, clearValues);
-    // commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-
+    
     vk::RenderingAttachmentInfoKHR renderingAttachmentInfo(*swapchainImageViews[currentSwapchainImageIndex], vk::ImageLayout::eColorAttachmentOptimal);
     renderingAttachmentInfo.setClearValue(clearValueColor); 
     renderingAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
@@ -232,10 +227,15 @@ void RenderSystem::Update()
         commandBuffer.drawIndexed(36, 1, 0, 0, 0);
     }
 
-    // ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *commandBuffer);
+    commandBuffer.endRenderingKHR();
+
+    renderingAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
+    vk::RenderingInfoKHR imguiRenderInfo({}, vk::Rect2D{{0, 0}, surfaceExtent}, 1, 0, 1, &renderingAttachmentInfo, nullptr);
+    commandBuffer.beginRenderingKHR(imguiRenderInfo);
+
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *commandBuffer);
 
     commandBuffer.endRenderingKHR();
-    // commandBuffer.endRenderPass();
 
     std::vector<vk::ImageMemoryBarrier> imageMemoryBarriers2;
     imageMemoryBarriers2.emplace_back(vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eMemoryRead,
@@ -295,7 +295,7 @@ void RenderSystem::Shutdown()
 
     m_RenderContext->clear();
 
-    // ShutdownImgui();
+    ShutdownImgui();
 }
 
 void RenderSystem::OnResize(Window* window, int width, int height)
@@ -359,8 +359,9 @@ void RenderSystem::InitImgui()
 	init_info.MinImageCount = 3;
 	init_info.ImageCount = 3;
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-
-	ImGui_ImplVulkan_Init(&init_info, *m_RenderPass);
+    init_info.UseDynamicRendering = true;
+    init_info.ColorAttachmentFormat = static_cast<VkFormat>(m_Swapchain.GetFormat().format);
+	ImGui_ImplVulkan_Init(&init_info, nullptr);
 }
 
 void RenderSystem::ShutdownImgui()
@@ -501,54 +502,6 @@ void RenderSystem::CreateVertexBuffer()
             m_RenderContext->DestroyBuffer(m_IndexBufferHandle);
         }
     );
-}
-
-void RenderSystem::CreateRenderPass()
-{
-    vk::SurfaceFormatKHR surfaceFormat = m_Swapchain.GetFormat();
-
-    vk::AttachmentDescription colorAttachment({}, surfaceFormat.format,
-                                              vk::SampleCountFlagBits::e1,
-                                              vk::AttachmentLoadOp::eClear,
-                                              vk::AttachmentStoreOp::eStore,
-                                              vk::AttachmentLoadOp::eDontCare,
-                                              vk::AttachmentStoreOp::eDontCare,
-                                              vk::ImageLayout::eColorAttachmentOptimal,
-                                              vk::ImageLayout::eColorAttachmentOptimal);
-
-    vk::AttachmentDescription depthAttachment({}, vk::Format::eD32Sfloat,
-                                              vk::SampleCountFlagBits::e1,
-                                              vk::AttachmentLoadOp::eClear,
-                                              vk::AttachmentStoreOp::eDontCare,
-                                              vk::AttachmentLoadOp::eDontCare,
-                                              vk::AttachmentStoreOp::eDontCare,
-                                              vk::ImageLayout::eDepthStencilAttachmentOptimal,
-                                              vk::ImageLayout::eDepthStencilAttachmentOptimal);
-
-    std::vector<vk::AttachmentDescription> attachments = {colorAttachment, depthAttachment};
-
-    vk::AttachmentReference colorAttachmentRef(0, vk::ImageLayout::eColorAttachmentOptimal);
-    vk::AttachmentReference depthAttachmentRef(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
-    std::vector<vk::AttachmentReference> inputAttachmentRefs;
-    std::vector<vk::AttachmentReference> colorAttachmentRefs = {colorAttachmentRef};
-    std::vector<vk::AttachmentReference> resolveAttachmentRefs;
-    std::vector<uint32_t> preserveAttachmentRefs;
-
-    vk::SubpassDescription subpassDesc({}, vk::PipelineBindPoint::eGraphics,
-                                       inputAttachmentRefs,
-                                       colorAttachmentRefs,
-                                       resolveAttachmentRefs,
-                                       &depthAttachmentRef,
-                                       preserveAttachmentRefs);
-
-    std::vector<vk::SubpassDescription> subpasses = {subpassDesc};
-    std::vector<vk::SubpassDependency> dependencies;
-
-    vk::RenderPassCreateInfo renderPassCreateInfo({}, attachments, subpasses, dependencies);
-
-    m_RenderPass = m_Device.Get().createRenderPass(renderPassCreateInfo);
-
-    m_Device.SetName(m_RenderPass, "Cube Color Pass");
 }
 
 void RenderSystem::CreateGlobalDescriptorSets()
@@ -703,7 +656,7 @@ void RenderSystem::CreateFramebuffers()
     for (uint32_t i = 0; i < swapchainImageCount; ++i)
     {
         std::vector<vk::ImageView> attachments = {*swapchainImageViews[i], *m_DepthImageView};
-        vk::FramebufferCreateInfo framebufferCreateInfo({}, *m_RenderPass, attachments, swapchainExtent.width, swapchainExtent.height, 1);
+        vk::FramebufferCreateInfo framebufferCreateInfo({}, nullptr, attachments, swapchainExtent.width, swapchainExtent.height, 1);
         m_Framebuffers.emplace_back(m_Device.Get().createFramebuffer(framebufferCreateInfo));
 
         m_Device.SetName(m_Framebuffers[i], "Cube Framebuffer " + std::to_string(i));
