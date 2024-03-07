@@ -149,6 +149,8 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
     graphicsPipeline.renderPass = desc.renderPass;
     graphicsPipeline.layout     = desc.pipelineLayout;
 
+    m_DevicePtr->SetName(graphicsPipeline.pipeline, desc.debugName);
+
     return m_GraphicsPipelinePool.create(
         std::move(desc),
         std::move(graphicsPipeline));
@@ -180,6 +182,8 @@ BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
     };
 
     buffer.vkDeviceAddress = m_DevicePtr->Get().getBufferAddress(bufferDeviceAddressInfo);
+
+    m_DevicePtr->SetName(reinterpret_cast<uint64_t>(buffer.vkBuffer), vk::ObjectType::eBuffer,  desc.debugName);
 
     return m_BufferPool.create(
         std::move(desc),

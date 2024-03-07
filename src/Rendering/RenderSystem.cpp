@@ -583,6 +583,7 @@ void RenderSystem::CreatePipeline()
     m_CubePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
         GraphicsPipelineDesc
         {
+            .debugName = "Cube Pipeline",
             .VS
             {
                 .byteCode = reinterpret_cast<uint8_t*>(cubeVertBytecode.data()),
@@ -617,6 +618,7 @@ void RenderSystem::CreatePipeline()
     m_TrianglePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
         GraphicsPipelineDesc
         {
+            .debugName = "Triangle Pipeline",
             .VS
             {
                 .byteCode = reinterpret_cast<uint8_t*>(triangleVertBytecode.data()),
