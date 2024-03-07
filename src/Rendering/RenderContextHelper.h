@@ -9,6 +9,8 @@
 #include <vector>
 namespace gore::VulkanHelper
 {
+std::vector<VkFormat> GetVkFormats(const std::vector<GraphicsFormat>& formats);
+
 inline vk::CompareOp GetVkCompareOp(CompareOp op)
 {
     return static_cast<vk::CompareOp>(op);

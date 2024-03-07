@@ -77,15 +77,9 @@ private:
     GraphicsPipelineHandle m_CubePipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
 
-    // Render pass
-    vk::raii::RenderPass m_RenderPass;
-
     // Pipeline
     vk::raii::PipelineLayout m_PipelineLayout;
     vk::raii::PipelineLayout m_BlankPipelineLayout;
-
-    // Framebuffer
-    std::vector<vk::raii::Framebuffer> m_Framebuffers;
 
     // Queue
     vk::raii::Queue m_GraphicsQueue;
@@ -126,10 +120,8 @@ private:
     void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
     void CreateDepthBuffer();
     void CreateVertexBuffer();
-    void CreateRenderPass();
     void CreateGlobalDescriptorSets();
     void CreatePipeline();
-    void CreateFramebuffers();
     void GetQueues();
     void CreateSynchronization();
 

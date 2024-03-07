@@ -85,15 +85,15 @@ Instance::Instance(App* app) :
     m_EnabledInstanceExtensions.reset(static_cast<size_t>(VulkanInstanceExtension::kVK_EXT_debug_utils));
 #endif
 
-    std::vector<const char*> enabledInstanceExtensions = BuildEnabledExtensions<VulkanInstanceExtensionBitset, VulkanInstanceExtension>(instanceExtensionProperties,
-                                                                                                                                        m_EnabledInstanceExtensions);
-
     // Instance Creation
 #ifdef VK_API_VERSION_1_1
     m_ApiVersion = m_Context.enumerateInstanceVersion(); // TODO: potential crash
 #else
     m_ApiVersion = VK_API_VERSION_1_0;
 #endif
+
+    std::vector<const char*> enabledInstanceExtensions = BuildEnabledExtensions<VulkanInstanceExtensionBitset, VulkanInstanceExtension>(instanceExtensionProperties,
+                                                                                                                                        m_EnabledInstanceExtensions);
 
     vk::ApplicationInfo appInfo("Gore", 1, "Gore", 1, m_ApiVersion);
     vk::InstanceCreateInfo instanceCreateInfo({}, &appInfo, enabledLayers, enabledInstanceExtensions);

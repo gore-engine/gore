@@ -286,6 +286,10 @@ struct GraphicsPipelineDesc final
     // Mesh shader
     ShaderBinding MS;
 
+    std::vector<GraphicsFormat> colorFormats = {};
+    GraphicsFormat depthFormat               = GraphicsFormat::Undefined;
+    GraphicsFormat stencilFormat             = GraphicsFormat::Undefined;
+
     std::vector<BindGroupHandle> bindGroups;
 
     std::vector<VertexBufferBinding> vertexBufferBindings;
@@ -305,5 +309,10 @@ struct GraphicsPipelineDesc final
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     VkRenderPass renderPass         = VK_NULL_HANDLE;
     uint32_t subpassIndex           = 0;
+
+    bool UseDynamicRendering() const
+    {
+        return depthFormat != GraphicsFormat::Undefined || stencilFormat != GraphicsFormat::Undefined || colorFormats.size() > 0;
+    }
 };
 } // namespace gore

@@ -6,10 +6,12 @@ namespace gore
 {
 enum class GraphicsFormat
 {
+    Undefined,
     // Common Render Target Formats
     R11G11B10_UNORM,
 
     // Common Texture Formats
+    BGRA8_SRGB,
     RGBA8_SRGB,
     RGBA8_UNORM,
     RGB8_SRGB,
@@ -29,7 +31,7 @@ enum class GraphicsFormat
 
     // Depth Stencil Format
     D32_FLOAT, // depth 24 bits, stencil 8 bits
-
+    D32_FLOAT_S8_UINT,
     Count
 };
 

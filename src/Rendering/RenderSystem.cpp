@@ -39,13 +39,9 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_Device(),
     // Surface & Swapchain
     m_Swapchain(),
-    // Render Pass
-    m_RenderPass(nullptr),
     // Pipeline
     m_BlankPipelineLayout(nullptr),
     m_PipelineLayout(nullptr),
-    // Framebuffers
-    m_Framebuffers(),
     // Queue
     m_GraphicsQueue(nullptr),
     m_GraphicsQueueFamilyIndex(0),
@@ -97,10 +93,8 @@ void RenderSystem::Initialize()
 
     CreateDepthBuffer();
     CreateVertexBuffer();
-    CreateRenderPass();
     CreateGlobalDescriptorSets();
     CreatePipeline();
-    CreateFramebuffers();
     GetQueues();
 
     m_CommandPool = m_Device.CreateCommandPool(m_GraphicsQueueFamilyIndex);
@@ -142,6 +136,7 @@ void RenderSystem::Update()
     uint32_t currentSwapchainImageIndex = m_Swapchain.GetCurrentImageIndex();
     vk::Extent2D surfaceExtent = m_Swapchain.GetExtent();
     const std::vector<vk::Image>& swapchainImages = m_Swapchain.GetImages();
+    const std::vector<vk::raii::ImageView>& swapchainImageViews = m_Swapchain.GetImageViews();
 
     vk::Fence inFlightFence = *m_InFlightFences[currentSwapchainImageIndex];
 
@@ -173,8 +168,19 @@ void RenderSystem::Update()
     vk::ClearValue clearValueColor(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
     vk::ClearValue clearValueDepth(vk::ClearDepthStencilValue(0.0f, 0));
     std::vector<vk::ClearValue> clearValues = {clearValueColor, clearValueDepth};
-    vk::RenderPassBeginInfo renderPassBeginInfo(*m_RenderPass, *m_Framebuffers[currentSwapchainImageIndex], {{0, 0}, surfaceExtent}, clearValues);
-    commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+    
+    vk::RenderingAttachmentInfoKHR renderingAttachmentInfo(*swapchainImageViews[currentSwapchainImageIndex], vk::ImageLayout::eColorAttachmentOptimal);
+    renderingAttachmentInfo.setClearValue(clearValueColor); 
+    renderingAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
+    renderingAttachmentInfo.setStoreOp(vk::AttachmentStoreOp::eStore);
+
+    vk::RenderingAttachmentInfoKHR depthStencilAttachmentInfo(*m_DepthImageView, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+    depthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
+    depthStencilAttachmentInfo.setStoreOp(vk::AttachmentStoreOp::eDontCare);
+
+    vk::RenderingInfoKHR renderingInfo({}, vk::Rect2D{{0, 0}, surfaceExtent}, 1, 0, 1, &renderingAttachmentInfo, &depthStencilAttachmentInfo);
+
+    commandBuffer.beginRenderingKHR(renderingInfo);
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
 
@@ -218,9 +224,15 @@ void RenderSystem::Update()
         commandBuffer.drawIndexed(36, 1, 0, 0, 0);
     }
 
+    commandBuffer.endRenderingKHR();
+
+    renderingAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
+    vk::RenderingInfoKHR imguiRenderInfo({}, vk::Rect2D{{0, 0}, surfaceExtent}, 1, 0, 1, &renderingAttachmentInfo, nullptr);
+    commandBuffer.beginRenderingKHR(imguiRenderInfo);
+
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *commandBuffer);
 
-    commandBuffer.endRenderPass();
+    commandBuffer.endRenderingKHR();
 
     std::vector<vk::ImageMemoryBarrier> imageMemoryBarriers2;
     imageMemoryBarriers2.emplace_back(vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eMemoryRead,
@@ -258,7 +270,6 @@ void RenderSystem::Update()
         int width, height;
         window->GetSize(&width, &height);
         CreateDepthBuffer();
-        CreateFramebuffers();
         CreateSynchronization();
 
         m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
@@ -298,7 +309,6 @@ void RenderSystem::OnResize(Window* window, int width, int height)
 
     m_Swapchain.Recreate(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     CreateDepthBuffer();
-    CreateFramebuffers();
 }
 
 void RenderSystem::InitImgui()
@@ -344,8 +354,9 @@ void RenderSystem::InitImgui()
 	init_info.MinImageCount = 3;
 	init_info.ImageCount = 3;
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-
-	ImGui_ImplVulkan_Init(&init_info, *m_RenderPass);
+    init_info.UseDynamicRendering = true;
+    init_info.ColorAttachmentFormat = static_cast<VkFormat>(m_Swapchain.GetFormat().format);
+	ImGui_ImplVulkan_Init(&init_info, nullptr);
 }
 
 void RenderSystem::ShutdownImgui()
@@ -488,54 +499,6 @@ void RenderSystem::CreateVertexBuffer()
     );
 }
 
-void RenderSystem::CreateRenderPass()
-{
-    vk::SurfaceFormatKHR surfaceFormat = m_Swapchain.GetFormat();
-
-    vk::AttachmentDescription colorAttachment({}, surfaceFormat.format,
-                                              vk::SampleCountFlagBits::e1,
-                                              vk::AttachmentLoadOp::eClear,
-                                              vk::AttachmentStoreOp::eStore,
-                                              vk::AttachmentLoadOp::eDontCare,
-                                              vk::AttachmentStoreOp::eDontCare,
-                                              vk::ImageLayout::eColorAttachmentOptimal,
-                                              vk::ImageLayout::eColorAttachmentOptimal);
-
-    vk::AttachmentDescription depthAttachment({}, vk::Format::eD32Sfloat,
-                                              vk::SampleCountFlagBits::e1,
-                                              vk::AttachmentLoadOp::eClear,
-                                              vk::AttachmentStoreOp::eDontCare,
-                                              vk::AttachmentLoadOp::eDontCare,
-                                              vk::AttachmentStoreOp::eDontCare,
-                                              vk::ImageLayout::eDepthStencilAttachmentOptimal,
-                                              vk::ImageLayout::eDepthStencilAttachmentOptimal);
-
-    std::vector<vk::AttachmentDescription> attachments = {colorAttachment, depthAttachment};
-
-    vk::AttachmentReference colorAttachmentRef(0, vk::ImageLayout::eColorAttachmentOptimal);
-    vk::AttachmentReference depthAttachmentRef(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
-    std::vector<vk::AttachmentReference> inputAttachmentRefs;
-    std::vector<vk::AttachmentReference> colorAttachmentRefs = {colorAttachmentRef};
-    std::vector<vk::AttachmentReference> resolveAttachmentRefs;
-    std::vector<uint32_t> preserveAttachmentRefs;
-
-    vk::SubpassDescription subpassDesc({}, vk::PipelineBindPoint::eGraphics,
-                                       inputAttachmentRefs,
-                                       colorAttachmentRefs,
-                                       resolveAttachmentRefs,
-                                       &depthAttachmentRef,
-                                       preserveAttachmentRefs);
-
-    std::vector<vk::SubpassDescription> subpasses = {subpassDesc};
-    std::vector<vk::SubpassDependency> dependencies;
-
-    vk::RenderPassCreateInfo renderPassCreateInfo({}, attachments, subpasses, dependencies);
-
-    m_RenderPass = m_Device.Get().createRenderPass(renderPassCreateInfo);
-
-    m_Device.SetName(m_RenderPass, "Cube Color Pass");
-}
-
 void RenderSystem::CreateGlobalDescriptorSets()
 {
     std::vector<vk::DescriptorPoolSize> poolSizes = {
@@ -632,6 +595,9 @@ void RenderSystem::CreatePipeline()
                 .byteSize = static_cast<uint32_t>(cubeFragBytecode.size()), 
                 .entryFunc = "ps"
             },
+            .colorFormats = { GraphicsFormat::BGRA8_SRGB },
+            .depthFormat = GraphicsFormat::D32_FLOAT,
+            .stencilFormat = GraphicsFormat::Undefined,
             .vertexBufferBindings
             {
                 {
@@ -643,7 +609,7 @@ void RenderSystem::CreatePipeline()
                 }
             },
             .pipelineLayout { *m_PipelineLayout },
-            .renderPass { *m_RenderPass },
+            .renderPass { nullptr },
             .subpassIndex = 0
         }
     );
@@ -663,31 +629,14 @@ void RenderSystem::CreatePipeline()
                 .byteSize = static_cast<uint32_t>(triangleFragBytecode.size()), 
                 .entryFunc = "ps"
             },            
+            .colorFormats = {GraphicsFormat::BGRA8_SRGB},
+            .depthFormat = GraphicsFormat::D32_FLOAT,
+            .stencilFormat = GraphicsFormat::Undefined,
             .pipelineLayout { *m_BlankPipelineLayout },
-            .renderPass { *m_RenderPass },
+            .renderPass { nullptr },
             .subpassIndex = 0
         }
     );
-}
-
-void RenderSystem::CreateFramebuffers()
-{
-    uint32_t swapchainImageCount                                = m_Swapchain.GetImageCount();
-    vk::Extent2D swapchainExtent                                = m_Swapchain.GetExtent();
-    const std::vector<vk::raii::ImageView>& swapchainImageViews = m_Swapchain.GetImageViews();
-
-    m_Framebuffers.clear();
-    m_Framebuffers.reserve(swapchainImageCount);
-
-    for (uint32_t i = 0; i < swapchainImageCount; ++i)
-    {
-        std::vector<vk::ImageView> attachments = {*swapchainImageViews[i], *m_DepthImageView};
-        vk::FramebufferCreateInfo framebufferCreateInfo({}, *m_RenderPass, attachments, swapchainExtent.width, swapchainExtent.height, 1);
-        m_Framebuffers.emplace_back(m_Device.Get().createFramebuffer(framebufferCreateInfo));
-
-        m_Device.SetName(m_Framebuffers[i], "Cube Framebuffer " + std::to_string(i));
-    }
-
 }
 
 void RenderSystem::GetQueues()

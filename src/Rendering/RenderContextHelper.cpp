@@ -26,6 +26,8 @@ vk::Format GetVkFormat(GraphicsFormat format)
             return vk::Format::eB10G11R11UfloatPack32;
         case GraphicsFormat::RGB32_FLOAT:
             return vk::Format::eR32G32B32Sfloat;
+        case GraphicsFormat::BGRA8_SRGB:
+            return vk::Format::eB8G8R8A8Srgb;
         case GraphicsFormat::RGB8_SRGB:
             return vk::Format::eR8G8B8Srgb;
         case GraphicsFormat::RGB8_UNORM:
@@ -42,10 +44,26 @@ vk::Format GetVkFormat(GraphicsFormat format)
             return vk::Format::eR16G16Sfloat;
         case GraphicsFormat::D32_FLOAT:
             return vk::Format::eD32Sfloat;
+        case GraphicsFormat::D32_FLOAT_S8_UINT:
+            return vk::Format::eD32SfloatS8Uint;
+        case GraphicsFormat::Undefined:
+            return vk::Format::eUndefined;
         default:
             std::runtime_error("Unknown format");
-            return vk::Format::eR8G8B8A8Srgb;
+            return vk::Format::eUndefined;
     }
+}
+
+std::vector<VkFormat> GetVkFormats(const std::vector<GraphicsFormat>& formats)
+{
+    std::vector<VkFormat> vkFormats;
+    vkFormats.reserve(formats.size());
+
+    for (auto format : formats)
+    {
+        vkFormats.push_back(static_cast<VkFormat>(GetVkFormat(format)));
+    }
+    return vkFormats;
 }
 
 VkBufferCreateInfo GetVkBufferCreateInfo(BufferDesc& desc)

@@ -127,6 +127,24 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
     createInfo.renderPass = desc.renderPass;
     createInfo.subpass    = desc.subpassIndex;
 
+    std::vector<VkFormat> colorFormats = VulkanHelper::GetVkFormats(desc.colorFormats);
+    VkFormat depthFormat = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.depthFormat));
+    VkFormat stencilFormat = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.stencilFormat));
+
+    VkPipelineRenderingCreateInfoKHR rfInfo = {};
+
+    if (desc.UseDynamicRendering())
+    {
+        rfInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+        rfInfo.pNext = nullptr;
+        rfInfo.colorAttachmentCount = colorFormats.size();
+        rfInfo.pColorAttachmentFormats = colorFormats.data();
+        rfInfo.depthAttachmentFormat = depthFormat;
+        rfInfo.stencilAttachmentFormat = stencilFormat;
+
+        createInfo.pNext = &rfInfo;
+    }
+
     GraphicsPipeline graphicsPipeline(std::move(m_DevicePtr->Get().createGraphicsPipeline(nullptr, createInfo)));
     graphicsPipeline.renderPass = desc.renderPass;
     graphicsPipeline.layout     = desc.pipelineLayout;
