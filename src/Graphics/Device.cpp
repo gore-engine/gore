@@ -275,7 +275,6 @@ Device::Device(PhysicalDevice physicalDevice) :
     m_EnabledDeviceExtensions.set();
     std::vector<const char*> enabledDeviceExtensions = BuildEnabledExtensions<VulkanDeviceExtensionBitset, VulkanDeviceExtension>(deviceExtensionProperties,
                                                                                                                                   m_EnabledDeviceExtensions);                                                                                                                                
-    enabledDeviceExtensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     // Create
     vk::DeviceCreateInfo deviceCreateInfo({}, queueCreateInfos, {}, enabledDeviceExtensions, nullptr, &enabledFeatures2);
     m_Device = pd.createDevice(deviceCreateInfo);
