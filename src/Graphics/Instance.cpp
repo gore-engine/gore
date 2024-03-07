@@ -92,13 +92,6 @@ Instance::Instance(App* app) :
     m_ApiVersion = VK_API_VERSION_1_0;
 #endif
 
-    uint32_t minorVersion = VK_API_VERSION_MINOR(m_ApiVersion);
-    uint32_t majorVersion = VK_API_VERSION_MAJOR(m_ApiVersion);
-    if (majorVersion >=1 && minorVersion >= 3)
-    {
-        m_ApiVersion = VK_API_VERSION_1_3;
-    }
-
     std::vector<const char*> enabledInstanceExtensions = BuildEnabledExtensions<VulkanInstanceExtensionBitset, VulkanInstanceExtension>(instanceExtensionProperties,
                                                                                                                                         m_EnabledInstanceExtensions);
 
