@@ -42,8 +42,6 @@ RenderSystem::RenderSystem(gore::App* app) :
     // Pipeline
     m_BlankPipelineLayout(nullptr),
     m_PipelineLayout(nullptr),
-    // Framebuffers
-    m_Framebuffers(),
     // Queue
     m_GraphicsQueue(nullptr),
     m_GraphicsQueueFamilyIndex(0),
@@ -97,7 +95,6 @@ void RenderSystem::Initialize()
     CreateVertexBuffer();
     CreateGlobalDescriptorSets();
     CreatePipeline();
-    CreateFramebuffers();
     GetQueues();
 
     m_CommandPool = m_Device.CreateCommandPool(m_GraphicsQueueFamilyIndex);
@@ -273,7 +270,6 @@ void RenderSystem::Update()
         int width, height;
         window->GetSize(&width, &height);
         CreateDepthBuffer();
-        CreateFramebuffers();
         CreateSynchronization();
 
         m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
@@ -313,7 +309,6 @@ void RenderSystem::OnResize(Window* window, int width, int height)
 
     m_Swapchain.Recreate(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     CreateDepthBuffer();
-    CreateFramebuffers();
 }
 
 void RenderSystem::InitImgui()
@@ -642,26 +637,6 @@ void RenderSystem::CreatePipeline()
             .subpassIndex = 0
         }
     );
-}
-
-void RenderSystem::CreateFramebuffers()
-{
-    uint32_t swapchainImageCount                                = m_Swapchain.GetImageCount();
-    vk::Extent2D swapchainExtent                                = m_Swapchain.GetExtent();
-    const std::vector<vk::raii::ImageView>& swapchainImageViews = m_Swapchain.GetImageViews();
-
-    m_Framebuffers.clear();
-    m_Framebuffers.reserve(swapchainImageCount);
-
-    for (uint32_t i = 0; i < swapchainImageCount; ++i)
-    {
-        std::vector<vk::ImageView> attachments = {*swapchainImageViews[i], *m_DepthImageView};
-        vk::FramebufferCreateInfo framebufferCreateInfo({}, nullptr, attachments, swapchainExtent.width, swapchainExtent.height, 1);
-        m_Framebuffers.emplace_back(m_Device.Get().createFramebuffer(framebufferCreateInfo));
-
-        m_Device.SetName(m_Framebuffers[i], "Cube Framebuffer " + std::to_string(i));
-    }
-
 }
 
 void RenderSystem::GetQueues()

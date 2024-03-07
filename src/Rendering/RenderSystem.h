@@ -81,9 +81,6 @@ private:
     vk::raii::PipelineLayout m_PipelineLayout;
     vk::raii::PipelineLayout m_BlankPipelineLayout;
 
-    // Framebuffer
-    std::vector<vk::raii::Framebuffer> m_Framebuffers;
-
     // Queue
     vk::raii::Queue m_GraphicsQueue;
     uint32_t m_GraphicsQueueFamilyIndex;
@@ -125,7 +122,6 @@ private:
     void CreateVertexBuffer();
     void CreateGlobalDescriptorSets();
     void CreatePipeline();
-    void CreateFramebuffers();
     void GetQueues();
     void CreateSynchronization();
 
