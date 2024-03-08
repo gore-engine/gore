@@ -19,7 +19,13 @@ straightforward as possible.
 ### Changed
  
 ### Fixed
- 
+
+ ## [Unreleased] - 2024-03-07
+Enable Vulkan Dynamic Rendering, which allows to get rid of render passes and subpasses.
+
+### Removed
+Remove render passes, subpasses and framebuffers.
+
 ## [Unreleased] - 2023-01-05
 Today we add a changelog file!
 ### Added
