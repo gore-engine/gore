@@ -162,7 +162,7 @@ void Swapchain::CreateSwapchain()
     vk::SwapchainCreateInfoKHR createInfo({}, *m_Surface, m_ImageCount,
                                           m_Format.format, m_Format.colorSpace,
                                           m_Extent, layers,
-                                          vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc, // TODO: Check supported usage and maybe get this from user?
+                                          vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst, // TODO: Check supported usage and maybe get this from user?
                                           vk::SharingMode::eExclusive,
                                           {}, // queueFamilies
                                           surfaceCapabilities.currentTransform,
