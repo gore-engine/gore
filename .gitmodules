@@ -1,0 +1,3 @@
+[submodule "src/External/AMD/rps"]
+	path = src/External/AMD/rps
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders
