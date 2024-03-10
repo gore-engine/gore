@@ -9,6 +9,8 @@
 
 #include "RenderContext.h"
 
+#include "rps/rps.h"
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
@@ -71,6 +73,9 @@ private:
     // Device
     gfx::Device m_Device;
 
+    // Rps Device
+    RpsDevice m_RpsDevice;
+
     // Surface & Swapchain
     gfx::Swapchain m_Swapchain;
 
@@ -116,6 +121,7 @@ private:
 
     void CreateInstance();
     void CreateDevice();
+    void CreateRPSDevice();
     void CreateSurface();
     void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
     void CreateDepthBuffer();

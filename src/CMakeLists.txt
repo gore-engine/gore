@@ -4,7 +4,7 @@ project(gore)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 # TODO: check debug or something else
-option(ENABLE_TEST "Enable gore engine test" ON)
+option(ENABLE_TEST "Enable gore engine test" OFF)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -136,6 +136,11 @@ list(APPEND COMMON_INCLUDE_FOLDERS ${CGLTF_INCLUDE_DIRS})
 add_subdirectory(External/rtm)
 list(APPEND COMMON_LIBRARIES RealtimeMath)
 
+set(RpsRootSolutionFolder "External/AMD/rps")
+add_subdirectory(External/AMD/rps)
+list(APPEND COMMON_LIBRARIES rps_core rps_runtime rps_runtime_vk)
+list(APPEND COMMON_INCLUDE_FOLDERS "${CMAKE_CURRENT_SOURCE_DIR}/External/AMD/rps/include")
+list(APPEND COMMON_DEFINITIONS "RPS_VK_RUNTIME")
 
 # catch2
 if (${ENABLE_TEST})

@@ -372,6 +372,21 @@ void RenderSystem::UploadPerframeGlobalConstantBuffer(uint32_t imageIndex)
 {
 }
 
+void RenderSystem::CreateRPSDevice()
+{
+    RpsVKRuntimeDeviceCreateInfo createInfo = {};
+    createInfo.hVkDevice = *m_Device.Get();
+    createInfo.hVkPhysicalDevice = *m_Device.GetPhysicalDevice().Get();
+
+    rpsVKRuntimeDeviceCreate(&createInfo, &m_RpsDevice);
+
+    m_RenderDeletionQueue.PushFunction(
+        [&](){
+            rpsDeviceDestroy(m_RpsDevice);
+        }
+    );
+}
+
 void RenderSystem::CreateDepthBuffer()
 {
     std::vector<vk::Format> candidateFormats = {
@@ -610,7 +625,6 @@ void RenderSystem::CreatePipeline()
                 }
             },
             .pipelineLayout { *m_PipelineLayout },
-            .renderPass { nullptr },
             .subpassIndex = 0
         }
     );
@@ -635,7 +649,6 @@ void RenderSystem::CreatePipeline()
             .depthFormat = GraphicsFormat::D32_FLOAT,
             .stencilFormat = GraphicsFormat::Undefined,
             .pipelineLayout { *m_BlankPipelineLayout },
-            .renderPass { nullptr },
             .subpassIndex = 0
         }
     );
