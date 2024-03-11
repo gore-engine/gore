@@ -15,12 +15,15 @@ struct BufferDesc final
 
 struct TextureDesc final
 {
-    const char* debugName = "Noname TextureDesc_2D_R8G8B8A8_SRGB";
+    const char* debugName = "Noname Texture_2D_R8G8B8A8_SRGB";
     TextureType type      = TextureType::Tex2D;
     // use dimentions.z for different texturetypes
     // glm::ivec3 dimentions = glm::ivec3(0);
     TextureFormat format  = TextureFormat::R8G8B8A8_SRGB;
     MemoryUsage memUsage  = MemoryUsage::GPU;
+    uint width            = 1;
+    uint height           = 1;
+    uint depth            = 1;
     int numMips           = 1;
     int numLayers         = 1;
     int numSamples        = 1;
