@@ -136,7 +136,13 @@ list(APPEND COMMON_INCLUDE_FOLDERS ${CGLTF_INCLUDE_DIRS})
 add_subdirectory(External/rtm)
 list(APPEND COMMON_LIBRARIES RealtimeMath)
 
+# Renderpipeline Shader
 set(RpsRootSolutionFolder "External/AMD/rps")
+
+if(APPLE)
+    add_compile_options(-Wno-single-bit-bitfield-constant-conversion)
+endif()
+
 add_subdirectory(External/AMD/rps)
 list(APPEND COMMON_LIBRARIES rps_core rps_runtime rps_runtime_vk)
 list(APPEND COMMON_INCLUDE_FOLDERS "${CMAKE_CURRENT_SOURCE_DIR}/External/AMD/rps/include")
