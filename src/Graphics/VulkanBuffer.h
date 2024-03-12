@@ -47,6 +47,7 @@ void FlushVulkanBuffer(const VulkanBuffer& buffer, const uint32_t size = 0)
     vmaFlushAllocation(buffer.vmaAllocator, buffer.vmaAllocation, 0, size);
 }
 
+// TODO: Can be replaced by vma 3.1.0 vmaCopyAllocationToMemory
 void SetBufferData(const VulkanBuffer& buffer, const uint8_t* data, const uint32_t size, const uint32_t offset = 0)
 {
     bool isPersistentMapped = IsPersistentMappedVulkanBuffer(buffer);
