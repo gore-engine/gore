@@ -39,7 +39,7 @@ gfx::VulkanBuffer RenderContext::CreateStagingBuffer(const gfx::Device& device, 
 
     VmaAllocationCreateInfo allocCreateInfo = {
         .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-        .usage = VMA_MEMORY_USAGE_CPU_ONLY,
+        .usage = VMA_MEMORY_USAGE_AUTO,
     };
     
     VulkanBuffer buffer;
