@@ -33,25 +33,6 @@ enum class TextureType
     Count
 };
 
-enum class TextureFormat
-{
-    None,
-    R8G8B8A8_SRGB,
-    R8G8B8A8_UNORM,
-    R8G8B8A8_SNORM,
-    R8G8B8A8_UINT,
-    R8G8B8A8_SINT,
-    R16G16B16A16_SFLOAT,
-    R16G16B16A16_SINT,
-    R16G16B16A16_UINT,
-    R32G32B32A32_SFLOAT,
-    R32G32B32A32_SINT,
-    R32G32B32A32_UINT,
-    D32_SFLOAT,
-    D32_SFLOAT_S8_UINT,
-    Count
-};
-
 enum class SamplerFilter
 {
     Nearest,

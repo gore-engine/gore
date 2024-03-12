@@ -195,6 +195,18 @@ const GraphicsPipeline& RenderContext::GetGraphicsPipeline(GraphicsPipelineHandl
     return m_GraphicsPipelinePool.getObject(handle);
 }
 
+TextureHandle RenderContext::createTexture(const TextureDesc& desc)
+{
+    VkFormat format = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.format));
+    
+    vk::raii::CommandBuffer commandBuffer = m_DevicePtr->Get().allocateCommandBuffers(vk::CommandBufferAllocateInfo(
+        m_DevicePtr->,
+        vk::CommandBufferLevel::ePrimary,
+        1))[0];
+    
+    return TextureHandle();
+}
+
 BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
 {
     using namespace gfx;

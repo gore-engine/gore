@@ -2,6 +2,7 @@
 
 #include "Handle.h"
 #include "GraphicsResource.h"
+#include "Texture.h"
 
 #include <vector>
 

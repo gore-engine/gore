@@ -19,15 +19,16 @@ struct TextureDesc final
     TextureType type      = TextureType::Tex2D;
     // use dimentions.z for different texturetypes
     // glm::ivec3 dimentions = glm::ivec3(0);
-    TextureFormat format  = TextureFormat::R8G8B8A8_SRGB;
+    GraphicsFormat format = GraphicsFormat::RGBA8_SRGB;
     MemoryUsage memUsage  = MemoryUsage::GPU;
-    uint width            = 1;
-    uint height           = 1;
-    uint depth            = 1;
+    uint32_t width        = 1;
+    uint32_t height       = 1;
+    uint32_t depth        = 1;
     int numMips           = 1;
     int numLayers         = 1;
     int numSamples        = 1;
     uint8_t* data         = nullptr;
+    uint32_t dataSize     = 0;
 };
 
 // TODO: Add more options
