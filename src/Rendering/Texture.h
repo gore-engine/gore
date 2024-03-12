@@ -7,18 +7,18 @@
 
 namespace gore
 {
-    struct Texture
-    {
-        VkImageView srv;
-        VkImageView* uav;
-        VkImageView srvStencil;
+struct Texture
+{
+    VkImageView srv        = VK_NULL_HANDLE;
+    VkImageView* uav       = nullptr;
+    VkImageView srvStencil = VK_NULL_HANDLE;
 
-        VkImage image;
-        VkDeviceMemory memory;
-        VkImageView imageView;
-        VkDeviceAddress deviceAddress;
-        VmaAllocation vmaAllocation;
-    };
+    VkImage image                 = VK_NULL_HANDLE;
+    VkDeviceMemory memory         = VK_NULL_HANDLE;
+    VkImageView imageView         = VK_NULL_HANDLE;
+    VkDeviceAddress deviceAddress = 0;
+    VmaAllocation vmaAllocation   = VK_NULL_HANDLE;
+};
 
-    using TextureHandle = Handle<Texture>;
-}
+using TextureHandle = Handle<Texture>;
+} // namespace gore
