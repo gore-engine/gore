@@ -5,6 +5,7 @@
 #include "DummyVertex.h"
 
 #include "Graphics/Vulkan/VulkanIncludes.h"
+#include "Graphics/VulkanBuffer.h"
 
 #include "GraphicsResourceDesc.h"
 #include "GraphicsResource.h"
@@ -70,6 +71,14 @@ public:
     void destroyPipeline(GraphicsPipelineHandle handle);
 
     void clear();
+private:
+    template <typename T>
+    static gfx::VulkanBuffer CreateStagintBuffer(const gfx::Device& device, std::vector<T> const& data)
+    {
+        return CreateStagingBuffer(device, data.data(), data.size() * sizeof(T));
+    }
+
+    static gfx::VulkanBuffer CreateStagingBuffer(const gfx::Device& device, void const* data, size_t size);
 
 private:
     using ShaderModulePool = Pool<ShaderModuleDesc, ShaderModule>;
@@ -79,6 +88,8 @@ private:
     ShaderModulePool m_ShaderModulePool;
     BufferPool m_BufferPool;
     GraphicsPipelinePool m_GraphicsPipelinePool;
+
+    vk::raii::CommandPool m_CommandPool;
 
     const gfx::Device* m_DevicePtr;
 };

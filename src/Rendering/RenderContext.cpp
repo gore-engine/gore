@@ -7,8 +7,18 @@ namespace gore
 {
 RenderContext::RenderContext(const gfx::Device* device) :
     m_DevicePtr(device),
-    m_ShaderModulePool()
+    m_ShaderModulePool(),
+    m_CommandPool(VK_NULL_HANDLE),
 {
+    device->GetQueueFamilyProperties();
+
+    vk::CommandPoolCreateInfo poolInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .queueFamilyIndex = device->GetQueueFamilyIndex(),
+        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+    };
+
+    m_CommandPool = device->Get().createCommandPool(poolInfo);
 }
 
 RenderContext::~RenderContext()
@@ -20,6 +30,30 @@ void RenderContext::clear()
 {
     m_ShaderModulePool.clear();
     m_GraphicsPipelinePool.clear();
+}
+
+gfx::VulkanBuffer RenderContext::CreateStagingBuffer(const gfx::Device& device, void const* data, size_t size)
+{
+    using namespace gfx;
+
+    VkBufferCreateInfo bufferInfo = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = size,
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+    };
+
+    VmaAllocationCreateInfo allocCreateInfo = {
+        .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+        .usage = VMA_MEMORY_USAGE_CPU_ONLY,
+    };
+    
+    VulkanBuffer buffer;
+    buffer.vmaAllocator = device.GetVmaAllocator();
+
+    VK_CHECK_RESULT(vmaCreateBuffer(device.GetVmaAllocator(), &bufferInfo, &allocCreateInfo, &buffer.vkBuffer, &buffer.vmaAllocation, &buffer.vmaAllocationInfo));
+
+    return buffer;
 }
 
 ShaderModuleHandle RenderContext::createShaderModule(ShaderModuleDesc&& desc)
