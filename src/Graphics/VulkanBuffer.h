@@ -7,15 +7,67 @@ namespace gore::gfx
 {
 struct VulkanBuffer
 {
-    void Clear()
-    {
-        vmaDestroyBuffer(vmaAllocator, vkBuffer, vmaAllocation);
-    }
-
     VmaAllocator vmaAllocator;
     VkBuffer vkBuffer; // TODO: better name!
     VkDeviceAddress vkDeviceAddress;
     VmaAllocation vmaAllocation;
     VmaAllocationInfo vmaAllocationInfo;
 };
+
+void ClearVulkanBuffer(VmaAllocator allocator, VkBuffer buffer, VmaAllocation allocation)
+{
+    vmaDestroyBuffer(allocator, buffer, allocation);
+}
+
+bool IsPersistentMappedVulkanBuffer(const VulkanBuffer& buffer)
+{
+    return buffer.vmaAllocationInfo.memoryType & VMA_ALLOCATION_CREATE_MAPPED_BIT != 0;
+}
+
+void* MapVulkanBuffer(const VulkanBuffer& buffer)
+{
+    if (IsPersistentMappedVulkanBuffer(buffer))
+    {
+        assert(buffer.vmaAllocationInfo.pMappedData != nullptr);
+        return buffer.vmaAllocationInfo.pMappedData;
+    }
+
+    void* data;
+    vmaMapMemory(buffer.vmaAllocator, buffer.vmaAllocation, &data);
+    return data;
+}
+
+void UnmapVulkanBuffer(const VulkanBuffer& buffer)
+{
+    vmaUnmapMemory(buffer.vmaAllocator, buffer.vmaAllocation);
+}
+
+void FlushVulkanBuffer(const VulkanBuffer& buffer, const uint32_t size = 0)
+{
+    vmaFlushAllocation(buffer.vmaAllocator, buffer.vmaAllocation, 0, size);
+}
+
+void SetBufferData(const VulkanBuffer& buffer, const uint8_t* data, const uint32_t size, const uint32_t offset = 0)
+{
+    bool isPersistentMapped = IsPersistentMappedVulkanBuffer(buffer);
+    if (isPersistentMapped)
+    {
+        uint8_t* mappedData = reinterpret_cast<uint8_t*>(buffer.vmaAllocationInfo.pMappedData);
+        assert(mappedData != nullptr);
+        memcpy(mappedData + offset, data, size);
+    }
+    else
+    {
+        uint8_t* mappedData;
+        vmaMapMemory(buffer.vmaAllocator, buffer.vmaAllocation, reinterpret_cast<void**>(&mappedData));
+        memcpy(mappedData + offset, data, size);
+        vmaUnmapMemory(buffer.vmaAllocator, buffer.vmaAllocation);
+    }
+}
+
+void SetBufferData(const VulkanBuffer& buffer, const std::vector<uint8_t>& data, const uint32_t offset = 0)
+{
+    SetBufferData(buffer, data.data(), static_cast<uint32_t>(data.size()), offset);
+}
+
 } // namespace gore::gfx
