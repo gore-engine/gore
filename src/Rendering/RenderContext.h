@@ -80,6 +80,9 @@ private:
 
     static gfx::VulkanBuffer CreateStagingBuffer(const gfx::Device& device, void const* data, size_t size);
 
+    vk::raii::CommandBuffer CreateCommandBuffer(vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary, bool begin = true);
+    void FlushCommandBuffer(vk::raii::CommandBuffer& commandBuffer, vk::raii::Queue& queue);
+
 private:
     using ShaderModulePool = Pool<ShaderModuleDesc, ShaderModule>;
     using BufferPool       = Pool<BufferDesc, Buffer>;

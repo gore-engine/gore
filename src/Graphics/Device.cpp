@@ -342,6 +342,20 @@ Device& Device::operator=(Device&& other) noexcept
     return *this;
 }
 
+uint32_t Device::GetQueueFamilyIndexByFlags(vk::QueueFlags flags) const
+{
+    for (uint32_t i = 0; i < m_QueueFamilyProperties.size(); ++i)
+    {
+        if ((m_QueueFamilyProperties[i].queueFlags & flags) == flags)
+        {
+            return i;
+        }
+    }
+
+    LOG_STREAM(FATAL) << "Failed to find queue family with flags: " << to_string(flags) << std::endl;
+    throw std::runtime_error("Failed to find queue family with flags");
+}
+
 uint32_t Device::ApiVersion() const
 {
     return std::min(m_Instance->Version(), m_DeviceApiVersion);

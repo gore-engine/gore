@@ -8,17 +8,11 @@ namespace gore
 RenderContext::RenderContext(const gfx::Device* device) :
     m_DevicePtr(device),
     m_ShaderModulePool(),
-    m_CommandPool(VK_NULL_HANDLE),
+    m_CommandPool(VK_NULL_HANDLE)
 {
-    device->GetQueueFamilyProperties();
+    uint32_t queueFamilyIndex = device->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics);
 
-    vk::CommandPoolCreateInfo poolInfo = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-        .queueFamilyIndex = device->GetQueueFamilyIndex(),
-        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-    };
-
-    m_CommandPool = device->Get().createCommandPool(poolInfo);
+    m_CommandPool = device->Get().createCommandPool({{}, queueFamilyIndex});
 }
 
 RenderContext::~RenderContext()
@@ -54,6 +48,32 @@ gfx::VulkanBuffer RenderContext::CreateStagingBuffer(const gfx::Device& device, 
     VK_CHECK_RESULT(vmaCreateBuffer(device.GetVmaAllocator(), &bufferInfo, &allocCreateInfo, &buffer.vkBuffer, &buffer.vmaAllocation, &buffer.vmaAllocationInfo));
 
     return buffer;
+}
+
+vk::raii::CommandBuffer RenderContext::CreateCommandBuffer(vk::CommandBufferLevel level, bool begin)
+{
+    vk::CommandBufferAllocateInfo allocateInfo(*m_CommandPool, level, 1);
+    vk::raii::CommandBuffer& commandBuffer = m_DevicePtr->Get().allocateCommandBuffers(allocateInfo)[0];
+
+    if (begin)
+    {
+        commandBuffer.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    }
+
+    return std::move(commandBuffer);
+}
+
+void RenderContext::FlushCommandBuffer(vk::raii::CommandBuffer& commandBuffer, vk::raii::Queue& queue)
+{
+    commandBuffer.end();
+
+    vk::SubmitInfo submitInfo     = {};
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers    = &*commandBuffer;
+
+    vk::raii::Fence fence = m_DevicePtr->Get().createFence({});
+    queue.submit(submitInfo, *fence);
+    m_DevicePtr->Get().waitForFences(*fence, VK_TRUE, UINT64_MAX);
 }
 
 ShaderModuleHandle RenderContext::createShaderModule(ShaderModuleDesc&& desc)
@@ -198,12 +218,13 @@ const GraphicsPipeline& RenderContext::GetGraphicsPipeline(GraphicsPipelineHandl
 TextureHandle RenderContext::createTexture(const TextureDesc& desc)
 {
     VkFormat format = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.format));
+
+    vk::raii::Queue queue = m_DevicePtr->Get().getQueue(m_DevicePtr->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics), 0);
     
-    vk::raii::CommandBuffer commandBuffer = m_DevicePtr->Get().allocateCommandBuffers(vk::CommandBufferAllocateInfo(
-        m_DevicePtr->,
-        vk::CommandBufferLevel::ePrimary,
-        1))[0];
-    
+    vk::raii::CommandBuffer cmd = CreateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
+
+    FlushCommandBuffer(cmd, queue);
+
     return TextureHandle();
 }
 
