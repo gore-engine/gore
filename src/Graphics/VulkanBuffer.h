@@ -55,7 +55,7 @@ void SetBufferData(const VulkanBuffer& buffer, const uint8_t* data, const uint32
     bool isMappable = IsMappableVulkanBuffer(buffer);
     if (isMappable == false)
     {
-        LOG_STREAM(ERROR, "VulkanBuffer", "SetBufferData: Buffer is not mappable!");
+        LOG_STREAM(ERROR) << "VulkanBuffer SetBufferData: Buffer is not mappable!" << std::endl;
         return;
     }
 
