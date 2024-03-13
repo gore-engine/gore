@@ -2,7 +2,7 @@
 
 #include "GraphicsResourcePrefix.h"
 
-namespace gore
+namespace gore::gfx
 {
 
 struct BufferDesc final

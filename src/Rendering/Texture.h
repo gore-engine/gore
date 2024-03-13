@@ -5,7 +5,7 @@
 
 #include "Graphics/Vulkan/VulkanIncludes.h"
 
-namespace gore
+namespace gore::gfx
 {
 struct Texture
 {

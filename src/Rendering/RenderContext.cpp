@@ -3,9 +3,9 @@
 
 #include "RenderContextHelper.h"
 
-namespace gore
+namespace gore::gfx
 {
-RenderContext::RenderContext(const gfx::Device* device) :
+RenderContext::RenderContext(const Device* device) :
     m_DevicePtr(device),
     m_ShaderModulePool(),
     m_CommandPool(VK_NULL_HANDLE)
@@ -31,9 +31,9 @@ gfx::VulkanBuffer RenderContext::CreateStagingBuffer(const gfx::Device& device, 
     using namespace gfx;
 
     VkBufferCreateInfo bufferInfo = {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = size,
-        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size        = size,
+        .usage       = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
     };
 
@@ -182,8 +182,8 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
     createInfo.subpass    = desc.subpassIndex;
 
     std::vector<VkFormat> colorFormats = VulkanHelper::GetVkFormats(desc.colorFormats);
-    VkFormat depthFormat = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.depthFormat));
-    VkFormat stencilFormat = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.stencilFormat));
+    VkFormat depthFormat               = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.depthFormat));
+    VkFormat stencilFormat             = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.stencilFormat));
 
     VkPipelineRenderingCreateInfoKHR rfInfo = {};
 
@@ -250,7 +250,7 @@ BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
 
     buffer.vkDeviceAddress = m_DevicePtr->Get().getBufferAddress(bufferDeviceAddressInfo);
 
-    m_DevicePtr->SetName(reinterpret_cast<uint64_t>(buffer.vkBuffer), vk::ObjectType::eBuffer,  desc.debugName);
+    m_DevicePtr->SetName(reinterpret_cast<uint64_t>(buffer.vkBuffer), vk::ObjectType::eBuffer, desc.debugName);
 
     return m_BufferPool.create(
         std::move(desc),
@@ -276,4 +276,4 @@ void RenderContext::DestroyBuffer(BufferHandle handle)
     vmaDestroyBuffer(m_DevicePtr->GetVmaAllocator(), buffer.vkBuffer, buffer.vmaAllocation);
     m_BufferPool.destroy(handle);
 }
-} // namespace gore
+} // namespace gore::gfx

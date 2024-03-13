@@ -7,7 +7,7 @@
 #include "GraphicsPipelineDesc.h"
 
 #include <vector>
-namespace gore::VulkanHelper
+namespace gore::gfx::VulkanHelper
 {
 std::vector<VkFormat> GetVkFormats(const std::vector<GraphicsFormat>& formats);
 

@@ -17,13 +17,10 @@
 #include "RenderPass.h"
 #include "Pool.h"
 
-namespace gore
+namespace gore::gfx
 {
 
-namespace gfx
-{
 class Device;
-}
 
 class RenderContext final
 {
@@ -84,8 +81,8 @@ private:
     void FlushCommandBuffer(vk::raii::CommandBuffer& commandBuffer, vk::raii::Queue& queue);
 
 private:
-    using ShaderModulePool = Pool<ShaderModuleDesc, ShaderModule>;
-    using BufferPool       = Pool<BufferDesc, Buffer>;
+    using ShaderModulePool     = Pool<ShaderModuleDesc, ShaderModule>;
+    using BufferPool           = Pool<BufferDesc, Buffer>;
     using GraphicsPipelinePool = Pool<GraphicsPipelineDesc, GraphicsPipeline>;
 
     ShaderModulePool m_ShaderModulePool;
@@ -94,7 +91,7 @@ private:
 
     vk::raii::CommandPool m_CommandPool;
 
-    const gfx::Device* m_DevicePtr;
+    const Device* m_DevicePtr;
 };
 
-} // namespace gore
+} // namespace gore::gfx
