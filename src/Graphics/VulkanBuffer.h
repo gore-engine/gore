@@ -19,7 +19,7 @@ void ClearVulkanBuffer(VmaAllocator allocator, VkBuffer buffer, VmaAllocation al
     vmaDestroyBuffer(allocator, buffer, allocation);
 }
 
-bool IsPersistentMappedVulkanBuffer(const VulkanBuffer& buffer)
+bool IsMappableVulkanBuffer(const VulkanBuffer& buffer)
 {
     VkMemoryPropertyFlags memPropFlags;
     vmaGetAllocationMemoryProperties(buffer.vmaAllocator, buffer.vmaAllocation, &memPropFlags);
@@ -28,7 +28,7 @@ bool IsPersistentMappedVulkanBuffer(const VulkanBuffer& buffer)
 
 void* MapVulkanBuffer(const VulkanBuffer& buffer)
 {
-    if (IsPersistentMappedVulkanBuffer(buffer))
+    if (IsMappableVulkanBuffer(buffer))
     {
         assert(buffer.vmaAllocationInfo.pMappedData != nullptr);
         return buffer.vmaAllocationInfo.pMappedData;
@@ -52,8 +52,14 @@ void FlushVulkanBuffer(const VulkanBuffer& buffer, const uint32_t size = 0)
 // TODO: Can be replaced by vma 3.1.0 vmaCopyAllocationToMemory
 void SetBufferData(const VulkanBuffer& buffer, const uint8_t* data, const uint32_t size, const uint32_t offset = 0)
 {
-    bool isPersistentMapped = IsPersistentMappedVulkanBuffer(buffer);
-    if (isPersistentMapped)
+    bool isMappable = IsMappableVulkanBuffer(buffer);
+    if (isMappable == false)
+    {
+        LOG_STREAM(ERROR, "VulkanBuffer", "SetBufferData: Buffer is not mappable!");
+        return;
+    }
+
+    if (buffer.vmaAllocationInfo.pMappedData != nullptr)
     {
         uint8_t* mappedData = reinterpret_cast<uint8_t*>(buffer.vmaAllocationInfo.pMappedData);
         assert(mappedData != nullptr);
