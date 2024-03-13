@@ -8,6 +8,9 @@ namespace gore::gfx
 RenderContext::RenderContext(const Device* device) :
     m_DevicePtr(device),
     m_ShaderModulePool(),
+    m_GraphicsPipelinePool(),
+    m_BufferPool(),
+    m_TexturePool(),
     m_CommandPool(VK_NULL_HANDLE)
 {
     uint32_t queueFamilyIndex = device->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics);
@@ -24,6 +27,8 @@ void RenderContext::clear()
 {
     m_ShaderModulePool.clear();
     m_GraphicsPipelinePool.clear();
+    m_BufferPool.clear();
+    m_TexturePool.clear();
 }
 
 VulkanBuffer RenderContext::CreateStagingBuffer(const Device& device, void const* data, size_t size)
@@ -90,7 +95,6 @@ const ShaderModuleDesc& RenderContext::getShaderModuleDesc(ShaderModuleHandle ha
 {
     return m_ShaderModulePool.getObjectDesc(handle);
 }
-
 
 const ShaderModule& RenderContext::getShaderModule(ShaderModuleHandle handle)
 {
@@ -213,9 +217,38 @@ const GraphicsPipeline& RenderContext::GetGraphicsPipeline(GraphicsPipelineHandl
     return m_GraphicsPipelinePool.getObject(handle);
 }
 
-TextureHandle RenderContext::createTexture(const TextureDesc& desc)
+TextureHandle RenderContext::createTexture(TextureDesc&& desc)
 {
-    VkFormat format = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.format));
+    VkImageCreateInfo imageInfo = {
+        .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType     = VulkanHelper::GetVkImageType(desc.type),
+        .format        = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.format)),
+        .extent        = {desc.width, desc.height, 1},
+        .mipLevels     = desc.numMips,
+        .arrayLayers   = desc.numLayers,
+        .samples       = VK_SAMPLE_COUNT_1_BIT,
+        .tiling        = VK_IMAGE_TILING_OPTIMAL,
+        .usage         = VulkanHelper::GetVkImageUsageFlags(desc.usage),
+        .sharingMode   = VK_SHARING_MODE_EXCLUSIVE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    };   
+
+    VmaAllocationCreateInfo allocCreateInfo = {
+        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+    };
+
+    Texture texture;
+    vmaCreateImage(m_DevicePtr->GetVmaAllocator(), &imageInfo, &allocCreateInfo, &texture.image, &texture.vmaAllocation, &texture.vmaAllocationInfo);
+
+    TextureHandle handle = m_TexturePool.create(std::move(desc), std::move(texture));
+    
+    if (desc.data == nullptr && desc.dataSize == 0)
+        return handle;
+
+    assert(desc.data != nullptr && desc.dataSize > 0);
+    
+    VulkanBuffer stagingBuffer = CreateStagingBuffer(*m_DevicePtr, desc.data, desc.dataSize);
 
     vk::raii::Queue queue = m_DevicePtr->Get().getQueue(m_DevicePtr->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics), 0);
     

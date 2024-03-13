@@ -44,7 +44,14 @@ public:
     void DrawProcedural();
     void DrawProceduralIndirect();
 
-    TextureHandle createTexture(const TextureDesc& desc);
+    TextureHandle createTexture(TextureDesc&& desc);
+
+    template <typename T>
+    void CopyDataToTexture(TextureHandle handle, const std::vector<T>& data)
+    {
+        CopyDataToTexture(handle, data.data(), data.size() * sizeof(T));
+    }
+    void CopyDataToTexture(TextureHandle handle, const void* data, size_t size);
 
     BufferHandle CreateBuffer(BufferDesc&& desc);
     const BufferDesc& GetBufferDesc(BufferHandle handle);
@@ -83,10 +90,12 @@ private:
 private:
     using ShaderModulePool     = Pool<ShaderModuleDesc, ShaderModule>;
     using BufferPool           = Pool<BufferDesc, Buffer>;
+    using TexturePool          = Pool<TextureDesc, Texture>;
     using GraphicsPipelinePool = Pool<GraphicsPipelineDesc, GraphicsPipeline>;
 
     ShaderModulePool m_ShaderModulePool;
     BufferPool m_BufferPool;
+    TexturePool m_TexturePool;
     GraphicsPipelinePool m_GraphicsPipelinePool;
 
     vk::raii::CommandPool m_CommandPool;

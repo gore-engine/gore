@@ -15,8 +15,9 @@ struct BufferDesc final
 
 struct TextureDesc final
 {
-    const char* debugName = "Noname Texture_2D_R8G8B8A8_SRGB";
-    TextureType type      = TextureType::Tex2D;
+    const char* debugName  = "Noname Texture_2D_R8G8B8A8_SRGB";
+    TextureType type       = TextureType::Tex2D;
+    TextureUsageBits usage = TextureUsageBits::Sampled;
     // use dimentions.z for different texturetypes
     // glm::ivec3 dimentions = glm::ivec3(0);
     GraphicsFormat format = GraphicsFormat::RGBA8_SRGB;
@@ -58,4 +59,4 @@ struct ShaderModuleDesc final
     uint32_t byteSize     = 0;
     const char* entryFunc = "main";
 };
-} // namespace gore
+} // namespace gore::gfx

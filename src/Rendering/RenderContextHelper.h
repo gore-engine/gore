@@ -11,6 +11,38 @@ namespace gore::gfx::VulkanHelper
 {
 std::vector<VkFormat> GetVkFormats(const std::vector<GraphicsFormat>& formats);
 
+inline VkImageType GetVkImageType(TextureType type)
+{
+    return static_cast<VkImageType>(type);
+}
+
+inline VkImageUsageFlags GetVkImageUsageFlags(TextureUsageBits usage)
+{
+    VkImageUsageFlags flag = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    
+    if (usage & TextureUsageBits::Sampled)
+    {
+        flag |= VK_IMAGE_USAGE_SAMPLED_BIT;
+    }
+
+    if (usage & TextureUsageBits::Storage)
+    {
+        flag |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }
+
+    if (usage & TextureUsageBits::RenderTarget)
+    {
+        flag |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    }
+
+    if (usage & TextureUsageBits::DepthStencil)
+    {
+        flag |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    }
+
+    return flag;
+}
+
 inline vk::CompareOp GetVkCompareOp(CompareOp op)
 {
     return static_cast<vk::CompareOp>(op);

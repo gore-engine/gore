@@ -20,6 +20,8 @@
 #include "Rendering/GPUData/GlobalConstantBuffer.h"
 #include "RenderContextHelper.h"
 
+#include "stb_image.h"
+
 #include <vector>
 #include <string>
 #include <sstream>
@@ -366,6 +368,35 @@ void RenderSystem::ShutdownImgui()
     ImGui::DestroyContext();
 
     m_ImguiDescriptorPool.clear();
+}
+
+TextureHandle RenderSystem::LoadTexture(const std::string& name)
+{
+    static const std::filesystem::path kTextureFolder = FileSystem::GetResourceFolder() / "Textures";
+    auto texturePath = kTextureFolder / name;
+
+    // TODO: change to use std::vector?
+
+    int width, height, channel;
+    stbi_uc* pixels = stbi_load(texturePath.c_str(), &width, &height, &channel, STBI_rgb_alpha);
+
+    if (pixels == nullptr)
+    {
+        LOG_STREAM(ERROR) << "RenderSystem LoadTexture: Failed to load texture: " << name << std::endl;
+        return TextureHandle();
+    }
+
+    TextureHandle handle = m_RenderContext->createTexture({
+        .debugName = name.c_str(),
+        .width = static_cast<uint32_t>(width),
+        .height = static_cast<uint32_t>(height),
+        .data = pixels,
+        .dataSize = static_cast<uint32_t>(width * height * 4)
+    });
+
+    stbi_image_free(pixels);
+
+    return handle;
 }
 
 void RenderSystem::UploadPerframeGlobalConstantBuffer(uint32_t imageIndex)
