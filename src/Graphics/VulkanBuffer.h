@@ -21,7 +21,9 @@ void ClearVulkanBuffer(VmaAllocator allocator, VkBuffer buffer, VmaAllocation al
 
 bool IsPersistentMappedVulkanBuffer(const VulkanBuffer& buffer)
 {
-    return buffer.vmaAllocationInfo.memoryType & VMA_ALLOCATION_CREATE_MAPPED_BIT != 0;
+    VkMemoryPropertyFlags memPropFlags;
+    vmaGetAllocationMemoryProperties(buffer.vmaAllocator, buffer.vmaAllocation, &memPropFlags);
+    return memPropFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 }
 
 void* MapVulkanBuffer(const VulkanBuffer& buffer)
