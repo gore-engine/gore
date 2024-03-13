@@ -19,6 +19,8 @@
 namespace gore
 {
 
+using namespace gfx;
+
 class Window;
 
 struct DeletionQueue
@@ -60,19 +62,21 @@ private:
     void InitImgui();
     void ShutdownImgui();
     
+    TextureHandle LoadTexture(const std::string& name);
+
     ImGui_ImplVulkanH_Window m_ImguiWindowData;
     vk::raii::DescriptorPool m_ImguiDescriptorPool;
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
 
     // Instance
-    gfx::Instance m_Instance;
+    Instance m_Instance;
 
     // Device
-    gfx::Device m_Device;
+    Device m_Device;
 
     // Surface & Swapchain
-    gfx::Swapchain m_Swapchain;
+    Swapchain m_Swapchain;
 
     GraphicsPipelineHandle m_CubePipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
@@ -88,7 +92,7 @@ private:
     uint32_t m_PresentQueueFamilyIndex;
 
     // Command Pool & Command Buffer
-    gfx::CommandPool m_CommandPool;
+    CommandPool m_CommandPool;
 
     // Global Descriptors
     vk::raii::DescriptorPool m_GlobalDescriptorPool;
@@ -125,7 +129,7 @@ private:
     void GetQueues();
     void CreateSynchronization();
 
-    [[nodiscard]] const gfx::PhysicalDevice& GetBestDevice(const std::vector<gfx::PhysicalDevice>& devices) const;
+    [[nodiscard]] const PhysicalDevice& GetBestDevice(const std::vector<PhysicalDevice>& devices) const;
 };
 
 } // namespace gore

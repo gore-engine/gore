@@ -83,8 +83,8 @@ void RenderSystem::Initialize()
     int width, height;
     window->GetSize(&width, &height);
 
-    std::vector<gfx::PhysicalDevice> physicalDevices = m_Instance.GetPhysicalDevices();
-    m_Device = gfx::Device(GetBestDevice(physicalDevices));
+    std::vector<PhysicalDevice> physicalDevices = m_Instance.GetPhysicalDevices();
+    m_Device = Device(GetBestDevice(physicalDevices));
 
     m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), 3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
@@ -196,7 +196,7 @@ void RenderSystem::Update()
 
     void* mappedData;
     vmaMapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vkBuffer.vmaAllocation, &mappedData);
-    auto& globalConstantBufferData = *reinterpret_cast<gfx::GlobalConstantBuffer*>(mappedData);
+    auto& globalConstantBufferData = *reinterpret_cast<GlobalConstantBuffer*>(mappedData);
     globalConstantBufferData.vpMatrix = camera->GetViewProjectionMatrix();
     vmaUnmapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vkBuffer.vmaAllocation);
 
@@ -521,7 +521,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
     for (int i = 0; i < m_Swapchain.GetImageCount(); ++i)
     {
         m_GlobalConstantBuffers.emplace_back(m_RenderContext->CreateBuffer({.debugName = "Global Constant Buffer",
-                                                                            .byteSize  = sizeof(gfx::GlobalConstantBuffer),
+                                                                            .byteSize  = sizeof(GlobalConstantBuffer),
                                                                             .usage     = BufferUsage::Uniform,
                                                                             .memUsage  = MemoryUsage::CPU_TO_GPU}));
 
@@ -529,7 +529,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
         vk::raii::DescriptorSets descriptorSets(m_Device.Get(), descriptorSetAllocateInfo);
         m_GlobalDescriptorSets.emplace_back(std::move(descriptorSets[0]));
 
-        vk::DescriptorBufferInfo globalConstantBufferInfo(m_RenderContext->GetBuffer(m_GlobalConstantBuffers[i]).vkBuffer.vkBuffer, 0, sizeof(gfx::GlobalConstantBuffer));
+        vk::DescriptorBufferInfo globalConstantBufferInfo(m_RenderContext->GetBuffer(m_GlobalConstantBuffers[i]).vkBuffer.vkBuffer, 0, sizeof(GlobalConstantBuffer));
         vk::WriteDescriptorSet globalConstantBufferWrite(*m_GlobalDescriptorSets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &globalConstantBufferInfo, nullptr);
 
         m_Device.Get().updateDescriptorSets({globalConstantBufferWrite}, {});
@@ -676,7 +676,7 @@ void RenderSystem::GetQueues()
     m_Device.SetName(m_PresentQueue, "Present Queue");
 }
 
-const gfx::PhysicalDevice& RenderSystem::GetBestDevice(const std::vector<gfx::PhysicalDevice>& devices) const
+const PhysicalDevice& RenderSystem::GetBestDevice(const std::vector<PhysicalDevice>& devices) const
 {
     int maxScore = -1;
     int physicalDeviceIndex = -1;

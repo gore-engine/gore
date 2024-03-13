@@ -2,7 +2,7 @@
 
 #include <array>
 
-namespace gore::VulkanHelper
+namespace gore::gfx::VulkanHelper
 {
 inline vk::StencilOpState GetVkStencilOpState(const StencilOpState& state)
 {

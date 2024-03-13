@@ -26,10 +26,8 @@ void RenderContext::clear()
     m_GraphicsPipelinePool.clear();
 }
 
-gfx::VulkanBuffer RenderContext::CreateStagingBuffer(const gfx::Device& device, void const* data, size_t size)
+VulkanBuffer RenderContext::CreateStagingBuffer(const Device& device, void const* data, size_t size)
 {
-    using namespace gfx;
-
     VkBufferCreateInfo bufferInfo = {
         .sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .size        = size,
@@ -230,8 +228,6 @@ TextureHandle RenderContext::createTexture(const TextureDesc& desc)
 
 BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
 {
-    using namespace gfx;
-
     uint32_t byteSize = desc.byteSize;
 
     VkBufferCreateInfo bufferInfo = VulkanHelper::GetVkBufferCreateInfo(desc);
@@ -269,11 +265,9 @@ const Buffer& RenderContext::GetBuffer(BufferHandle handle)
 
 void RenderContext::DestroyBuffer(BufferHandle handle)
 {
-    using namespace gfx;
-
     auto buffer = m_BufferPool.getObject(handle).vkBuffer;
 
-    vmaDestroyBuffer(m_DevicePtr->GetVmaAllocator(), buffer.vkBuffer, buffer.vmaAllocation);
+    ClearVulkanBuffer(m_DevicePtr->GetVmaAllocator(), buffer.vkBuffer, buffer.vmaAllocation);
     m_BufferPool.destroy(handle);
 }
 } // namespace gore::gfx

@@ -28,7 +28,7 @@ class RenderContext final
     NON_COPYABLE(RenderContext);
 
 public:
-    RenderContext(const gfx::Device* device);
+    RenderContext(const Device* device);
     ~RenderContext();
 
     // RenderPass
@@ -70,12 +70,12 @@ public:
     void clear();
 private:
     template <typename T>
-    static gfx::VulkanBuffer CreateStagintBuffer(const gfx::Device& device, std::vector<T> const& data)
+    static VulkanBuffer CreateStagintBuffer(const Device& device, std::vector<T> const& data)
     {
         return CreateStagingBuffer(device, data.data(), data.size() * sizeof(T));
     }
 
-    static gfx::VulkanBuffer CreateStagingBuffer(const gfx::Device& device, void const* data, size_t size);
+    static VulkanBuffer CreateStagingBuffer(const Device& device, void const* data, size_t size);
 
     vk::raii::CommandBuffer CreateCommandBuffer(vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary, bool begin = true);
     void FlushCommandBuffer(vk::raii::CommandBuffer& commandBuffer, vk::raii::Queue& queue);
