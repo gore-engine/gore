@@ -126,6 +126,37 @@ inline vk::PipelineColorBlendAttachmentState GetVkColorBlendAttachmentState(cons
         static_cast<vk::ColorComponentFlagBits>(state.colorWriteMask));
 }
 
+
+vk::PipelineStageFlags GetPipelineStageFlags(vk::ImageLayout layout)
+{
+    switch (layout)
+    {
+        case vk::ImageLayout::eUndefined:
+            return vk::PipelineStageFlagBits::eTopOfPipe;
+        case vk::ImageLayout::ePreinitialized:
+            return vk::PipelineStageFlagBits::eHost;
+        case vk::ImageLayout::eTransferSrcOptimal:
+        case vk::ImageLayout::eTransferDstOptimal:
+            return vk::PipelineStageFlagBits::eTransfer;
+        case vk::ImageLayout::eColorAttachmentOptimal:
+            return vk::PipelineStageFlagBits::eColorAttachmentOutput;
+        case vk::ImageLayout::eDepthStencilAttachmentOptimal:
+            return vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests;
+        case vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR:
+            return vk::PipelineStageFlagBits::eFragmentShadingRateAttachmentKHR;
+        case vk::ImageLayout::eShaderReadOnlyOptimal:
+            return vk::PipelineStageFlagBits::eVertexShader | vk::PipelineStageFlagBits::eFragmentShader;
+        case vk::ImageLayout::ePresentSrcKHR:
+            return vk::PipelineStageFlagBits::eBottomOfPipe;
+        case vk::ImageLayout::eGeneral:
+            assert(false && "General layout is not supported yet");
+            return vk::PipelineStageFlagBits::eTopOfPipe;
+        default:
+            assert(false && "Unknown layout");
+            return vk::PipelineStageFlagBits::eTopOfPipe;    
+    }
+}
+
 vk::Format GetVkFormat(GraphicsFormat format);
 
 VkBufferCreateInfo GetVkBufferCreateInfo(BufferDesc& desc);
