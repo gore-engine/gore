@@ -1,5 +1,6 @@
 #include "RenderContext.h"
 #include "Graphics/Device.h"
+#include "Graphics/VulkanBuffer.h"
 
 #include "RenderContextHelper.h"
 
@@ -59,7 +60,7 @@ VulkanBuffer RenderContext::CreateStagingBuffer(const Device& device, void const
 vk::raii::CommandBuffer RenderContext::CreateCommandBuffer(vk::CommandBufferLevel level, bool begin)
 {
     vk::CommandBufferAllocateInfo allocateInfo(*m_CommandPool, level, 1);
-    vk::raii::CommandBuffer& commandBuffer = m_DevicePtr->Get().allocateCommandBuffers(allocateInfo)[0];
+    vk::raii::CommandBuffer commandBuffer = std::move(m_DevicePtr->Get().allocateCommandBuffers(allocateInfo)[0]);
 
     if (begin)
     {
@@ -79,7 +80,8 @@ void RenderContext::FlushCommandBuffer(vk::raii::CommandBuffer& commandBuffer, v
 
     vk::raii::Fence fence = m_DevicePtr->Get().createFence({});
     queue.submit(submitInfo, *fence);
-    m_DevicePtr->Get().waitForFences(*fence, VK_TRUE, UINT64_MAX);
+    auto res = m_DevicePtr->Get().waitForFences(*fence, VK_TRUE, UINT64_MAX);
+    VK_CHECK_RESULT(res);
 }
 
 ShaderModuleHandle RenderContext::createShaderModule(ShaderModuleDesc&& desc)
@@ -227,8 +229,8 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
         .imageType     = VulkanHelper::GetVkImageType(desc.type),
         .format        = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.format)),
         .extent        = {desc.width, desc.height, 1},
-        .mipLevels     = desc.numMips,
-        .arrayLayers   = desc.numLayers,
+        .mipLevels     = static_cast<uint32_t>(desc.numMips),
+        .arrayLayers   = static_cast<uint32_t>(desc.numLayers),
         .samples       = VK_SAMPLE_COUNT_1_BIT,
         .tiling        = VK_IMAGE_TILING_OPTIMAL,
         .usage         = VulkanHelper::GetVkImageUsageFlags(desc.usage),
@@ -257,14 +259,19 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
     
     vk::raii::CommandBuffer cmd = CreateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
 
+    CopyDataToTexture(handle, desc.data, desc.dataSize);
+
     FlushCommandBuffer(cmd, queue);
 
-    return TextureHandle();
+    ClearVulkanBuffer(m_DevicePtr->GetVmaAllocator(), stagingBuffer.vkBuffer, stagingBuffer.vmaAllocation);
+
+    return handle;
 }
 
 void RenderContext::CopyDataToTexture(TextureHandle handle, const void* data, size_t size)
 {
     auto texture = m_TexturePool.getObject(handle);
+    auto textureDesc = m_TexturePool.getObjectDesc(handle);
 
     VulkanBuffer stagingBuffer = CreateStagingBuffer(*m_DevicePtr, data, size);
 
@@ -272,9 +279,15 @@ void RenderContext::CopyDataToTexture(TextureHandle handle, const void* data, si
     
     vk::raii::CommandBuffer cmd = CreateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
 
-    cmd.
+    vk::ImageSubresourceRange subresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
 
-    cmd.copyBufferToImage(stagingBuffer.vkBuffer, texture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &VulkanHelper::GetVkBufferImageCopyRegion(texture.desc, size));
+    vk::Image image = texture.image;
+
+    VulkanHelper::ImageLayoutTransition(cmd, image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, subresourceRange);
+
+    cmd.copyBufferToImage(stagingBuffer.vkBuffer, image, vk::ImageLayout::eTransferDstOptimal, vk::BufferImageCopy(0, 0, 0, vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1), vk::Offset3D(0, 0, 0), vk::Extent3D(textureDesc.width, textureDesc.height, 1)));
+
+    VulkanHelper::ImageLayoutTransition(cmd, image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, subresourceRange);
 
     FlushCommandBuffer(cmd, queue);
 }

@@ -127,7 +127,7 @@ inline vk::PipelineColorBlendAttachmentState GetVkColorBlendAttachmentState(cons
 }
 
 
-vk::PipelineStageFlags GetPipelineStageFlags(vk::ImageLayout layout)
+inline vk::PipelineStageFlags GetPipelineStageFlags(vk::ImageLayout layout)
 {
     switch (layout)
     {
@@ -173,5 +173,5 @@ vk::PipelineMultisampleStateCreateInfo GetVkMultisampleState(const GraphicsPipel
 vk::PipelineDepthStencilStateCreateInfo GetVkDepthStencilState(const GraphicsPipelineDesc& desc);
 vk::PipelineColorBlendStateCreateInfo GetVkColorBlendState(const GraphicsPipelineDesc& desc);
 
-void ImageLayoutTransition(vk::raii::CommandBuffer& commandBuffer, vk::raii::Image& image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageSubresourceRange subResourceRange);
+void ImageLayoutTransition(vk::raii::CommandBuffer& commandBuffer, vk::Image& image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageSubresourceRange subResourceRange);
 } // namespace gore::VulkanHelper

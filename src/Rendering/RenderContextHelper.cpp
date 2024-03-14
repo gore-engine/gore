@@ -266,10 +266,8 @@ vk::PipelineColorBlendStateCreateInfo GetVkColorBlendState(const GraphicsPipelin
         {1.0f, 1.0f, 1.0f, 1.0f});
 }
 
-void VulkanHelper::ImageLayoutTransition(vk::raii::CommandBuffer& commandBuffer, vk::raii::Image& image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageSubresourceRange subResourceRange)
+void ImageLayoutTransition(vk::raii::CommandBuffer& commandBuffer, vk::Image& image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageSubresourceRange subResourceRange)
 {
-
-
     std::vector<vk::ImageMemoryBarrier> barriers;
     barriers.push_back(vk::ImageMemoryBarrier(
         {},
@@ -278,7 +276,7 @@ void VulkanHelper::ImageLayoutTransition(vk::raii::CommandBuffer& commandBuffer,
         newLayout,
         VK_QUEUE_FAMILY_IGNORED,
         VK_QUEUE_FAMILY_IGNORED,
-        *image,
+        image,
         subResourceRange));
 }
 
