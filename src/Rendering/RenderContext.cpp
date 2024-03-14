@@ -268,6 +268,15 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
     return handle;
 }
 
+void RenderContext::DestroyTexture(TextureHandle handle)
+{
+    auto texture = m_TexturePool.getObject(handle);
+
+    DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
+    // TODO: Destroy Texture View
+    m_TexturePool.destroy(handle);
+}
+
 void RenderContext::CopyDataToTexture(TextureHandle handle, const void* data, size_t size)
 {
     auto texture = m_TexturePool.getObject(handle);

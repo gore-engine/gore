@@ -22,4 +22,10 @@ struct Texture
 };
 
 using TextureHandle = Handle<Texture>;
+
+inline void DestroyVulkanTexture(VmaAllocator vmaAllocator, VkImage image, VmaAllocation vmaAllocation)
+{
+    vmaDestroyImage(vmaAllocator, image, vmaAllocation);
+}
+
 } // namespace gore::gfx

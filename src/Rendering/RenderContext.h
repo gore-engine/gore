@@ -45,6 +45,7 @@ public:
     void DrawProceduralIndirect();
 
     TextureHandle createTexture(TextureDesc&& desc);
+    void DestroyTexture(TextureHandle handle); 
 
     template <typename T>
     void CopyDataToTexture(TextureHandle handle, const std::vector<T>& data)
