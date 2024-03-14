@@ -50,6 +50,9 @@ VulkanBuffer RenderContext::CreateStagingBuffer(const Device& device, void const
 
     VK_CHECK_RESULT(vmaCreateBuffer(device.GetVmaAllocator(), &bufferInfo, &allocCreateInfo, &buffer.vkBuffer, &buffer.vmaAllocation, &buffer.vmaAllocationInfo));
 
+    void* mappedData = buffer.vmaAllocationInfo.pMappedData;
+    memcpy(mappedData, data, size);
+
     return buffer;
 }
 
@@ -257,6 +260,23 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
     FlushCommandBuffer(cmd, queue);
 
     return TextureHandle();
+}
+
+void RenderContext::CopyDataToTexture(TextureHandle handle, const void* data, size_t size)
+{
+    auto texture = m_TexturePool.getObject(handle);
+
+    VulkanBuffer stagingBuffer = CreateStagingBuffer(*m_DevicePtr, data, size);
+
+    vk::raii::Queue queue = m_DevicePtr->Get().getQueue(m_DevicePtr->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics), 0);
+    
+    vk::raii::CommandBuffer cmd = CreateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
+
+    cmd.
+
+    cmd.copyBufferToImage(stagingBuffer.vkBuffer, texture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &VulkanHelper::GetVkBufferImageCopyRegion(texture.desc, size));
+
+    FlushCommandBuffer(cmd, queue);
 }
 
 BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
