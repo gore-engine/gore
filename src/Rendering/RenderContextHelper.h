@@ -172,4 +172,6 @@ vk::PipelineRasterizationStateCreateInfo GetVkRasterizeState(const GraphicsPipel
 vk::PipelineMultisampleStateCreateInfo GetVkMultisampleState(const GraphicsPipelineDesc& desc);
 vk::PipelineDepthStencilStateCreateInfo GetVkDepthStencilState(const GraphicsPipelineDesc& desc);
 vk::PipelineColorBlendStateCreateInfo GetVkColorBlendState(const GraphicsPipelineDesc& desc);
+
+void ImageLayoutTransition(vk::raii::CommandBuffer& commandBuffer, vk::raii::Image& image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageSubresourceRange subResourceRange);
 } // namespace gore::VulkanHelper
