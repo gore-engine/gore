@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GraphicsFormat.h"
 #include "GraphicsResourcePrefix.h"
 
 namespace gore::gfx

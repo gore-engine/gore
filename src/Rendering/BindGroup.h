@@ -6,7 +6,7 @@
 
 #include <vector>
 
-namespace gore
+namespace gore::gfx
 {
 struct BindLayout;
 
@@ -24,4 +24,4 @@ struct BindGroupDesc final
     std::vector<TextureHandle> textures = {};
     std::vector<DynamicBuffer> buffers  = {};
 };
-} // namespace gore
+} // namespace gore::gfx

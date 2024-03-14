@@ -641,7 +641,6 @@ void RenderSystem::CreatePipeline()
                 }
             },
             .pipelineLayout { *m_PipelineLayout },
-            .renderPass { nullptr },
             .subpassIndex = 0
         }
     );
@@ -666,7 +665,6 @@ void RenderSystem::CreatePipeline()
             .depthFormat = GraphicsFormat::D32_FLOAT,
             .stencilFormat = GraphicsFormat::Undefined,
             .pipelineLayout { *m_BlankPipelineLayout },
-            .renderPass { nullptr },
             .subpassIndex = 0
         }
     );
