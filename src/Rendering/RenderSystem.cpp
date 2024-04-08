@@ -20,6 +20,7 @@
 #include "Rendering/GPUData/GlobalConstantBuffer.h"
 #include "RenderContextHelper.h"
 
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #include <vector>
@@ -378,7 +379,7 @@ TextureHandle RenderSystem::LoadTexture(const std::string& name)
     // TODO: change to use std::vector?
 
     int width, height, channel;
-    stbi_uc* pixels = stbi_load(texturePath.c_str(), &width, &height, &channel, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(texturePath.generic_string().c_str(), &width, &height, &channel, STBI_rgb_alpha);
 
     if (pixels == nullptr)
     {
