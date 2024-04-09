@@ -90,6 +90,7 @@ public:
     static const Color DarkOrange;
     static const Color DarkPurple;
     static const Color DarkPink;
+    static const Color Clear;
 };
 
 // Binary operators
