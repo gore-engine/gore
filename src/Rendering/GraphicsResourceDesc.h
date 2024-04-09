@@ -3,6 +3,8 @@
 #include "GraphicsFormat.h"
 #include "GraphicsResourcePrefix.h"
 
+#include "Math/Color.h"
+
 namespace gore::gfx
 {
 
@@ -46,6 +48,14 @@ struct SamplerDesc final
     SamplerAddressMode addressModeU = SamplerAddressMode::Repeat;
     SamplerAddressMode addressModeV = SamplerAddressMode::Repeat;
     SamplerAddressMode addressModeW = SamplerAddressMode::Repeat;
+
+    float mipLodBias      = 0.0f;
+    CompareOp compareOp   = CompareOp::Never;
+    float minLod          = 0.0f;
+    float maxLod          = 0.0f;
+    float maxAnisotropy   = 1.0f;
+    bool anisotropyEnable = false;
+    Color borderColor     = Color::Clear;
 };
 
 struct MaterialDesc final
