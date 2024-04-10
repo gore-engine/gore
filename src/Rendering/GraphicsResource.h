@@ -23,6 +23,7 @@ struct Buffer
 
 struct Sampler
 {
+    VkSampler vkSampler = VK_NULL_HANDLE;
 };
 
 struct BindGroup

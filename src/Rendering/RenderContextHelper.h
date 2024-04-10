@@ -157,6 +157,51 @@ inline vk::PipelineStageFlags GetPipelineStageFlags(vk::ImageLayout layout)
     }
 }
 
+inline vk::Filter GetVkFilter(SamplerFilter filter)
+{
+    switch (filter)
+    {
+        case SamplerFilter::Nearest:
+            return vk::Filter::eNearest;
+        case SamplerFilter::Linear:
+            return vk::Filter::eLinear;
+        default:
+            return vk::Filter::eLinear;
+    }
+}
+
+inline vk::SamplerMipmapMode GetVkMipmapMode(SamplerMipmapMode mode)
+{
+    switch (mode)
+    {
+        case SamplerMipmapMode::Nearest:
+            return vk::SamplerMipmapMode::eNearest;
+        case SamplerMipmapMode::Linear:
+            return vk::SamplerMipmapMode::eLinear;
+        default:
+            return vk::SamplerMipmapMode::eLinear;
+    }
+}
+
+inline vk::SamplerAddressMode GetVkAddressMode(SamplerAddressMode mode)
+{
+    switch (mode)
+    {
+        case SamplerAddressMode::Repeat:
+            return vk::SamplerAddressMode::eRepeat;
+        case SamplerAddressMode::MirroredRepeat:
+            return vk::SamplerAddressMode::eMirroredRepeat;
+        case SamplerAddressMode::ClampToEdge:
+            return vk::SamplerAddressMode::eClampToEdge;
+        case SamplerAddressMode::ClampToBorder:
+            return vk::SamplerAddressMode::eClampToBorder;
+        case SamplerAddressMode::MirrorClampToEdge:
+            return vk::SamplerAddressMode::eMirrorClampToEdge;
+        default:
+            return vk::SamplerAddressMode::eRepeat;
+    }
+}
+
 vk::Format GetVkFormat(GraphicsFormat format);
 
 VkBufferCreateInfo GetVkBufferCreateInfo(BufferDesc& desc);
@@ -174,4 +219,6 @@ vk::PipelineDepthStencilStateCreateInfo GetVkDepthStencilState(const GraphicsPip
 vk::PipelineColorBlendStateCreateInfo GetVkColorBlendState(const GraphicsPipelineDesc& desc);
 
 void ImageLayoutTransition(vk::raii::CommandBuffer& commandBuffer, vk::Image& image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageSubresourceRange subResourceRange);
+
+vk::SamplerCreateInfo GetVkSamplerCreateInfo(const SamplerDesc& desc);
 } // namespace gore::VulkanHelper

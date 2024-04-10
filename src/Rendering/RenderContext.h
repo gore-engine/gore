@@ -59,7 +59,7 @@ public:
     const Buffer& GetBuffer(BufferHandle handle);
     void DestroyBuffer(BufferHandle handle);
 
-    SamplerHandle createSampler(const SamplerDesc& desc);
+    SamplerHandle createSampler(SamplerDesc&& desc);
     BindGroupHandle createBindGroup(const BindGroupDesc& desc);
 
     ShaderModuleHandle createShaderModule(ShaderModuleDesc&& desc);
@@ -93,11 +93,13 @@ private:
     using BufferPool           = Pool<BufferDesc, Buffer>;
     using TexturePool          = Pool<TextureDesc, Texture>;
     using GraphicsPipelinePool = Pool<GraphicsPipelineDesc, GraphicsPipeline>;
+    using SamplerPool          = Pool<SamplerDesc, Sampler>;
 
     ShaderModulePool m_ShaderModulePool;
     BufferPool m_BufferPool;
     TexturePool m_TexturePool;
     GraphicsPipelinePool m_GraphicsPipelinePool;
+    SamplerPool m_SamplerPool;
 
     vk::raii::CommandPool m_CommandPool;
 
