@@ -348,7 +348,7 @@ void RenderContext::DestroyBuffer(BufferHandle handle)
     m_BufferPool.destroy(handle);
 }
 
-SamplerHandle RenderContext::createSampler(SamplerDesc&& desc)
+SamplerHandle RenderContext::CreateSampler(SamplerDesc&& desc)
 {
     vk::SamplerCreateInfo samplerCreateInfo{};
 
@@ -372,4 +372,19 @@ SamplerHandle RenderContext::createSampler(SamplerDesc&& desc)
 
     return m_SamplerPool.create(std::move(desc), std::move(sampler));
 }
+
+const SamplerDesc& RenderContext::GetSamplerDesc(SamplerHandle handle)
+{
+    return m_SamplerPool.getObjectDesc(handle);
+}
+
+void RenderContext::DestroySampler(SamplerHandle handle)
+{
+    auto sampler = m_SamplerPool.getObject(handle).vkSampler;
+
+    VULKAN_DEVICE.destroySampler(sampler);
+    m_SamplerPool.destroy(handle);
+}
+
+
 } // namespace gore::gfx

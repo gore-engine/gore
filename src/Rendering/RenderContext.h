@@ -59,7 +59,10 @@ public:
     const Buffer& GetBuffer(BufferHandle handle);
     void DestroyBuffer(BufferHandle handle);
 
-    SamplerHandle createSampler(SamplerDesc&& desc);
+    SamplerHandle CreateSampler(SamplerDesc&& desc);
+    const SamplerDesc& GetSamplerDesc(SamplerHandle handle);
+    void DestroySampler(SamplerHandle handle);
+
     BindGroupHandle createBindGroup(const BindGroupDesc& desc);
 
     ShaderModuleHandle createShaderModule(ShaderModuleDesc&& desc);
@@ -78,7 +81,7 @@ public:
     void clear();
 private:
     template <typename T>
-    static VulkanBuffer CreateStagintBuffer(const Device& device, std::vector<T> const& data)
+    static VulkanBuffer CreateStagingBuffer(const Device& device, std::vector<T> const& data)
     {
         return CreateStagingBuffer(device, data.data(), data.size() * sizeof(T));
     }
