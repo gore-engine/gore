@@ -55,7 +55,7 @@ struct SamplerDesc final
     float maxLod          = 0.0f;
     float maxAnisotropy   = 1.0f;
     bool anisotropyEnable = false;
-    Color borderColor     = Color::Clear;
+    // Color borderColor     = Color::Clear;
 };
 
 struct MaterialDesc final

@@ -19,7 +19,7 @@ inline VkImageType GetVkImageType(TextureType type)
 inline VkImageUsageFlags GetVkImageUsageFlags(TextureUsageBits usage)
 {
     VkImageUsageFlags flag = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    
+
     if (usage & TextureUsageBits::Sampled)
     {
         flag |= VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -153,7 +153,7 @@ inline vk::PipelineStageFlags GetPipelineStageFlags(vk::ImageLayout layout)
             return vk::PipelineStageFlagBits::eTopOfPipe;
         default:
             assert(false && "Unknown layout");
-            return vk::PipelineStageFlagBits::eTopOfPipe;    
+            return vk::PipelineStageFlagBits::eTopOfPipe;
     }
 }
 
@@ -219,6 +219,4 @@ vk::PipelineDepthStencilStateCreateInfo GetVkDepthStencilState(const GraphicsPip
 vk::PipelineColorBlendStateCreateInfo GetVkColorBlendState(const GraphicsPipelineDesc& desc);
 
 void ImageLayoutTransition(vk::raii::CommandBuffer& commandBuffer, vk::Image& image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageSubresourceRange subResourceRange);
-
-vk::SamplerCreateInfo GetVkSamplerCreateInfo(const SamplerDesc& desc);
-} // namespace gore::VulkanHelper
+} // namespace gore::gfx::VulkanHelper
