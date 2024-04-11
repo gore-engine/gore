@@ -4,6 +4,8 @@
 
 #include "RenderContextHelper.h"
 
+#define VULKAN_DEVICE (*m_DevicePtr->Get())
+
 namespace gore::gfx
 {
 RenderContext::RenderContext(const Device* device) :
@@ -366,7 +368,7 @@ SamplerHandle RenderContext::createSampler(SamplerDesc&& desc)
     samplerCreateInfo.anisotropyEnable = desc.anisotropyEnable;
     samplerCreateInfo.borderColor      = vk::BorderColor::eFloatOpaqueWhite;
 
-    Sampler sampler = {.vkSampler = *m_DevicePtr->Get().createSampler(samplerCreateInfo)};
+    Sampler sampler = {.vkSampler = VULKAN_DEVICE.createSampler(samplerCreateInfo)};
 
     return m_SamplerPool.create(std::move(desc), std::move(sampler));
 }
