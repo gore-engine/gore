@@ -2,8 +2,7 @@
 
 #include "GraphicsFormat.h"
 #include "GraphicsResourcePrefix.h"
-
-#include "Math/Color.h"
+#include "GraphicsPipelineDesc.h"
 
 namespace gore::gfx
 {

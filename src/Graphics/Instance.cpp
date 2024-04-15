@@ -9,6 +9,8 @@
 #include <vector>
 #include <cstdlib>
 
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+
 namespace gore::gfx
 {
 
@@ -132,6 +134,7 @@ Instance::Instance(App* app) :
                      << VK_API_VERSION_MAJOR(m_ApiVersion) << "."
                      << VK_API_VERSION_MINOR(m_ApiVersion) << "."
                      << VK_API_VERSION_PATCH(m_ApiVersion) << std::endl;
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(*m_Instance);
 
     // Debug
 #if ENGINE_DEBUG
