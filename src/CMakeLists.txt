@@ -53,6 +53,9 @@ compile_shader(${SHADER_SOURCE_FILES} "vulkan" "pixel" "ps")
 compile_shader("Shaders/sample/triangle.hlsl" "vulkan" "vertex" "vs")
 compile_shader("Shaders/sample/triangle.hlsl" "vulkan" "pixel" "ps")
 
+compile_shader("Shaders/sample/SimpleLit.hlsl" "vulkan" "vertex" "vs")
+compile_shader("Shaders/sample/SimpleLit.hlsl" "vulkan" "pixel" "ps")
+
 # Platform Specific Configurations
 
 if (${TARGET_PLATFORM} STREQUAL "Windows")
