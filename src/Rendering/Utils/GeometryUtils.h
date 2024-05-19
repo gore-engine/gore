@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include "Rendering/Mesh/Mesh.h"
+
 namespace gore::gfx::geometry
 {
 enum class IndexType : uint8_t
@@ -37,8 +39,23 @@ enum class ShaderChannel : uint8_t
     Color    = 1 << 7,
 };
 
+FLAG_ENUM_CLASS(ShaderChannel, uint8_t);
+
 int CalculateShaderChannelsByteStrideSize(uint8_t channels);
 
 int CalculateVertexBufferSize(uint8_t channels, uint32_t vertexCount);
 int CalculateIndexBufferSize(IndexType indexType, uint32_t indexCount);
+
+enum class PrimitiveType : uint8_t
+{
+    Triangle,
+    Quad,
+    Cube,
+    Sphere,
+    Cylinder,
+    Cone,
+    Torus,
+    Plane,
+    Count
+};
 } // namespace gore::gfx::geometry

@@ -80,6 +80,7 @@ private:
 
     GraphicsPipelineHandle m_CubePipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
+    GraphicsPipelineHandle m_UVQuadPipelineHandle;
 
     // Pipeline
     vk::raii::PipelineLayout m_PipelineLayout;
@@ -100,6 +101,13 @@ private:
     std::vector<vk::raii::DescriptorSet> m_GlobalDescriptorSets;
 
     std::vector<BufferHandle> m_GlobalConstantBuffers;
+    
+    // Material Descriptors
+    vk::DescriptorPool m_MaterialDescriptorPool;
+    vk::DescriptorSetLayout m_UVQuadDescriptorSetLayout;
+    vk::DescriptorSet m_UVQuadDescriptorSet;
+
+    TextureHandle m_UVCheckTextureHandle;
 
     // Synchronization
     std::vector<vk::raii::Semaphore> m_RenderFinishedSemaphores;
@@ -125,6 +133,7 @@ private:
     void CreateDepthBuffer();
     void CreateVertexBuffer();
     void CreateGlobalDescriptorSets();
+    void CreateUVQuadDescriptorSets();
     void CreatePipeline();
     void GetQueues();
     void CreateSynchronization();

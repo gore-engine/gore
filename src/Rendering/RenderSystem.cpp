@@ -91,6 +91,8 @@ void RenderSystem::Initialize()
     std::vector<PhysicalDevice> physicalDevices = m_Instance.GetPhysicalDevices();
     m_Device = Device(GetBestDevice(physicalDevices));
 
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(*m_Device.Get());
+
     m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), 3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
 
@@ -577,6 +579,17 @@ void RenderSystem::CreateGlobalDescriptorSets()
             }
         }
     );
+}
+
+void RenderSystem::CreateUVQuadDescriptorSets()
+{
+    std::vector<vk::DescriptorPoolSize> poolSizes = {
+        {       vk::DescriptorType::eUniformBuffer, 10},
+        {vk::DescriptorType::eUniformBufferDynamic, 10},
+        {       vk::DescriptorType::eCombinedImageSampler, 10}
+    };
+ 
+    m_MaterialDescriptorPool = (*m_Device.Get()).createDescriptorPool({vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 10, poolSizes});
 }
 
 static std::vector<char> LoadShaderBytecode(const std::string& name, const ShaderStage& stage, const std::string& entryPoint)
