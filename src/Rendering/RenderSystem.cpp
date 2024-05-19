@@ -77,6 +77,8 @@ RenderSystem::RenderSystem(gore::App* app) :
 
 RenderSystem::~RenderSystem()
 {
+    m_RenderContext.release();
+
     g_RenderSystem = nullptr;
 }
 
