@@ -1,4 +1,4 @@
-#include "../ShaderLibrary/Utils/Triangle.hlsl"
+#include "../ShaderLibrary/Utils/Quad.hlsl"
 
 struct Attributes
 {
@@ -14,8 +14,12 @@ struct Varyings
 Varyings vs(Attributes IN)
 {
     Varyings v;
-    v.position = float4(triangle_pos[IN.vertexID], 0, 1);
-    v.color = triangle_color[IN.vertexID];
+
+    uint index = quad_indices[IN.vertexID];
+
+    v.position = float4(quad_pos[index], 0, 1);
+    v.color = quad_color[index];
+
     return v;
 }
 
@@ -23,3 +27,4 @@ float4 ps(Varyings v) : SV_Target0
 {
     return float4(v.color, 1.0f);
 }
+
