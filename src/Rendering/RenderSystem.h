@@ -80,8 +80,8 @@ private:
 
     GraphicsPipelineHandle m_CubePipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
-    GraphicsPipelineHandle m_UVQuadPipelineHandle;
-
+    GraphicsPipelineHandle m_QuadPipelineHandle;
+    
     // Pipeline
     vk::raii::PipelineLayout m_PipelineLayout;
     vk::raii::PipelineLayout m_BlankPipelineLayout;

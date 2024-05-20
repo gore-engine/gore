@@ -189,15 +189,17 @@ void RenderSystem::Update()
 
     commandBuffer.beginRenderingKHR(renderingInfo);
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
-
     vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(surfaceExtent.width), static_cast<float>(surfaceExtent.height), 0.0f, 1.0f);
     commandBuffer.setViewport(0, {viewport});
 
     vk::Rect2D scissor({0, 0}, surfaceExtent);
     commandBuffer.setScissor(0, {scissor});
 
-    commandBuffer.draw(3, 1, 0, 0);
+    // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
+    // commandBuffer.draw(3, 1, 0, 0);
+
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_QuadPipelineHandle).pipeline);
+    commandBuffer.draw(6, 1, 0, 0);
 
     auto& globalConstantBuffer = m_RenderContext->GetBuffer(m_GlobalConstantBuffers[currentSwapchainImageIndex]);
 
@@ -617,6 +619,9 @@ void RenderSystem::CreatePipeline()
     std::vector<char> triangleVertBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Vertex, "vs");
     std::vector<char> triangleFragBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Fragment, "ps");
 
+    std::vector<char> quadVertBytecode = LoadShaderBytecode("sample/quad", ShaderStage::Vertex, "vs");
+    std::vector<char> quadFragBytecode = LoadShaderBytecode("sample/quad", ShaderStage::Fragment, "ps");
+
     // TODO: this is temporary now!
     vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstant));
     std::vector<vk::PushConstantRange> pushConstantRanges = {pushConstantRange};
@@ -677,6 +682,30 @@ void RenderSystem::CreatePipeline()
                 .byteSize = static_cast<uint32_t>(triangleFragBytecode.size()), 
                 .entryFunc = "ps"
             },            
+            .colorFormats = {GraphicsFormat::BGRA8_SRGB},
+            .depthFormat = GraphicsFormat::D32_FLOAT,
+            .stencilFormat = GraphicsFormat::Undefined,
+            .pipelineLayout { *m_BlankPipelineLayout },
+            .subpassIndex = 0
+        }
+    );
+
+    m_QuadPipelineHandle = m_RenderContext->CreateGraphicsPipeline(
+        GraphicsPipelineDesc
+        {
+            .debugName = "UV Quad Pipeline",
+            .VS
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(quadVertBytecode.data()),
+                .byteSize = static_cast<uint32_t>(quadVertBytecode.size()), 
+                .entryFunc = "vs"
+            },
+            .PS
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(quadFragBytecode.data()), 
+                .byteSize = static_cast<uint32_t>(quadFragBytecode.size()), 
+                .entryFunc = "ps"
+            },
             .colorFormats = {GraphicsFormat::BGRA8_SRGB},
             .depthFormat = GraphicsFormat::D32_FLOAT,
             .stencilFormat = GraphicsFormat::Undefined,
