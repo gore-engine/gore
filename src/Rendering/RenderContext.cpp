@@ -19,6 +19,7 @@ RenderContext::RenderContext(const Device* device) :
     uint32_t queueFamilyIndex = device->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics);
 
     m_CommandPool = device->Get().createCommandPool({{}, queueFamilyIndex});
+    device->SetName(m_CommandPool, "RenderContext CommandPool");
 }
 
 RenderContext::~RenderContext()
@@ -32,6 +33,8 @@ void RenderContext::clear()
     m_GraphicsPipelinePool.clear();
     m_BufferPool.clear();
     m_TexturePool.clear();
+
+    m_CommandPool.clear();
 }
 
 VulkanBuffer RenderContext::CreateStagingBuffer(const Device& device, void const* data, size_t size)
