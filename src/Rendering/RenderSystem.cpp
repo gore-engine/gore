@@ -101,6 +101,7 @@ void RenderSystem::Initialize()
     CreateDepthBuffer();
     CreateVertexBuffer();
     CreateGlobalDescriptorSets();
+    CreateUVQuadDescriptorSets();
     CreatePipeline();
     GetQueues();
 
@@ -592,6 +593,25 @@ void RenderSystem::CreateUVQuadDescriptorSets()
     };
  
     m_MaterialDescriptorPool = (*m_Device.Get()).createDescriptorPool({vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 10, poolSizes});
+
+    std::vector<vk::DescriptorSetLayoutBinding> bindings = {
+        {0, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment}
+    };
+
+    m_UVQuadDescriptorSetLayout = (*m_Device.Get()).createDescriptorSetLayout({{}, bindings});
+
+    vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(m_MaterialDescriptorPool, m_UVQuadDescriptorSetLayout);
+
+    m_UVQuadDescriptorSet = (*m_Device.Get()).allocateDescriptorSets(descriptorSetAllocateInfo).front();
+
+    LOG_STREAM(INFO) << "UV Quad Descriptor Set" << m_UVQuadDescriptorSet << std::endl;
+
+    m_RenderDeletionQueue.PushFunction(
+        [&](){
+            (*m_Device.Get()).destroyDescriptorPool(m_MaterialDescriptorPool);
+            (*m_Device.Get()).destroyDescriptorSetLayout(m_UVQuadDescriptorSetLayout);
+        }
+    );
 }
 
 static std::vector<char> LoadShaderBytecode(const std::string& name, const ShaderStage& stage, const std::string& entryPoint)
