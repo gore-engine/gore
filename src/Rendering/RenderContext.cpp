@@ -39,6 +39,12 @@ void RenderContext::clear()
     }
     m_TexturePool.clear();
 
+    for(auto& sampler : m_SamplerPool.objects)
+    {
+        VULKAN_DEVICE.destroySampler(sampler.vkSampler);
+    }
+    m_SamplerPool.clear();
+
     m_CommandPool.clear();
 }
 
@@ -276,11 +282,21 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
 
 void RenderContext::DestroyTexture(TextureHandle handle)
 {
-    auto texture = m_TexturePool.getObject(handle);
+    auto& texture = m_TexturePool.getObject(handle);
 
     DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
     // TODO: Destroy Texture View
     m_TexturePool.destroy(handle);
+}
+
+const Texture& RenderContext::GetTexture(TextureHandle handle)
+{
+    return m_TexturePool.getObject(handle);
+}
+
+const TextureDesc& RenderContext::GetTextureDesc(TextureHandle handle)
+{
+    return m_TexturePool.getObjectDesc(handle);
 }
 
 void RenderContext::CopyDataToTexture(TextureHandle handle, const void* data, size_t size)

@@ -9,7 +9,6 @@ namespace gore::gfx
 {
 struct Sampler
 {
-    VkSampler sampler = VK_NULL_HANDLE;
+    vk::Sampler sampler = VK_NULL_HANDLE;
 };
-
 } // namespace gore::gfx

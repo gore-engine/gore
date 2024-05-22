@@ -46,6 +46,8 @@ public:
 
     TextureHandle createTexture(TextureDesc&& desc);
     void DestroyTexture(TextureHandle handle); 
+    const Texture& GetTexture(TextureHandle handle);
+    const TextureDesc& GetTextureDesc(TextureHandle handle);
 
     template <typename T>
     void CopyDataToTexture(TextureHandle handle, const std::vector<T>& data)
