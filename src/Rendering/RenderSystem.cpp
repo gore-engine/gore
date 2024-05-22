@@ -105,6 +105,8 @@ void RenderSystem::Initialize()
     CreatePipeline();
     GetQueues();
 
+    LoadTexture("sample.jpg");
+
     m_CommandPool = m_Device.CreateCommandPool(m_GraphicsQueueFamilyIndex);
     m_Device.SetName(m_CommandPool.Get(0), "CommandPool 0");
     m_Device.SetName(m_CommandPool.Get(1), "CommandPool 1");

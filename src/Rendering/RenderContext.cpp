@@ -32,6 +32,11 @@ void RenderContext::clear()
     m_ShaderModulePool.clear();
     m_GraphicsPipelinePool.clear();
     m_BufferPool.clear();
+
+    for(auto& texture : m_TexturePool.objects)
+    {
+        DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
+    }
     m_TexturePool.clear();
 
     m_CommandPool.clear();
@@ -249,7 +254,7 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
     };
 
     Texture texture;
-    vmaCreateImage(m_DevicePtr->GetVmaAllocator(), &imageInfo, &allocCreateInfo, &texture.image, &texture.vmaAllocation, &texture.vmaAllocationInfo);
+    VK_CHECK_RESULT(vmaCreateImage(m_DevicePtr->GetVmaAllocator(), &imageInfo, &allocCreateInfo, &texture.image, &texture.vmaAllocation, &texture.vmaAllocationInfo));
 
     TextureHandle handle = m_TexturePool.create(std::move(desc), std::move(texture));
 
@@ -258,8 +263,6 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
 
     assert(desc.data != nullptr && desc.dataSize > 0);
 
-    VulkanBuffer stagingBuffer = CreateStagingBuffer(*m_DevicePtr, desc.data, desc.dataSize);
-
     vk::raii::Queue queue = m_DevicePtr->Get().getQueue(m_DevicePtr->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics), 0);
 
     vk::raii::CommandBuffer cmd = CreateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
@@ -267,8 +270,6 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
     CopyDataToTexture(handle, desc.data, desc.dataSize);
 
     FlushCommandBuffer(cmd, queue);
-
-    ClearVulkanBuffer(m_DevicePtr->GetVmaAllocator(), stagingBuffer.vkBuffer, stagingBuffer.vmaAllocation);
 
     return handle;
 }
@@ -304,6 +305,8 @@ void RenderContext::CopyDataToTexture(TextureHandle handle, const void* data, si
     VulkanHelper::ImageLayoutTransition(cmd, image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, subresourceRange);
 
     FlushCommandBuffer(cmd, queue);
+
+    ClearVulkanBuffer(m_DevicePtr->GetVmaAllocator(), stagingBuffer.vkBuffer, stagingBuffer.vmaAllocation);
 }
 
 BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
