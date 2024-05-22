@@ -100,12 +100,13 @@ void RenderSystem::Initialize()
 
     CreateDepthBuffer();
     CreateVertexBuffer();
+    
+    CreateTextureObjects();
+
     CreateGlobalDescriptorSets();
     CreateUVQuadDescriptorSets();
     CreatePipeline();
     GetQueues();
-
-    LoadTexture("sample.jpg");
 
     m_CommandPool = m_Device.CreateCommandPool(m_GraphicsQueueFamilyIndex);
     m_Device.SetName(m_CommandPool.Get(0), "CommandPool 0");
@@ -380,7 +381,7 @@ void RenderSystem::ShutdownImgui()
     m_ImguiDescriptorPool.clear();
 }
 
-TextureHandle RenderSystem::LoadTexture(const std::string& name)
+TextureHandle RenderSystem::CreateTextureHandle(const std::string& name)
 {
     static const std::filesystem::path kTextureFolder = FileSystem::GetResourceFolder() / "Textures";
     auto texturePath = kTextureFolder / name;
@@ -392,7 +393,7 @@ TextureHandle RenderSystem::LoadTexture(const std::string& name)
 
     if (pixels == nullptr)
     {
-        LOG_STREAM(ERROR) << "RenderSystem LoadTexture: Failed to load texture: " << name << std::endl;
+        LOG_STREAM(ERROR) << "RenderSystem CreateTextureHandle: Failed to load texture: " << name << std::endl;
         return TextureHandle();
     }
 
@@ -586,7 +587,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
     );
 }
 
-void RenderSystem::CreateUVQuadDescriptorSets()
+void RenderSystem:: CreateUVQuadDescriptorSets()
 {
     std::vector<vk::DescriptorPoolSize> poolSizes = {
         {       vk::DescriptorType::eUniformBuffer, 10},
@@ -614,6 +615,10 @@ void RenderSystem::CreateUVQuadDescriptorSets()
             (*m_Device.Get()).destroyDescriptorSetLayout(m_UVQuadDescriptorSetLayout);
         }
     );
+}
+
+void RenderSystem::UpdateUVQuadDescriptorSets()
+{
 }
 
 static std::vector<char> LoadShaderBytecode(const std::string& name, const ShaderStage& stage, const std::string& entryPoint)
@@ -733,6 +738,32 @@ void RenderSystem::CreatePipeline()
             .stencilFormat = GraphicsFormat::Undefined,
             .pipelineLayout { *m_BlankPipelineLayout },
             .subpassIndex = 0
+        }
+    );
+}
+
+void RenderSystem::CreateTextureObjects()
+{
+    m_UVCheckTextureHandle = CreateTextureHandle("sample.jpg");
+
+    m_UVCheckSamplerHandle = m_RenderContext->CreateSampler(
+        SamplerDesc
+        {
+            .debugName = "UV Check Sampler",
+        }
+    );
+
+    vk::ImageViewCreateInfo imageViewCreateInfo({},
+                                                m_RenderContext->GetTexture(m_UVCheckTextureHandle).image,
+                                                vk::ImageViewType::e2D,
+                                                vk::Format::eR8G8B8A8Unorm,
+                                                {},
+                                                {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
+    m_UVCheckImageView = (*m_Device.Get()).createImageView(imageViewCreateInfo);
+
+    m_RenderDeletionQueue.PushFunction(
+        [&](){
+            (*m_Device.Get()).destroyImageView(m_UVCheckImageView);
         }
     );
 }

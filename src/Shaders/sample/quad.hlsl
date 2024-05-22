@@ -1,5 +1,10 @@
 #include "../ShaderLibrary/Utils/Quad.hlsl"
 
+[[vk::combinedImageSampler]][[vk::binding(0, 0)]]
+Texture2D<float4> myTexture;
+[[vk::combinedImageSampler]][[vk::binding(0, 0)]]
+SamplerState mySampler;
+
 struct Attributes
 {
     uint vertexID : SV_VertexID;
@@ -8,7 +13,7 @@ struct Attributes
 struct Varyings
 {
     float4 position : SV_Position;
-    float3 color : COLOR;
+    float2 uv : TEXCOORD;
 };
 
 Varyings vs(Attributes IN)
@@ -18,13 +23,13 @@ Varyings vs(Attributes IN)
     uint index = quad_indices[IN.vertexID];
 
     v.position = float4(quad_pos[index], 0, 1);
-    v.color = quad_color[index];
-
+    v.uv = quad_uv[index];
     return v;
 }
 
 float4 ps(Varyings v) : SV_Target0
 {
-    return float4(v.color, 1.0f);
+    return float4(v.uv, 0, 1);
+    return myTexture.Sample(mySampler, v.uv);
 }
 

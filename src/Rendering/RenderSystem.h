@@ -62,8 +62,6 @@ private:
     void InitImgui();
     void ShutdownImgui();
     
-    TextureHandle LoadTexture(const std::string& name);
-
     ImGui_ImplVulkanH_Window m_ImguiWindowData;
     vk::raii::DescriptorPool m_ImguiDescriptorPool;
 private:
@@ -108,6 +106,8 @@ private:
     vk::DescriptorSet m_UVQuadDescriptorSet;
 
     TextureHandle m_UVCheckTextureHandle;
+    SamplerHandle m_UVCheckSamplerHandle;
+    vk::ImageView m_UVCheckImageView;
 
     // Synchronization
     std::vector<vk::raii::Semaphore> m_RenderFinishedSemaphores;
@@ -134,9 +134,13 @@ private:
     void CreateVertexBuffer();
     void CreateGlobalDescriptorSets();
     void CreateUVQuadDescriptorSets();
+    void UpdateUVQuadDescriptorSets();
     void CreatePipeline();
+    void CreateTextureObjects();
     void GetQueues();
     void CreateSynchronization();
+
+    TextureHandle CreateTextureHandle(const std::string& name);
 
     [[nodiscard]] const PhysicalDevice& GetBestDevice(const std::vector<PhysicalDevice>& devices) const;
 };
