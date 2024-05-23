@@ -59,8 +59,8 @@ jobs:
             c_compiler: cl
           - os: ubuntu-latest
             c_compiler: clang
-          - os: macos-latest
-            c_compiler: gcc
+        # - os: macos-latest
+        #   c_compiler: gcc
         # - os: macos-latest
         #   c_compiler: cl
         # - os: macos-latest
@@ -98,12 +98,12 @@ jobs:
         # sudo apt-get install -y libglfw3-dev # This seems to be unnecessary
         sudo apt-get install -y libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config
     
-    - name: Install Package Dependencies on macOS
-      if: matrix.os == 'macos-latest'
-      run: |
-        brew update
-        brew install pkg-config
-        brew install glfw3
+  # - name: Install Package Dependencies on macOS
+  #   if: matrix.os == 'macos-latest'
+  #   run: |
+  #     brew update
+  #     brew install pkg-config
+  #     brew install glfw3
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
