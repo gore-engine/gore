@@ -400,6 +400,11 @@ const SamplerDesc& RenderContext::GetSamplerDesc(SamplerHandle handle)
     return m_SamplerPool.getObjectDesc(handle);
 }
 
+const Sampler& RenderContext::GetSampler(SamplerHandle handle)
+{
+    return m_SamplerPool.getObject(handle);
+}
+
 void RenderContext::DestroySampler(SamplerHandle handle)
 {
     auto sampler = m_SamplerPool.getObject(handle).vkSampler;

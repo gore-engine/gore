@@ -63,6 +63,7 @@ public:
 
     SamplerHandle CreateSampler(SamplerDesc&& desc);
     const SamplerDesc& GetSamplerDesc(SamplerHandle handle);
+    const Sampler& GetSampler(SamplerHandle handle);
     void DestroySampler(SamplerHandle handle);
 
     BindGroupHandle createBindGroup(const BindGroupDesc& desc);
