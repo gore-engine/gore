@@ -622,7 +622,7 @@ void RenderSystem:: CreateUVQuadDescriptorSets()
 
 void RenderSystem::UpdateUVQuadDescriptorSets()
 {
-    vk::DescriptorImageInfo descriptorImageInfo(m_RenderContext->GetSampler(m_UVCheckSamplerHandle).vkSampler, m_UVCheckImageView);
+    vk::DescriptorImageInfo descriptorImageInfo(m_RenderContext->GetSampler(m_UVCheckSamplerHandle).vkSampler, m_UVCheckImageView, vk::ImageLayout::eShaderReadOnlyOptimal);
 
     vk::WriteDescriptorSet writeDescriptorSet(m_UVQuadDescriptorSet, 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &descriptorImageInfo);
 
@@ -773,7 +773,7 @@ void RenderSystem::CreateTextureObjects()
     vk::ImageViewCreateInfo imageViewCreateInfo({},
                                                 m_RenderContext->GetTexture(m_UVCheckTextureHandle).image,
                                                 vk::ImageViewType::e2D,
-                                                vk::Format::eR8G8B8A8Unorm,
+                                                vk::Format::eR8G8B8A8Srgb,
                                                 {},
                                                 {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
     m_UVCheckImageView = (*m_Device.Get()).createImageView(imageViewCreateInfo);

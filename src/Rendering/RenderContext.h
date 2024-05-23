@@ -10,6 +10,8 @@
 #include "GraphicsResourceDesc.h"
 #include "GraphicsResource.h"
 
+#include "Texture.h"
+#include "Sampler.h"
 #include "BindGroup.h"
 
 #include "GraphicsPipelineDesc.h"

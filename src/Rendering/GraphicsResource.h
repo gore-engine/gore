@@ -21,11 +21,6 @@ struct Buffer
     gfx::VulkanBuffer vkBuffer;
 };
 
-struct Sampler
-{
-    VkSampler vkSampler = VK_NULL_HANDLE;
-};
-
 struct BindGroup
 {
 };
@@ -41,7 +36,6 @@ struct ShaderModule
 };
 
 using BufferHandle       = Handle<Buffer>;
-using SamplerHandle      = Handle<Sampler>;
 using BindGroupHandle    = Handle<BindGroup>;
 using ShaderModuleHandle = Handle<ShaderModule>;
 } // namespace gore

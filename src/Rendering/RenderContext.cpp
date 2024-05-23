@@ -41,7 +41,7 @@ void RenderContext::clear()
 
     for(auto& sampler : m_SamplerPool.objects)
     {
-        VULKAN_DEVICE.destroySampler(sampler.vkSampler);
+        DestroyVulkanSampler(VULKAN_DEVICE, sampler.vkSampler);    
     }
     m_SamplerPool.clear();
 

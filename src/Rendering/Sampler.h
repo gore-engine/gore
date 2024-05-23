@@ -9,6 +9,13 @@ namespace gore::gfx
 {
 struct Sampler
 {
-    vk::Sampler sampler = VK_NULL_HANDLE;
+    vk::Sampler vkSampler = VK_NULL_HANDLE;
 };
+
+inline void DestroyVulkanSampler(vk::Device device, vk::Sampler sampler)
+{
+    device.destroySampler(sampler);
+}
+
+using SamplerHandle = Handle<Sampler>;
 } // namespace gore::gfx
