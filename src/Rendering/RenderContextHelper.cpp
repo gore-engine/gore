@@ -278,6 +278,8 @@ void ImageLayoutTransition(vk::raii::CommandBuffer& commandBuffer, vk::Image& im
         VK_QUEUE_FAMILY_IGNORED,
         image,
         subResourceRange));
+    
+    commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eHost, vk::PipelineStageFlagBits::eFragmentShader, {}, {}, {}, barriers);
 }
 
 } // namespace gore::VulkanHelper

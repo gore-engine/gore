@@ -251,7 +251,7 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
         .tiling        = VK_IMAGE_TILING_OPTIMAL,
         .usage         = VulkanHelper::GetVkImageUsageFlags(desc.usage),
         .sharingMode   = VK_SHARING_MODE_EXCLUSIVE,
-        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED,
     };
 
     VmaAllocationCreateInfo allocCreateInfo = {
@@ -314,7 +314,7 @@ void RenderContext::CopyDataToTexture(TextureHandle handle, const void* data, si
 
     vk::Image image = texture.image;
 
-    VulkanHelper::ImageLayoutTransition(cmd, image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, subresourceRange);
+    VulkanHelper::ImageLayoutTransition(cmd, image, vk::ImageLayout::ePreinitialized, vk::ImageLayout::eTransferDstOptimal, subresourceRange);
 
     cmd.copyBufferToImage(stagingBuffer.vkBuffer, image, vk::ImageLayout::eTransferDstOptimal, vk::BufferImageCopy(0, 0, 0, vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1), vk::Offset3D(0, 0, 0), vk::Extent3D(textureDesc.width, textureDesc.height, 1)));
 
