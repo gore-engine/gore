@@ -29,7 +29,6 @@ Varyings vs(Attributes IN)
 
 float4 ps(Varyings v) : SV_Target0
 {
-    return float4(v.uv, 0, 1);
     return myTexture.Sample(mySampler, v.uv);
 }
 
