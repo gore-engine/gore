@@ -45,6 +45,7 @@ RenderSystem::RenderSystem(gore::App* app) :
     // Pipeline
     m_BlankPipelineLayout(nullptr),
     m_PipelineLayout(nullptr),
+    m_UVQuadPipelineLayout(VK_NULL_HANDLE),
     // Queue
     m_GraphicsQueue(nullptr),
     m_GraphicsQueueFamilyIndex(0),
@@ -105,6 +106,7 @@ void RenderSystem::Initialize()
 
     CreateGlobalDescriptorSets();
     CreateUVQuadDescriptorSets();
+    UpdateUVQuadDescriptorSets();
     CreatePipeline();
     GetQueues();
 
@@ -203,6 +205,7 @@ void RenderSystem::Update()
     // commandBuffer.draw(3, 1, 0, 0);
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_QuadPipelineHandle).pipeline);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_UVQuadPipelineLayout, 0, {m_UVQuadDescriptorSet}, {});
     commandBuffer.draw(6, 1, 0, 0);
 
     auto& globalConstantBuffer = m_RenderContext->GetBuffer(m_GlobalConstantBuffers[currentSwapchainImageIndex]);
@@ -607,7 +610,7 @@ void RenderSystem:: CreateUVQuadDescriptorSets()
 
     m_UVQuadDescriptorSet = (*m_Device.Get()).allocateDescriptorSets(descriptorSetAllocateInfo).front();
 
-    LOG_STREAM(INFO) << "UV Quad Descriptor Set" << m_UVQuadDescriptorSet << std::endl;
+    LOG_STREAM(INFO) << "UV Quad Descriptor Set" << m_UVQuadDescriptorSet << std::endl;    
 
     m_RenderDeletionQueue.PushFunction(
         [&](){
@@ -619,6 +622,11 @@ void RenderSystem:: CreateUVQuadDescriptorSets()
 
 void RenderSystem::UpdateUVQuadDescriptorSets()
 {
+    vk::DescriptorImageInfo descriptorImageInfo(m_RenderContext->GetSampler(m_UVCheckSamplerHandle).vkSampler, m_UVCheckImageView);
+
+    vk::WriteDescriptorSet writeDescriptorSet(m_UVQuadDescriptorSet, 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &descriptorImageInfo);
+
+    (*m_Device.Get()).updateDescriptorSets({writeDescriptorSet}, {});
 }
 
 static std::vector<char> LoadShaderBytecode(const std::string& name, const ShaderStage& stage, const std::string& entryPoint)
@@ -658,6 +666,9 @@ void RenderSystem::CreatePipeline()
 
     m_PipelineLayout = m_Device.Get().createPipelineLayout(pipelineLayoutInfo);
     m_BlankPipelineLayout = m_Device.Get().createPipelineLayout({});
+
+    vk::PipelineLayoutCreateInfo uvQuadPipelineLayoutInfo({}, m_UVQuadDescriptorSetLayout);
+    m_UVQuadPipelineLayout = (*m_Device.Get()).createPipelineLayout(uvQuadPipelineLayoutInfo);
 
     m_CubePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
         GraphicsPipelineDesc
@@ -736,8 +747,14 @@ void RenderSystem::CreatePipeline()
             .colorFormats = {GraphicsFormat::BGRA8_SRGB},
             .depthFormat = GraphicsFormat::D32_FLOAT,
             .stencilFormat = GraphicsFormat::Undefined,
-            .pipelineLayout { *m_BlankPipelineLayout },
+            .pipelineLayout { m_UVQuadPipelineLayout },
             .subpassIndex = 0
+        }
+    );
+
+    m_RenderDeletionQueue.PushFunction(
+        [&](){
+            (*m_Device.Get()).destroyPipelineLayout(m_UVQuadPipelineLayout);
         }
     );
 }

@@ -83,6 +83,7 @@ private:
     // Pipeline
     vk::raii::PipelineLayout m_PipelineLayout;
     vk::raii::PipelineLayout m_BlankPipelineLayout;
+    vk::PipelineLayout m_UVQuadPipelineLayout;
 
     // Queue
     vk::raii::Queue m_GraphicsQueue;
