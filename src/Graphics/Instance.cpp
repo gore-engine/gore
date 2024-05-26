@@ -9,6 +9,8 @@
 #include <vector>
 #include <cstdlib>
 
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+
 namespace gore::gfx
 {
 
@@ -20,7 +22,8 @@ Instance::Instance() :
     m_Instance(nullptr),
     m_ValidationEnabled(false),
     m_DebugReportCallback(nullptr),
-    m_DebugUtilsMessenger(nullptr)
+    m_DebugUtilsMessenger(nullptr),
+    m_Loader()
 {
 }
 
@@ -132,6 +135,11 @@ Instance::Instance(App* app) :
                      << VK_API_VERSION_MAJOR(m_ApiVersion) << "."
                      << VK_API_VERSION_MINOR(m_ApiVersion) << "."
                      << VK_API_VERSION_PATCH(m_ApiVersion) << std::endl;
+    
+    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = m_Loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(*m_Instance);
 
     // Debug
 #if ENGINE_DEBUG

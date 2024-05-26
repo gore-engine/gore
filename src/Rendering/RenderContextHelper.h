@@ -7,9 +7,41 @@
 #include "GraphicsPipelineDesc.h"
 
 #include <vector>
-namespace gore::VulkanHelper
+namespace gore::gfx::VulkanHelper
 {
 std::vector<VkFormat> GetVkFormats(const std::vector<GraphicsFormat>& formats);
+
+inline VkImageType GetVkImageType(TextureType type)
+{
+    return static_cast<VkImageType>(type);
+}
+
+inline VkImageUsageFlags GetVkImageUsageFlags(TextureUsageBits usage)
+{
+    VkImageUsageFlags flag = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    if (usage & TextureUsageBits::Sampled)
+    {
+        flag |= VK_IMAGE_USAGE_SAMPLED_BIT;
+    }
+
+    if (usage & TextureUsageBits::Storage)
+    {
+        flag |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }
+
+    if (usage & TextureUsageBits::RenderTarget)
+    {
+        flag |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    }
+
+    if (usage & TextureUsageBits::DepthStencil)
+    {
+        flag |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    }
+
+    return flag;
+}
 
 inline vk::CompareOp GetVkCompareOp(CompareOp op)
 {
@@ -94,6 +126,82 @@ inline vk::PipelineColorBlendAttachmentState GetVkColorBlendAttachmentState(cons
         static_cast<vk::ColorComponentFlagBits>(state.colorWriteMask));
 }
 
+
+inline vk::PipelineStageFlags GetPipelineStageFlags(vk::ImageLayout layout)
+{
+    switch (layout)
+    {
+        case vk::ImageLayout::eUndefined:
+            return vk::PipelineStageFlagBits::eTopOfPipe;
+        case vk::ImageLayout::ePreinitialized:
+            return vk::PipelineStageFlagBits::eHost;
+        case vk::ImageLayout::eTransferSrcOptimal:
+        case vk::ImageLayout::eTransferDstOptimal:
+            return vk::PipelineStageFlagBits::eTransfer;
+        case vk::ImageLayout::eColorAttachmentOptimal:
+            return vk::PipelineStageFlagBits::eColorAttachmentOutput;
+        case vk::ImageLayout::eDepthStencilAttachmentOptimal:
+            return vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests;
+        case vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR:
+            return vk::PipelineStageFlagBits::eFragmentShadingRateAttachmentKHR;
+        case vk::ImageLayout::eShaderReadOnlyOptimal:
+            return vk::PipelineStageFlagBits::eVertexShader | vk::PipelineStageFlagBits::eFragmentShader;
+        case vk::ImageLayout::ePresentSrcKHR:
+            return vk::PipelineStageFlagBits::eBottomOfPipe;
+        case vk::ImageLayout::eGeneral:
+            assert(false && "General layout is not supported yet");
+            return vk::PipelineStageFlagBits::eTopOfPipe;
+        default:
+            assert(false && "Unknown layout");
+            return vk::PipelineStageFlagBits::eTopOfPipe;
+    }
+}
+
+inline vk::Filter GetVkFilter(SamplerFilter filter)
+{
+    switch (filter)
+    {
+        case SamplerFilter::Nearest:
+            return vk::Filter::eNearest;
+        case SamplerFilter::Linear:
+            return vk::Filter::eLinear;
+        default:
+            return vk::Filter::eLinear;
+    }
+}
+
+inline vk::SamplerMipmapMode GetVkMipmapMode(SamplerMipmapMode mode)
+{
+    switch (mode)
+    {
+        case SamplerMipmapMode::Nearest:
+            return vk::SamplerMipmapMode::eNearest;
+        case SamplerMipmapMode::Linear:
+            return vk::SamplerMipmapMode::eLinear;
+        default:
+            return vk::SamplerMipmapMode::eLinear;
+    }
+}
+
+inline vk::SamplerAddressMode GetVkAddressMode(SamplerAddressMode mode)
+{
+    switch (mode)
+    {
+        case SamplerAddressMode::Repeat:
+            return vk::SamplerAddressMode::eRepeat;
+        case SamplerAddressMode::MirroredRepeat:
+            return vk::SamplerAddressMode::eMirroredRepeat;
+        case SamplerAddressMode::ClampToEdge:
+            return vk::SamplerAddressMode::eClampToEdge;
+        case SamplerAddressMode::ClampToBorder:
+            return vk::SamplerAddressMode::eClampToBorder;
+        case SamplerAddressMode::MirrorClampToEdge:
+            return vk::SamplerAddressMode::eMirrorClampToEdge;
+        default:
+            return vk::SamplerAddressMode::eRepeat;
+    }
+}
+
 vk::Format GetVkFormat(GraphicsFormat format);
 
 VkBufferCreateInfo GetVkBufferCreateInfo(BufferDesc& desc);
@@ -109,4 +217,6 @@ vk::PipelineRasterizationStateCreateInfo GetVkRasterizeState(const GraphicsPipel
 vk::PipelineMultisampleStateCreateInfo GetVkMultisampleState(const GraphicsPipelineDesc& desc);
 vk::PipelineDepthStencilStateCreateInfo GetVkDepthStencilState(const GraphicsPipelineDesc& desc);
 vk::PipelineColorBlendStateCreateInfo GetVkColorBlendState(const GraphicsPipelineDesc& desc);
-} // namespace gore::VulkanHelper
+
+void ImageLayoutTransition(vk::raii::CommandBuffer& commandBuffer, vk::Image& image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageSubresourceRange subResourceRange);
+} // namespace gore::gfx::VulkanHelper

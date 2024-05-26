@@ -5,10 +5,13 @@
 #include "DummyVertex.h"
 
 #include "Graphics/Vulkan/VulkanIncludes.h"
+#include "Graphics/VulkanBuffer.h"
 
 #include "GraphicsResourceDesc.h"
 #include "GraphicsResource.h"
 
+#include "Texture.h"
+#include "Sampler.h"
 #include "BindGroup.h"
 
 #include "GraphicsPipelineDesc.h"
@@ -16,13 +19,10 @@
 #include "RenderPass.h"
 #include "Pool.h"
 
-namespace gore
+namespace gore::gfx
 {
 
-namespace gfx
-{
 class Device;
-}
 
 class RenderContext final
 {
@@ -30,7 +30,7 @@ class RenderContext final
     NON_COPYABLE(RenderContext);
 
 public:
-    RenderContext(const gfx::Device* device);
+    RenderContext(const Device* device);
     ~RenderContext();
 
     // RenderPass
@@ -46,14 +46,28 @@ public:
     void DrawProcedural();
     void DrawProceduralIndirect();
 
-    TextureHandle createTexture(const TextureDesc& desc);
+    TextureHandle createTexture(TextureDesc&& desc);
+    void DestroyTexture(TextureHandle handle); 
+    const Texture& GetTexture(TextureHandle handle);
+    const TextureDesc& GetTextureDesc(TextureHandle handle);
+
+    template <typename T>
+    void CopyDataToTexture(TextureHandle handle, const std::vector<T>& data)
+    {
+        CopyDataToTexture(handle, data.data(), data.size() * sizeof(T));
+    }
+    void CopyDataToTexture(TextureHandle handle, const void* data, size_t size);
 
     BufferHandle CreateBuffer(BufferDesc&& desc);
     const BufferDesc& GetBufferDesc(BufferHandle handle);
     const Buffer& GetBuffer(BufferHandle handle);
     void DestroyBuffer(BufferHandle handle);
 
-    SamplerHandle createSampler(const SamplerDesc& desc);
+    SamplerHandle CreateSampler(SamplerDesc&& desc);
+    const SamplerDesc& GetSamplerDesc(SamplerHandle handle);
+    const Sampler& GetSampler(SamplerHandle handle);
+    void DestroySampler(SamplerHandle handle);
+
     BindGroupHandle createBindGroup(const BindGroupDesc& desc);
 
     ShaderModuleHandle createShaderModule(ShaderModuleDesc&& desc);
@@ -70,17 +84,34 @@ public:
     void destroyPipeline(GraphicsPipelineHandle handle);
 
     void clear();
+private:
+    template <typename T>
+    static VulkanBuffer CreateStagingBuffer(const Device& device, std::vector<T> const& data)
+    {
+        return CreateStagingBuffer(device, data.data(), data.size() * sizeof(T));
+    }
+
+    static VulkanBuffer CreateStagingBuffer(const Device& device, void const* data, size_t size);
+
+    vk::raii::CommandBuffer CreateCommandBuffer(vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary, bool begin = true);
+    void FlushCommandBuffer(vk::raii::CommandBuffer& commandBuffer, vk::raii::Queue& queue);
 
 private:
-    using ShaderModulePool = Pool<ShaderModuleDesc, ShaderModule>;
-    using BufferPool       = Pool<BufferDesc, Buffer>;
+    using ShaderModulePool     = Pool<ShaderModuleDesc, ShaderModule>;
+    using BufferPool           = Pool<BufferDesc, Buffer>;
+    using TexturePool          = Pool<TextureDesc, Texture>;
     using GraphicsPipelinePool = Pool<GraphicsPipelineDesc, GraphicsPipeline>;
+    using SamplerPool          = Pool<SamplerDesc, Sampler>;
 
     ShaderModulePool m_ShaderModulePool;
     BufferPool m_BufferPool;
+    TexturePool m_TexturePool;
     GraphicsPipelinePool m_GraphicsPipelinePool;
+    SamplerPool m_SamplerPool;
 
-    const gfx::Device* m_DevicePtr;
+    vk::raii::CommandPool m_CommandPool;
+
+    const Device* m_DevicePtr;
 };
 
-} // namespace gore
+} // namespace gore::gfx

@@ -4,6 +4,6 @@ namespace gore
 {
 struct PipelineLayout
 {
-    VkPipelineLayout layout;
+    VkPipelineLayout layout = VK_NULL_HANDLE;
 };
 } // namespace gore

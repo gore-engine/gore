@@ -19,6 +19,8 @@
 namespace gore
 {
 
+using namespace gfx;
+
 class Window;
 
 struct DeletionQueue
@@ -66,20 +68,22 @@ private:
     std::unique_ptr<RenderContext> m_RenderContext;
 
     // Instance
-    gfx::Instance m_Instance;
+    Instance m_Instance;
 
     // Device
-    gfx::Device m_Device;
+    Device m_Device;
 
     // Surface & Swapchain
-    gfx::Swapchain m_Swapchain;
+    Swapchain m_Swapchain;
 
     GraphicsPipelineHandle m_CubePipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
-
+    GraphicsPipelineHandle m_QuadPipelineHandle;
+    
     // Pipeline
     vk::raii::PipelineLayout m_PipelineLayout;
     vk::raii::PipelineLayout m_BlankPipelineLayout;
+    vk::PipelineLayout m_UVQuadPipelineLayout;
 
     // Queue
     vk::raii::Queue m_GraphicsQueue;
@@ -88,7 +92,7 @@ private:
     uint32_t m_PresentQueueFamilyIndex;
 
     // Command Pool & Command Buffer
-    gfx::CommandPool m_CommandPool;
+    CommandPool m_CommandPool;
 
     // Global Descriptors
     vk::raii::DescriptorPool m_GlobalDescriptorPool;
@@ -96,6 +100,15 @@ private:
     std::vector<vk::raii::DescriptorSet> m_GlobalDescriptorSets;
 
     std::vector<BufferHandle> m_GlobalConstantBuffers;
+    
+    // Material Descriptors
+    vk::DescriptorPool m_MaterialDescriptorPool;
+    vk::DescriptorSetLayout m_UVQuadDescriptorSetLayout;
+    vk::DescriptorSet m_UVQuadDescriptorSet;
+
+    TextureHandle m_UVCheckTextureHandle;
+    SamplerHandle m_UVCheckSamplerHandle;
+    vk::ImageView m_UVCheckImageView;
 
     // Synchronization
     std::vector<vk::raii::Semaphore> m_RenderFinishedSemaphores;
@@ -121,11 +134,16 @@ private:
     void CreateDepthBuffer();
     void CreateVertexBuffer();
     void CreateGlobalDescriptorSets();
+    void CreateUVQuadDescriptorSets();
+    void UpdateUVQuadDescriptorSets();
     void CreatePipeline();
+    void CreateTextureObjects();
     void GetQueues();
     void CreateSynchronization();
 
-    [[nodiscard]] const gfx::PhysicalDevice& GetBestDevice(const std::vector<gfx::PhysicalDevice>& devices) const;
+    TextureHandle CreateTextureHandle(const std::string& name);
+
+    [[nodiscard]] const PhysicalDevice& GetBestDevice(const std::vector<PhysicalDevice>& devices) const;
 };
 
 } // namespace gore

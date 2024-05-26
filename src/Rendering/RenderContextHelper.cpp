@@ -2,7 +2,7 @@
 
 #include <array>
 
-namespace gore::VulkanHelper
+namespace gore::gfx::VulkanHelper
 {
 inline vk::StencilOpState GetVkStencilOpState(const StencilOpState& state)
 {
@@ -264,6 +264,22 @@ vk::PipelineColorBlendStateCreateInfo GetVkColorBlendState(const GraphicsPipelin
         colorBlendState.attachments.size(),
         reinterpret_cast<const vk::PipelineColorBlendAttachmentState*>(colorBlendState.attachments.data()),
         {1.0f, 1.0f, 1.0f, 1.0f});
+}
+
+void ImageLayoutTransition(vk::raii::CommandBuffer& commandBuffer, vk::Image& image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageSubresourceRange subResourceRange)
+{
+    std::vector<vk::ImageMemoryBarrier> barriers;
+    barriers.push_back(vk::ImageMemoryBarrier(
+        {},
+        {},
+        oldLayout,
+        newLayout,
+        VK_QUEUE_FAMILY_IGNORED,
+        VK_QUEUE_FAMILY_IGNORED,
+        image,
+        subResourceRange));
+    
+    commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eHost, vk::PipelineStageFlagBits::eFragmentShader, {}, {}, {}, barriers);
 }
 
 } // namespace gore::VulkanHelper

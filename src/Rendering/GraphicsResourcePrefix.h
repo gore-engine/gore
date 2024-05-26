@@ -25,30 +25,30 @@ enum class BufferUsage
     Count
 };
 
-enum class TextureType
+enum TextureUsageBits : uint8_t
 {
-    Tex2D,
-    Tex3D,
-    Cube,
+    Sampled      = 1 << 0, // SRV
+    Storage      = 1 << 1, // UAV
+    RenderTarget = 1 << 2, // RTV
+    DepthStencil = 1 << 3, // DSV
     Count
 };
 
-enum class TextureFormat
+inline TextureUsageBits operator|(TextureUsageBits a, TextureUsageBits b)
 {
-    None,
-    R8G8B8A8_SRGB,
-    R8G8B8A8_UNORM,
-    R8G8B8A8_SNORM,
-    R8G8B8A8_UINT,
-    R8G8B8A8_SINT,
-    R16G16B16A16_SFLOAT,
-    R16G16B16A16_SINT,
-    R16G16B16A16_UINT,
-    R32G32B32A32_SFLOAT,
-    R32G32B32A32_SINT,
-    R32G32B32A32_UINT,
-    D32_SFLOAT,
-    D32_SFLOAT_S8_UINT,
+    return static_cast<TextureUsageBits>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
+}
+
+inline TextureUsageBits operator&(TextureUsageBits a, TextureUsageBits b)
+{
+    return static_cast<TextureUsageBits>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
+}
+
+enum class TextureType : uint8_t
+{
+    Tex1D,
+    Tex2D,
+    Tex3D,
     Count
 };
 

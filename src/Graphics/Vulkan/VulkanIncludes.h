@@ -21,6 +21,7 @@
     #error Unsupported platform
 #endif
 
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_extension_inspection.hpp>

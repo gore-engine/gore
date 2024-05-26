@@ -33,7 +33,7 @@ public:
 
 private:
     App* m_App;
-
+    vk::DynamicLoader m_Loader;
     vk::raii::Context m_Context;
     uint32_t m_ApiVersion;
     vk::raii::Instance m_Instance;

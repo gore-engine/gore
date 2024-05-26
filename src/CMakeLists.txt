@@ -19,6 +19,7 @@ elseif (UNIX)
 endif ()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/ShaderCompile.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/Resources.cmake)
 
 # Configurations
 
@@ -52,6 +53,9 @@ compile_shader(${SHADER_SOURCE_FILES} "vulkan" "pixel" "ps")
 
 compile_shader("Shaders/sample/triangle.hlsl" "vulkan" "vertex" "vs")
 compile_shader("Shaders/sample/triangle.hlsl" "vulkan" "pixel" "ps")
+
+compile_shader("Shaders/sample/quad.hlsl" "vulkan" "vertex" "vs")
+compile_shader("Shaders/sample/quad.hlsl" "vulkan" "pixel" "ps")
 
 # Platform Specific Configurations
 
@@ -157,6 +161,8 @@ endif()
 add_library(${PROJECT_NAME} ${COMMON_SOURCES} ${PLATFORM_SOURCES})
 
 add_shader_dependencies(${PROJECT_NAME})
+copy_texture_resources(${PROJECT_NAME})
+
 target_include_directories(${PROJECT_NAME} PUBLIC ${COMMON_INCLUDE_FOLDERS} ${PLATFORM_INCLUDE_DIRECTORIES})
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${COMMON_DEFINITIONS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${COMMON_LIBRARIES} ${PLATFORM_LIBRARIES})

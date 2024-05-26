@@ -1,14 +1,25 @@
 #include "RenderContext.h"
 #include "Graphics/Device.h"
+#include "Graphics/VulkanBuffer.h"
 
 #include "RenderContextHelper.h"
 
-namespace gore
+#define VULKAN_DEVICE (*m_DevicePtr->Get())
+
+namespace gore::gfx
 {
-RenderContext::RenderContext(const gfx::Device* device) :
+RenderContext::RenderContext(const Device* device) :
     m_DevicePtr(device),
-    m_ShaderModulePool()
+    m_ShaderModulePool(),
+    m_GraphicsPipelinePool(),
+    m_BufferPool(),
+    m_TexturePool(),
+    m_CommandPool(VK_NULL_HANDLE)
 {
+    uint32_t queueFamilyIndex = device->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics);
+
+    m_CommandPool = device->Get().createCommandPool({{}, queueFamilyIndex});
+    device->SetName(m_CommandPool, "RenderContext CommandPool");
 }
 
 RenderContext::~RenderContext()
@@ -20,6 +31,73 @@ void RenderContext::clear()
 {
     m_ShaderModulePool.clear();
     m_GraphicsPipelinePool.clear();
+    m_BufferPool.clear();
+
+    for(auto& texture : m_TexturePool.objects)
+    {
+        DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
+    }
+    m_TexturePool.clear();
+
+    for(auto& sampler : m_SamplerPool.objects)
+    {
+        DestroyVulkanSampler(VULKAN_DEVICE, sampler.vkSampler);    
+    }
+    m_SamplerPool.clear();
+
+    m_CommandPool.clear();
+}
+
+VulkanBuffer RenderContext::CreateStagingBuffer(const Device& device, void const* data, size_t size)
+{
+    VkBufferCreateInfo bufferInfo = {
+        .sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size        = size,
+        .usage       = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+    };
+
+    VmaAllocationCreateInfo allocCreateInfo = {
+        .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+        .usage = VMA_MEMORY_USAGE_AUTO,
+    };
+
+    VulkanBuffer buffer;
+    buffer.vmaAllocator = device.GetVmaAllocator();
+
+    VK_CHECK_RESULT(vmaCreateBuffer(device.GetVmaAllocator(), &bufferInfo, &allocCreateInfo, &buffer.vkBuffer, &buffer.vmaAllocation, &buffer.vmaAllocationInfo));
+
+    void* mappedData = buffer.vmaAllocationInfo.pMappedData;
+    memcpy(mappedData, data, size);
+
+    return buffer;
+}
+
+vk::raii::CommandBuffer RenderContext::CreateCommandBuffer(vk::CommandBufferLevel level, bool begin)
+{
+    vk::CommandBufferAllocateInfo allocateInfo(*m_CommandPool, level, 1);
+    vk::raii::CommandBuffer commandBuffer = std::move(m_DevicePtr->Get().allocateCommandBuffers(allocateInfo)[0]);
+
+    if (begin)
+    {
+        commandBuffer.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    }
+
+    return std::move(commandBuffer);
+}
+
+void RenderContext::FlushCommandBuffer(vk::raii::CommandBuffer& commandBuffer, vk::raii::Queue& queue)
+{
+    commandBuffer.end();
+
+    vk::SubmitInfo submitInfo     = {};
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers    = &*commandBuffer;
+
+    vk::raii::Fence fence = m_DevicePtr->Get().createFence({});
+    queue.submit(submitInfo, *fence);
+    auto res = m_DevicePtr->Get().waitForFences(*fence, VK_TRUE, UINT64_MAX);
+    VK_CHECK_RESULT(res);
 }
 
 ShaderModuleHandle RenderContext::createShaderModule(ShaderModuleDesc&& desc)
@@ -38,7 +116,6 @@ const ShaderModuleDesc& RenderContext::getShaderModuleDesc(ShaderModuleHandle ha
 {
     return m_ShaderModulePool.getObjectDesc(handle);
 }
-
 
 const ShaderModule& RenderContext::getShaderModule(ShaderModuleHandle handle)
 {
@@ -110,7 +187,7 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
     vk::PipelineDynamicStateCreateInfo dynamicState = {
         {},
         dynamicStates};
-        
+
     vk::GraphicsPipelineCreateInfo createInfo;
     createInfo.stageCount          = 2;
     createInfo.pStages             = shaderStages.data();
@@ -128,18 +205,18 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
     createInfo.subpass    = desc.subpassIndex;
 
     std::vector<VkFormat> colorFormats = VulkanHelper::GetVkFormats(desc.colorFormats);
-    VkFormat depthFormat = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.depthFormat));
-    VkFormat stencilFormat = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.stencilFormat));
+    VkFormat depthFormat               = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.depthFormat));
+    VkFormat stencilFormat             = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.stencilFormat));
 
     VkPipelineRenderingCreateInfoKHR rfInfo = {};
 
     if (desc.UseDynamicRendering())
     {
-        rfInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
-        rfInfo.pNext = nullptr;
-        rfInfo.colorAttachmentCount = colorFormats.size();
+        rfInfo.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+        rfInfo.pNext                   = nullptr;
+        rfInfo.colorAttachmentCount    = colorFormats.size();
         rfInfo.pColorAttachmentFormats = colorFormats.data();
-        rfInfo.depthAttachmentFormat = depthFormat;
+        rfInfo.depthAttachmentFormat   = depthFormat;
         rfInfo.stencilAttachmentFormat = stencilFormat;
 
         createInfo.pNext = &rfInfo;
@@ -161,10 +238,95 @@ const GraphicsPipeline& RenderContext::GetGraphicsPipeline(GraphicsPipelineHandl
     return m_GraphicsPipelinePool.getObject(handle);
 }
 
+TextureHandle RenderContext::createTexture(TextureDesc&& desc)
+{
+    VkImageCreateInfo imageInfo = {
+        .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType     = VulkanHelper::GetVkImageType(desc.type),
+        .format        = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.format)),
+        .extent        = {desc.width, desc.height, 1},
+        .mipLevels     = static_cast<uint32_t>(desc.numMips),
+        .arrayLayers   = static_cast<uint32_t>(desc.numLayers),
+        .samples       = VK_SAMPLE_COUNT_1_BIT,
+        .tiling        = VK_IMAGE_TILING_OPTIMAL,
+        .usage         = VulkanHelper::GetVkImageUsageFlags(desc.usage),
+        .sharingMode   = VK_SHARING_MODE_EXCLUSIVE,
+        .initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED,
+    };
+
+    VmaAllocationCreateInfo allocCreateInfo = {
+        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+    };
+
+    Texture texture;
+    VK_CHECK_RESULT(vmaCreateImage(m_DevicePtr->GetVmaAllocator(), &imageInfo, &allocCreateInfo, &texture.image, &texture.vmaAllocation, &texture.vmaAllocationInfo));
+
+    TextureHandle handle = m_TexturePool.create(std::move(desc), std::move(texture));
+
+    if (desc.data == nullptr && desc.dataSize == 0)
+        return handle;
+
+    assert(desc.data != nullptr && desc.dataSize > 0);
+
+    vk::raii::Queue queue = m_DevicePtr->Get().getQueue(m_DevicePtr->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics), 0);
+
+    vk::raii::CommandBuffer cmd = CreateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
+
+    CopyDataToTexture(handle, desc.data, desc.dataSize);
+
+    FlushCommandBuffer(cmd, queue);
+
+    return handle;
+}
+
+void RenderContext::DestroyTexture(TextureHandle handle)
+{
+    auto& texture = m_TexturePool.getObject(handle);
+
+    DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
+    // TODO: Destroy Texture View
+    m_TexturePool.destroy(handle);
+}
+
+const Texture& RenderContext::GetTexture(TextureHandle handle)
+{
+    return m_TexturePool.getObject(handle);
+}
+
+const TextureDesc& RenderContext::GetTextureDesc(TextureHandle handle)
+{
+    return m_TexturePool.getObjectDesc(handle);
+}
+
+void RenderContext::CopyDataToTexture(TextureHandle handle, const void* data, size_t size)
+{
+    auto texture     = m_TexturePool.getObject(handle);
+    auto textureDesc = m_TexturePool.getObjectDesc(handle);
+
+    VulkanBuffer stagingBuffer = CreateStagingBuffer(*m_DevicePtr, data, size);
+
+    vk::raii::Queue queue = m_DevicePtr->Get().getQueue(m_DevicePtr->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics), 0);
+
+    vk::raii::CommandBuffer cmd = CreateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
+
+    vk::ImageSubresourceRange subresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+
+    vk::Image image = texture.image;
+
+    VulkanHelper::ImageLayoutTransition(cmd, image, vk::ImageLayout::ePreinitialized, vk::ImageLayout::eTransferDstOptimal, subresourceRange);
+
+    cmd.copyBufferToImage(stagingBuffer.vkBuffer, image, vk::ImageLayout::eTransferDstOptimal, vk::BufferImageCopy(0, 0, 0, vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1), vk::Offset3D(0, 0, 0), vk::Extent3D(textureDesc.width, textureDesc.height, 1)));
+
+    VulkanHelper::ImageLayoutTransition(cmd, image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, subresourceRange);
+
+    FlushCommandBuffer(cmd, queue);
+
+    ClearVulkanBuffer(m_DevicePtr->GetVmaAllocator(), stagingBuffer.vkBuffer, stagingBuffer.vmaAllocation);
+}
+
 BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
 {
-    using namespace gfx;
-
     uint32_t byteSize = desc.byteSize;
 
     VkBufferCreateInfo bufferInfo = VulkanHelper::GetVkBufferCreateInfo(desc);
@@ -183,7 +345,7 @@ BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
 
     buffer.vkDeviceAddress = m_DevicePtr->Get().getBufferAddress(bufferDeviceAddressInfo);
 
-    m_DevicePtr->SetName(reinterpret_cast<uint64_t>(buffer.vkBuffer), vk::ObjectType::eBuffer,  desc.debugName);
+    m_DevicePtr->SetName(reinterpret_cast<uint64_t>(buffer.vkBuffer), vk::ObjectType::eBuffer, desc.debugName);
 
     return m_BufferPool.create(
         std::move(desc),
@@ -202,11 +364,54 @@ const Buffer& RenderContext::GetBuffer(BufferHandle handle)
 
 void RenderContext::DestroyBuffer(BufferHandle handle)
 {
-    using namespace gfx;
-
     auto buffer = m_BufferPool.getObject(handle).vkBuffer;
 
-    vmaDestroyBuffer(m_DevicePtr->GetVmaAllocator(), buffer.vkBuffer, buffer.vmaAllocation);
+    ClearVulkanBuffer(m_DevicePtr->GetVmaAllocator(), buffer.vkBuffer, buffer.vmaAllocation);
     m_BufferPool.destroy(handle);
 }
-} // namespace gore
+
+SamplerHandle RenderContext::CreateSampler(SamplerDesc&& desc)
+{
+    vk::SamplerCreateInfo samplerCreateInfo{};
+
+    samplerCreateInfo.minFilter = VulkanHelper::GetVkFilter(desc.minFilter);
+    samplerCreateInfo.magFilter = VulkanHelper::GetVkFilter(desc.magFilter);
+
+    samplerCreateInfo.mipmapMode   = VulkanHelper::GetVkMipmapMode(desc.mipmapMode);
+    samplerCreateInfo.addressModeU = VulkanHelper::GetVkAddressMode(desc.addressModeU);
+    samplerCreateInfo.addressModeV = VulkanHelper::GetVkAddressMode(desc.addressModeV);
+    samplerCreateInfo.addressModeW = VulkanHelper::GetVkAddressMode(desc.addressModeW);
+
+    samplerCreateInfo.mipLodBias       = desc.mipLodBias;
+    samplerCreateInfo.compareOp        = VulkanHelper::GetVkCompareOp(desc.compareOp);
+    samplerCreateInfo.minLod           = desc.minLod;
+    samplerCreateInfo.maxLod           = desc.maxLod;
+    samplerCreateInfo.maxAnisotropy    = desc.maxAnisotropy;
+    samplerCreateInfo.anisotropyEnable = desc.anisotropyEnable;
+    samplerCreateInfo.borderColor      = vk::BorderColor::eFloatOpaqueWhite;
+
+    Sampler sampler = {.vkSampler = VULKAN_DEVICE.createSampler(samplerCreateInfo)};
+
+    return m_SamplerPool.create(std::move(desc), std::move(sampler));
+}
+
+const SamplerDesc& RenderContext::GetSamplerDesc(SamplerHandle handle)
+{
+    return m_SamplerPool.getObjectDesc(handle);
+}
+
+const Sampler& RenderContext::GetSampler(SamplerHandle handle)
+{
+    return m_SamplerPool.getObject(handle);
+}
+
+void RenderContext::DestroySampler(SamplerHandle handle)
+{
+    auto sampler = m_SamplerPool.getObject(handle).vkSampler;
+
+    VULKAN_DEVICE.destroySampler(sampler);
+    m_SamplerPool.destroy(handle);
+}
+
+
+} // namespace gore::gfx

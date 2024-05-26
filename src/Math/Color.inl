@@ -53,3 +53,4 @@ const Color Color::DarkCyan(0.0f, 0.5f, 0.5f, 1.0f);
 const Color Color::DarkOrange(1.0f, 0.55f, 0.0f, 1.0f);
 const Color Color::DarkPurple(0.5f, 0.0f, 0.5f, 1.0f);
 const Color Color::DarkPink(1.0f, 0.08f, 0.58f, 1.0f);
+const Color Color::Clear(0.0f, 0.0f, 0.0f, 0.0f)

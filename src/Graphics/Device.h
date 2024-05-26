@@ -65,6 +65,7 @@ public:
     [[nodiscard]] const Instance* GetInstance() const { return m_Instance; }
     [[nodiscard]] VmaAllocator GetVmaAllocator() const { return m_VmaAllocator; }
     [[nodiscard]] const std::vector<vk::QueueFamilyProperties>& GetQueueFamilyProperties() const { return m_QueueFamilyProperties; }
+    uint32_t GetQueueFamilyIndexByFlags(vk::QueueFlags flags) const;
     [[nodiscard]] uint32_t ApiVersion() const;
 
     [[nodiscard]] bool HasExtension(VulkanDeviceExtension extension) const;

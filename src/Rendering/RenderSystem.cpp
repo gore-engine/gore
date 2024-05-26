@@ -20,6 +20,9 @@
 #include "Rendering/GPUData/GlobalConstantBuffer.h"
 #include "RenderContextHelper.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #include <vector>
 #include <string>
 #include <sstream>
@@ -42,6 +45,7 @@ RenderSystem::RenderSystem(gore::App* app) :
     // Pipeline
     m_BlankPipelineLayout(nullptr),
     m_PipelineLayout(nullptr),
+    m_UVQuadPipelineLayout(VK_NULL_HANDLE),
     // Queue
     m_GraphicsQueue(nullptr),
     m_GraphicsQueueFamilyIndex(0),
@@ -74,6 +78,8 @@ RenderSystem::RenderSystem(gore::App* app) :
 
 RenderSystem::~RenderSystem()
 {
+    m_RenderContext.release();
+
     g_RenderSystem = nullptr;
 }
 
@@ -83,8 +89,10 @@ void RenderSystem::Initialize()
     int width, height;
     window->GetSize(&width, &height);
 
-    std::vector<gfx::PhysicalDevice> physicalDevices = m_Instance.GetPhysicalDevices();
-    m_Device = gfx::Device(GetBestDevice(physicalDevices));
+    std::vector<PhysicalDevice> physicalDevices = m_Instance.GetPhysicalDevices();
+    m_Device = Device(GetBestDevice(physicalDevices));
+
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(*m_Device.Get());
 
     m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), 3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
@@ -93,7 +101,12 @@ void RenderSystem::Initialize()
 
     CreateDepthBuffer();
     CreateVertexBuffer();
+    
+    CreateTextureObjects();
+
     CreateGlobalDescriptorSets();
+    CreateUVQuadDescriptorSets();
+    UpdateUVQuadDescriptorSets();
     CreatePipeline();
     GetQueues();
 
@@ -182,21 +195,24 @@ void RenderSystem::Update()
 
     commandBuffer.beginRenderingKHR(renderingInfo);
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
-
     vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(surfaceExtent.width), static_cast<float>(surfaceExtent.height), 0.0f, 1.0f);
     commandBuffer.setViewport(0, {viewport});
 
     vk::Rect2D scissor({0, 0}, surfaceExtent);
     commandBuffer.setScissor(0, {scissor});
 
-    commandBuffer.draw(3, 1, 0, 0);
+    // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
+    // commandBuffer.draw(3, 1, 0, 0);
+
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_QuadPipelineHandle).pipeline);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_UVQuadPipelineLayout, 0, {m_UVQuadDescriptorSet}, {});
+    commandBuffer.draw(6, 1, 0, 0);
 
     auto& globalConstantBuffer = m_RenderContext->GetBuffer(m_GlobalConstantBuffers[currentSwapchainImageIndex]);
 
     void* mappedData;
     vmaMapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vkBuffer.vmaAllocation, &mappedData);
-    auto& globalConstantBufferData = *reinterpret_cast<gfx::GlobalConstantBuffer*>(mappedData);
+    auto& globalConstantBufferData = *reinterpret_cast<GlobalConstantBuffer*>(mappedData);
     globalConstantBufferData.vpMatrix = camera->GetViewProjectionMatrix();
     vmaUnmapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vkBuffer.vmaAllocation);
 
@@ -368,6 +384,35 @@ void RenderSystem::ShutdownImgui()
     m_ImguiDescriptorPool.clear();
 }
 
+TextureHandle RenderSystem::CreateTextureHandle(const std::string& name)
+{
+    static const std::filesystem::path kTextureFolder = FileSystem::GetResourceFolder() / "Textures";
+    auto texturePath = kTextureFolder / name;
+
+    // TODO: change to use std::vector?
+
+    int width, height, channel;
+    stbi_uc* pixels = stbi_load(texturePath.generic_string().c_str(), &width, &height, &channel, STBI_rgb_alpha);
+
+    if (pixels == nullptr)
+    {
+        LOG_STREAM(ERROR) << "RenderSystem CreateTextureHandle: Failed to load texture: " << name << std::endl;
+        return TextureHandle();
+    }
+
+    TextureHandle handle = m_RenderContext->createTexture({
+        .debugName = name.c_str(),
+        .width = static_cast<uint32_t>(width),
+        .height = static_cast<uint32_t>(height),
+        .data = pixels,
+        .dataSize = static_cast<uint32_t>(width * height * 4)
+    });
+
+    stbi_image_free(pixels);
+
+    return handle;
+}
+
 void RenderSystem::UploadPerframeGlobalConstantBuffer(uint32_t imageIndex)
 {
 }
@@ -521,7 +566,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
     for (int i = 0; i < m_Swapchain.GetImageCount(); ++i)
     {
         m_GlobalConstantBuffers.emplace_back(m_RenderContext->CreateBuffer({.debugName = "Global Constant Buffer",
-                                                                            .byteSize  = sizeof(gfx::GlobalConstantBuffer),
+                                                                            .byteSize  = sizeof(GlobalConstantBuffer),
                                                                             .usage     = BufferUsage::Uniform,
                                                                             .memUsage  = MemoryUsage::CPU_TO_GPU}));
 
@@ -529,7 +574,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
         vk::raii::DescriptorSets descriptorSets(m_Device.Get(), descriptorSetAllocateInfo);
         m_GlobalDescriptorSets.emplace_back(std::move(descriptorSets[0]));
 
-        vk::DescriptorBufferInfo globalConstantBufferInfo(m_RenderContext->GetBuffer(m_GlobalConstantBuffers[i]).vkBuffer.vkBuffer, 0, sizeof(gfx::GlobalConstantBuffer));
+        vk::DescriptorBufferInfo globalConstantBufferInfo(m_RenderContext->GetBuffer(m_GlobalConstantBuffers[i]).vkBuffer.vkBuffer, 0, sizeof(GlobalConstantBuffer));
         vk::WriteDescriptorSet globalConstantBufferWrite(*m_GlobalDescriptorSets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &globalConstantBufferInfo, nullptr);
 
         m_Device.Get().updateDescriptorSets({globalConstantBufferWrite}, {});
@@ -543,6 +588,45 @@ void RenderSystem::CreateGlobalDescriptorSets()
             }
         }
     );
+}
+
+void RenderSystem:: CreateUVQuadDescriptorSets()
+{
+    std::vector<vk::DescriptorPoolSize> poolSizes = {
+        {       vk::DescriptorType::eUniformBuffer, 10},
+        {vk::DescriptorType::eUniformBufferDynamic, 10},
+        {       vk::DescriptorType::eCombinedImageSampler, 10}
+    };
+ 
+    m_MaterialDescriptorPool = (*m_Device.Get()).createDescriptorPool({vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 10, poolSizes});
+
+    std::vector<vk::DescriptorSetLayoutBinding> bindings = {
+        {0, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment}
+    };
+
+    m_UVQuadDescriptorSetLayout = (*m_Device.Get()).createDescriptorSetLayout({{}, bindings});
+
+    vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(m_MaterialDescriptorPool, m_UVQuadDescriptorSetLayout);
+
+    m_UVQuadDescriptorSet = (*m_Device.Get()).allocateDescriptorSets(descriptorSetAllocateInfo).front();
+
+    LOG_STREAM(INFO) << "UV Quad Descriptor Set" << m_UVQuadDescriptorSet << std::endl;    
+
+    m_RenderDeletionQueue.PushFunction(
+        [&](){
+            (*m_Device.Get()).destroyDescriptorPool(m_MaterialDescriptorPool);
+            (*m_Device.Get()).destroyDescriptorSetLayout(m_UVQuadDescriptorSetLayout);
+        }
+    );
+}
+
+void RenderSystem::UpdateUVQuadDescriptorSets()
+{
+    vk::DescriptorImageInfo descriptorImageInfo(m_RenderContext->GetSampler(m_UVCheckSamplerHandle).vkSampler, m_UVCheckImageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+    vk::WriteDescriptorSet writeDescriptorSet(m_UVQuadDescriptorSet, 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &descriptorImageInfo);
+
+    (*m_Device.Get()).updateDescriptorSets({writeDescriptorSet}, {});
 }
 
 static std::vector<char> LoadShaderBytecode(const std::string& name, const ShaderStage& stage, const std::string& entryPoint)
@@ -570,6 +654,9 @@ void RenderSystem::CreatePipeline()
     std::vector<char> triangleVertBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Vertex, "vs");
     std::vector<char> triangleFragBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Fragment, "ps");
 
+    std::vector<char> quadVertBytecode = LoadShaderBytecode("sample/quad", ShaderStage::Vertex, "vs");
+    std::vector<char> quadFragBytecode = LoadShaderBytecode("sample/quad", ShaderStage::Fragment, "ps");
+
     // TODO: this is temporary now!
     vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstant));
     std::vector<vk::PushConstantRange> pushConstantRanges = {pushConstantRange};
@@ -579,6 +666,9 @@ void RenderSystem::CreatePipeline()
 
     m_PipelineLayout = m_Device.Get().createPipelineLayout(pipelineLayoutInfo);
     m_BlankPipelineLayout = m_Device.Get().createPipelineLayout({});
+
+    vk::PipelineLayoutCreateInfo uvQuadPipelineLayoutInfo({}, m_UVQuadDescriptorSetLayout);
+    m_UVQuadPipelineLayout = (*m_Device.Get()).createPipelineLayout(uvQuadPipelineLayoutInfo);
 
     m_CubePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
         GraphicsPipelineDesc
@@ -610,7 +700,6 @@ void RenderSystem::CreatePipeline()
                 }
             },
             .pipelineLayout { *m_PipelineLayout },
-            .renderPass { nullptr },
             .subpassIndex = 0
         }
     );
@@ -635,8 +724,63 @@ void RenderSystem::CreatePipeline()
             .depthFormat = GraphicsFormat::D32_FLOAT,
             .stencilFormat = GraphicsFormat::Undefined,
             .pipelineLayout { *m_BlankPipelineLayout },
-            .renderPass { nullptr },
             .subpassIndex = 0
+        }
+    );
+
+    m_QuadPipelineHandle = m_RenderContext->CreateGraphicsPipeline(
+        GraphicsPipelineDesc
+        {
+            .debugName = "UV Quad Pipeline",
+            .VS
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(quadVertBytecode.data()),
+                .byteSize = static_cast<uint32_t>(quadVertBytecode.size()), 
+                .entryFunc = "vs"
+            },
+            .PS
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(quadFragBytecode.data()), 
+                .byteSize = static_cast<uint32_t>(quadFragBytecode.size()), 
+                .entryFunc = "ps"
+            },
+            .colorFormats = {GraphicsFormat::BGRA8_SRGB},
+            .depthFormat = GraphicsFormat::D32_FLOAT,
+            .stencilFormat = GraphicsFormat::Undefined,
+            .pipelineLayout { m_UVQuadPipelineLayout },
+            .subpassIndex = 0
+        }
+    );
+
+    m_RenderDeletionQueue.PushFunction(
+        [&](){
+            (*m_Device.Get()).destroyPipelineLayout(m_UVQuadPipelineLayout);
+        }
+    );
+}
+
+void RenderSystem::CreateTextureObjects()
+{
+    m_UVCheckTextureHandle = CreateTextureHandle("sample.jpg");
+
+    m_UVCheckSamplerHandle = m_RenderContext->CreateSampler(
+        SamplerDesc
+        {
+            .debugName = "UV Check Sampler",
+        }
+    );
+
+    vk::ImageViewCreateInfo imageViewCreateInfo({},
+                                                m_RenderContext->GetTexture(m_UVCheckTextureHandle).image,
+                                                vk::ImageViewType::e2D,
+                                                vk::Format::eR8G8B8A8Srgb,
+                                                {},
+                                                {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
+    m_UVCheckImageView = (*m_Device.Get()).createImageView(imageViewCreateInfo);
+
+    m_RenderDeletionQueue.PushFunction(
+        [&](){
+            (*m_Device.Get()).destroyImageView(m_UVCheckImageView);
         }
     );
 }
@@ -676,7 +820,7 @@ void RenderSystem::GetQueues()
     m_Device.SetName(m_PresentQueue, "Present Queue");
 }
 
-const gfx::PhysicalDevice& RenderSystem::GetBestDevice(const std::vector<gfx::PhysicalDevice>& devices) const
+const PhysicalDevice& RenderSystem::GetBestDevice(const std::vector<PhysicalDevice>& devices) const
 {
     int maxScore = -1;
     int physicalDeviceIndex = -1;
