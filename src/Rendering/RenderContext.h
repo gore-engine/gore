@@ -7,6 +7,8 @@
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/VulkanBuffer.h"
 
+#include "GraphicsCaching/ResourceCache.h"
+
 #include "GraphicsResourceDesc.h"
 #include "GraphicsResource.h"
 
@@ -83,6 +85,8 @@ public:
     void destroyBindGroup(BindGroupHandle handle);
     void destroyPipeline(GraphicsPipelineHandle handle);
 
+    BindLayout GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo);
+
     void clear();
 private:
     template <typename T>
@@ -108,6 +112,8 @@ private:
     TexturePool m_TexturePool;
     GraphicsPipelinePool m_GraphicsPipelinePool;
     SamplerPool m_SamplerPool;
+    
+    ResourceCache m_ResourceCache;
 
     vk::raii::CommandPool m_CommandPool;
 
