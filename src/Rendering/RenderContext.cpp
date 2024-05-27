@@ -27,6 +27,40 @@ RenderContext::~RenderContext()
     clear();
 }
 
+BindLayout RenderContext::GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo)
+{
+    std::size_t hash{0u};
+    utils::hash_combine(hash, createInfo);
+
+    auto it = m_ResourceCache.bindLayouts.find(hash);
+    if (it != m_ResourceCache.bindLayouts.end())
+    {
+        return it->second;
+    }
+
+    BindLayout bindLayout;
+    std::vector<vk::DescriptorSetLayoutBinding> bindings;
+    for (const auto& binding : createInfo.bindings)
+    {
+        vk::DescriptorSetLayoutBinding layoutBinding(
+            binding.binding,
+            VulkanHelper::GetVkDescriptorType(binding.type),
+            binding.descriptorCount,
+            VulkanHelper::GetVkShaderStageFlags(binding.stage),
+            nullptr);
+
+        bindings.push_back(layoutBinding);
+    }
+
+    bindLayout.layout = VULKAN_DEVICE.createDescriptorSetLayout({{}, static_cast<uint32_t>(bindings.size()), bindings.data()});
+
+    // m_DevicePtr->SetName(bindLayout.layout, createInfo.name != nullptr ? createInfo.name : "NoNameBindLayout");
+
+    m_ResourceCache.bindLayouts[hash] = bindLayout;
+
+    return bindLayout;
+}
+
 void RenderContext::clear()
 {
     m_ShaderModulePool.clear();
@@ -46,6 +80,8 @@ void RenderContext::clear()
     m_SamplerPool.clear();
 
     m_CommandPool.clear();
+
+    ClearCache(m_ResourceCache, VULKAN_DEVICE);
 }
 
 VulkanBuffer RenderContext::CreateStagingBuffer(const Device& device, void const* data, size_t size)

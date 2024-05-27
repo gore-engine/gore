@@ -12,4 +12,6 @@ struct ResourceCache final
 {
     std::unordered_map<std::size_t, BindLayout> bindLayouts;
 };
+
+void ClearCache(ResourceCache& cache, vk::Device device);
 } // namespace gore::gfx

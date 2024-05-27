@@ -2,6 +2,8 @@
 
 #include "Prefix.h"
 
+#include <functional>
+
 namespace gore::utils
 {
     template <typename T>

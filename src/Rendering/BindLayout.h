@@ -30,11 +30,12 @@ struct Binding final
 
 struct BindLayoutCreateInfo final
 {
+    const char* name              = nullptr;
     std::vector<Binding> bindings = {};
 };
 
 struct BindLayout final
-{  
+{
     /// @brief Vulkan : DescriptorSetLayout
     vk::DescriptorSetLayout layout;
 };

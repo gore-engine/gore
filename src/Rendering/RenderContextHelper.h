@@ -202,6 +202,57 @@ inline vk::SamplerAddressMode GetVkAddressMode(SamplerAddressMode mode)
     }
 }
 
+inline vk::DescriptorType GetVkDescriptorType(BindType type)
+{
+    switch (type)
+    {
+        case BindType::UniformBuffer:
+            return vk::DescriptorType::eUniformBuffer;
+        case BindType::StorageBuffer:
+            return vk::DescriptorType::eStorageBuffer;
+        case BindType::SampledImage:
+            return vk::DescriptorType::eSampledImage;
+        case BindType::StorageImage:
+            return vk::DescriptorType::eStorageImage;
+        case BindType::Sampler:
+            return vk::DescriptorType::eSampler;
+        default:
+            return vk::DescriptorType::eUniformBuffer;
+    }
+}
+
+inline vk::ShaderStageFlags GetVkShaderStageFlags(ShaderStage stage)
+{
+    vk::ShaderStageFlags flags{0};
+
+    if (HasFlag(stage, ShaderStage::Vertex))
+    {
+        flags |= vk::ShaderStageFlagBits::eVertex;
+    }
+
+    if (HasFlag(stage, ShaderStage::Fragment))
+    {
+        flags |= vk::ShaderStageFlagBits::eFragment;
+    }
+
+    if (HasFlag(stage, ShaderStage::Compute))
+    {
+        flags |= vk::ShaderStageFlagBits::eCompute;
+    }
+
+    if (HasFlag(stage, ShaderStage::Task))
+    {
+        flags |= vk::ShaderStageFlagBits::eTaskNV;
+    }
+
+    if (HasFlag(stage, ShaderStage::Mesh))
+    {
+        flags |= vk::ShaderStageFlagBits::eMeshNV;
+    }
+
+    return flags;
+}
+
 vk::Format GetVkFormat(GraphicsFormat format);
 
 VkBufferCreateInfo GetVkBufferCreateInfo(BufferDesc& desc);

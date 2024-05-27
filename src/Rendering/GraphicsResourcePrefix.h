@@ -95,12 +95,4 @@ enum class ShaderStage : uint8_t
     // TODO: RayTracing
 };
 
-inline ShaderStage operator|(ShaderStage a, ShaderStage b)
-{
-    return static_cast<ShaderStage>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
-}
-
-inline ShaderStage operator&(ShaderStage a, ShaderStage b)
-{
-    return static_cast<ShaderStage>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
-}
+FLAG_ENUM_CLASS(ShaderStage, uint8_t)
