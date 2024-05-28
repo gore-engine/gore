@@ -103,7 +103,7 @@ private:
     
     // Material Descriptors
     vk::DescriptorPool m_MaterialDescriptorPool;
-    vk::DescriptorSetLayout m_UVQuadDescriptorSetLayout;
+    BindLayout m_UVQuadBindLayout;
     vk::DescriptorSet m_UVQuadDescriptorSet;
 
     TextureHandle m_UVCheckTextureHandle;

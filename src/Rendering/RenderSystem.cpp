@@ -600,13 +600,19 @@ void RenderSystem:: CreateUVQuadDescriptorSets()
  
     m_MaterialDescriptorPool = (*m_Device.Get()).createDescriptorPool({vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 10, poolSizes});
 
-    std::vector<vk::DescriptorSetLayoutBinding> bindings = {
-        {0, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment}
+    std::vector<Binding> bindings {
+        {0, BindType::SampledImage, 1, ShaderStage::Fragment}
     };
 
-    m_UVQuadDescriptorSetLayout = (*m_Device.Get()).createDescriptorSetLayout({{}, bindings});
+    BindLayoutCreateInfo bindLayoutCreateInfo = 
+    {
+        .name = "UV Quad Descriptor Set Layout",
+        .bindings = bindings
+    };
+    
+    m_UVQuadBindLayout = m_RenderContext->GetOrCreateBindLayout(bindLayoutCreateInfo);
 
-    vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(m_MaterialDescriptorPool, m_UVQuadDescriptorSetLayout);
+    vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(m_MaterialDescriptorPool, m_UVQuadBindLayout.layout);
 
     m_UVQuadDescriptorSet = (*m_Device.Get()).allocateDescriptorSets(descriptorSetAllocateInfo).front();
 
@@ -615,7 +621,6 @@ void RenderSystem:: CreateUVQuadDescriptorSets()
     m_RenderDeletionQueue.PushFunction(
         [&](){
             (*m_Device.Get()).destroyDescriptorPool(m_MaterialDescriptorPool);
-            (*m_Device.Get()).destroyDescriptorSetLayout(m_UVQuadDescriptorSetLayout);
         }
     );
 }
@@ -667,7 +672,7 @@ void RenderSystem::CreatePipeline()
     m_PipelineLayout = m_Device.Get().createPipelineLayout(pipelineLayoutInfo);
     m_BlankPipelineLayout = m_Device.Get().createPipelineLayout({});
 
-    vk::PipelineLayoutCreateInfo uvQuadPipelineLayoutInfo({}, m_UVQuadDescriptorSetLayout);
+    vk::PipelineLayoutCreateInfo uvQuadPipelineLayoutInfo({}, m_UVQuadBindLayout.layout);
     m_UVQuadPipelineLayout = (*m_Device.Get()).createPipelineLayout(uvQuadPipelineLayoutInfo);
 
     m_CubePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
