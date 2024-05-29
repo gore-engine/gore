@@ -24,4 +24,10 @@ struct BindGroupDesc final
     std::vector<TextureHandle> textures = {};
     std::vector<DynamicBuffer> buffers  = {};
 };
+
+struct BindGroup final
+{
+    /// @brief Vulkan : DescriptorSet
+    vk::DescriptorSet set;
+};
 } // namespace gore::gfx
