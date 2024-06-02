@@ -10,6 +10,16 @@
 namespace gore::gfx
 {
 
+enum class UpdateFrequency : uint8_t
+{
+    None,
+    PerFrame,
+    PerBatch,
+    // We should never use this, but it's here for completeness
+    PerDraw,
+    Count
+};
+
 /// @brief Buffer handle with byte offset
 struct DynamicBuffer final
 {
@@ -20,9 +30,10 @@ struct DynamicBuffer final
 struct BindGroupDesc final
 {
     const char* debugName               = nullptr;
-    const BindLayout* bindLayout        = nullptr;
+    UpdateFrequency updateFrequency     = UpdateFrequency::None;
     std::vector<TextureHandle> textures = {};
     std::vector<DynamicBuffer> buffers  = {};
+    const BindLayout* bindLayout        = nullptr;
 };
 
 struct BindGroup final
@@ -30,4 +41,6 @@ struct BindGroup final
     /// @brief Vulkan : DescriptorSet
     vk::DescriptorSet set;
 };
+
+using BindGroupHandle = Handle<BindGroup>;
 } // namespace gore::gfx

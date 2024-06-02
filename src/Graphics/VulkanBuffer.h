@@ -1,10 +1,20 @@
 #pragma once
 
+#include "Rendering/GraphicsResourcePrefix.h"
+
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 
 namespace gore::gfx
 {
+struct BufferDesc final
+{
+    const char* debugName = "Noname VertexBufferDesc";
+    uint32_t byteSize     = 0;
+    BufferUsage usage     = BufferUsage::Vertex;
+    MemoryUsage memUsage  = MemoryUsage::GPU;
+};
+
 struct VulkanBuffer
 {
     VmaAllocator vmaAllocator;

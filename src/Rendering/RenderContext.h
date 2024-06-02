@@ -9,7 +9,6 @@
 
 #include "GraphicsCaching/ResourceCache.h"
 
-#include "GraphicsResourceDesc.h"
 #include "GraphicsResource.h"
 
 #include "Texture.h"
@@ -49,7 +48,7 @@ public:
     void DrawProceduralIndirect();
 
     TextureHandle createTexture(TextureDesc&& desc);
-    void DestroyTexture(TextureHandle handle); 
+    void DestroyTexture(TextureHandle handle);
     const Texture& GetTexture(TextureHandle handle);
     const TextureDesc& GetTextureDesc(TextureHandle handle);
 
@@ -88,6 +87,7 @@ public:
     BindLayout GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo);
 
     void clear();
+
 private:
     template <typename T>
     static VulkanBuffer CreateStagingBuffer(const Device& device, std::vector<T> const& data)
@@ -102,6 +102,7 @@ private:
 
     void CreateDescriptorPools();
     void ClearDescriptorPools();
+
 private:
     using ShaderModulePool     = Pool<ShaderModuleDesc, ShaderModule>;
     using BufferPool           = Pool<BufferDesc, Buffer>;

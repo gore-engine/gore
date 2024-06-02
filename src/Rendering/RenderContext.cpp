@@ -67,15 +67,15 @@ void RenderContext::clear()
     m_GraphicsPipelinePool.clear();
     m_BufferPool.clear();
 
-    for(auto& texture : m_TexturePool.objects)
+    for (auto& texture : m_TexturePool.objects)
     {
         DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
     }
     m_TexturePool.clear();
 
-    for(auto& sampler : m_SamplerPool.objects)
+    for (auto& sampler : m_SamplerPool.objects)
     {
-        DestroyVulkanSampler(VULKAN_DEVICE, sampler.vkSampler);    
+        DestroyVulkanSampler(VULKAN_DEVICE, sampler.vkSampler);
     }
     m_SamplerPool.clear();
 

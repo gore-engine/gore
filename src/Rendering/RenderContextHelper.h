@@ -3,8 +3,10 @@
 #include "Prefix.h"
 
 #include "Graphics/Vulkan/VulkanIncludes.h"
-#include "GraphicsResourceDesc.h"
 #include "GraphicsPipelineDesc.h"
+
+#include "Texture.h"
+#include "Sampler.h"
 
 #include <vector>
 namespace gore::gfx::VulkanHelper
