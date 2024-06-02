@@ -79,6 +79,8 @@ void RenderContext::clear()
     }
     m_SamplerPool.clear();
 
+    ClearDescriptorPools();
+
     m_CommandPool.clear();
 
     ClearCache(m_ResourceCache, VULKAN_DEVICE);
@@ -134,6 +136,42 @@ void RenderContext::FlushCommandBuffer(vk::raii::CommandBuffer& commandBuffer, v
     queue.submit(submitInfo, *fence);
     auto res = m_DevicePtr->Get().waitForFences(*fence, VK_TRUE, UINT64_MAX);
     VK_CHECK_RESULT(res);
+}
+
+void RenderContext::CreateDescriptorPools()
+{
+    vk::DescriptorPoolSize poolSizes[] = {
+        {       vk::DescriptorType::eUniformBuffer, 1000},
+        {vk::DescriptorType::eCombinedImageSampler, 1000},
+        {       vk::DescriptorType::eStorageBuffer, 1000},
+        {        vk::DescriptorType::eStorageImage, 1000},
+        {             vk::DescriptorType::eSampler, 1000},
+    };
+
+    vk::DescriptorPoolCreateInfo poolCreateInfo(
+        {},
+        1,
+        static_cast<uint32_t>(std::size(poolSizes)),
+        poolSizes);
+
+    m_DescriptorPool[(uint32_t)UpdateFrequency::None] = VULKAN_DEVICE.createDescriptorPool(poolCreateInfo);
+
+    poolCreateInfo.maxSets                                = 100;
+    m_DescriptorPool[(uint32_t)UpdateFrequency::PerFrame] = VULKAN_DEVICE.createDescriptorPool(poolCreateInfo);
+
+    poolCreateInfo.maxSets                                = 100;
+    m_DescriptorPool[(uint32_t)UpdateFrequency::PerBatch] = VULKAN_DEVICE.createDescriptorPool(poolCreateInfo);
+
+    poolCreateInfo.maxSets                               = 100;
+    m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw] = VULKAN_DEVICE.createDescriptorPool(poolCreateInfo);
+}
+
+void RenderContext::ClearDescriptorPools()
+{
+    VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::None]);
+    VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::PerFrame]);
+    VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::PerBatch]);
+    VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw]);
 }
 
 ShaderModuleHandle RenderContext::createShaderModule(ShaderModuleDesc&& desc)

@@ -100,6 +100,8 @@ private:
     vk::raii::CommandBuffer CreateCommandBuffer(vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary, bool begin = true);
     void FlushCommandBuffer(vk::raii::CommandBuffer& commandBuffer, vk::raii::Queue& queue);
 
+    void CreateDescriptorPools();
+    void ClearDescriptorPools();
 private:
     using ShaderModulePool     = Pool<ShaderModuleDesc, ShaderModule>;
     using BufferPool           = Pool<BufferDesc, Buffer>;
@@ -113,6 +115,8 @@ private:
     GraphicsPipelinePool m_GraphicsPipelinePool;
     SamplerPool m_SamplerPool;
     
+    vk::DescriptorPool m_DescriptorPool[(uint32_t)UpdateFrequency::Count];
+
     ResourceCache m_ResourceCache;
 
     vk::raii::CommandPool m_CommandPool;
