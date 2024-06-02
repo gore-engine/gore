@@ -70,6 +70,9 @@ public:
     void DestroySampler(SamplerHandle handle);
 
     BindGroupHandle createBindGroup(const BindGroupDesc& desc);
+    void destroyBindGroup(BindGroupHandle handle);
+    const BindGroup& GetBindGroup(BindGroupHandle handle);
+    const BindGroupDesc& GetBindGroupDesc(BindGroupHandle handle);
 
     ShaderModuleHandle createShaderModule(ShaderModuleDesc&& desc);
     const ShaderModuleDesc& getShaderModuleDesc(ShaderModuleHandle handle);
@@ -81,7 +84,6 @@ public:
 
     void destroyTexture(TextureHandle handle);
     void destroySampler(SamplerHandle handle);
-    void destroyBindGroup(BindGroupHandle handle);
     void destroyPipeline(GraphicsPipelineHandle handle);
 
     BindLayout GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo);
@@ -109,13 +111,15 @@ private:
     using TexturePool          = Pool<TextureDesc, Texture>;
     using GraphicsPipelinePool = Pool<GraphicsPipelineDesc, GraphicsPipeline>;
     using SamplerPool          = Pool<SamplerDesc, Sampler>;
+    using BindGroupPool        = Pool<BindGroupDesc, BindGroup>;
 
     ShaderModulePool m_ShaderModulePool;
     BufferPool m_BufferPool;
     TexturePool m_TexturePool;
     GraphicsPipelinePool m_GraphicsPipelinePool;
     SamplerPool m_SamplerPool;
-    
+    BindGroupPool m_BindGroupPool;
+
     vk::DescriptorPool m_DescriptorPool[(uint32_t)UpdateFrequency::Count];
 
     ResourceCache m_ResourceCache;

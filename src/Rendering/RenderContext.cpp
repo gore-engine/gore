@@ -487,5 +487,31 @@ void RenderContext::DestroySampler(SamplerHandle handle)
     m_SamplerPool.destroy(handle);
 }
 
+BindGroupHandle RenderContext::createBindGroup(const BindGroupDesc& desc)
+{
+    vk::DescriptorSetLayout setLayout = desc.bindLayout->layout;
+    vk::DescriptorPool pool           = m_DescriptorPool[(uint32_t)desc.updateFrequency];
+
+    vk::DescriptorSet descriptorSet = VULKAN_DEVICE.allocateDescriptorSets({pool, 1, &setLayout})[0];
+
+    std::vector<vk::DescriptorBufferInfo> bufferInfos;
+    bufferInfos.reserve(desc.buffers.size());
+    for (const auto& buffer : desc.buffers)
+    {
+        const BufferDesc& bufferDesc = GetBufferDesc(buffer.handle);
+        const Buffer& bufferInfo     = GetBuffer(buffer.handle);
+
+        bufferInfos.push_back({GetBuffer(buffer.handle).vkBuffer.vkBuffer, buffer.byteOffset, bufferDesc.byteSize});
+    }
+    
+    std::vector<vk::DescriptorImageInfo> imageInfos;
+    imageInfos.reserve(desc.textures.size());
+
+    std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+
+
+    return BindGroupHandle();
+}
+
 
 } // namespace gore::gfx
