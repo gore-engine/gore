@@ -1,8 +1,6 @@
 #ifndef VULKAN_BINDING
 #define VULKAN_BINDING
 
-#include "./VulkanVariables.hlsl"
-
 // Set 0 is for global resources, set 1 is for material resources, set 2 is for shader resources
 // eg. Declare your resources like this:
 // COMBINED_SAMPLE_TEXTURE(GLOBAL, 0, myTexture, float4)
@@ -22,7 +20,5 @@
 #define COMBINED_SAMPLE_TEXTURE(Region, Binding, TextureName, Format)\
 COMBINED_IMAGE_SAMPLER DESCRIPTOR_SET_BINDING(Binding, Region##_BINDING_DESCRIPTOR_SET) TEXTURE_2D(TextureName, Format); \
 COMBINED_IMAGE_SAMPLER DESCRIPTOR_SET_BINDING(Binding, Region##_BINDING_DESCRIPTOR_SET) SAMPLER(TextureName##Sampler);
-
-#define COMBINED_SAMPLE_TEXTURE(Region, Binding, TextureName) COMBINED_SAMPLE_TEXTURE(Region, Binding, TextureName, float4)
 
 #endif
