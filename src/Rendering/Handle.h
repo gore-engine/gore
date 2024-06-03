@@ -56,9 +56,4 @@ private:
     uint32_t _index = 0;
     uint32_t _gen   = 0;
 };
-
-// using BufferHandle = Handle<struct Buffer>;
-// using TextureHandle = Handle<struct Texture>;
-// using ShaderModuleHandle = Handle<struct ShaderModule>;
-// using GraphicsPipelineHandle = Handle<struct GraphicsPipeline>;
 } // namespace gore
