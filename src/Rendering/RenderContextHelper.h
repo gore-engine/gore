@@ -212,8 +212,10 @@ inline vk::DescriptorType GetVkDescriptorType(BindType type)
             return vk::DescriptorType::eUniformBuffer;
         case BindType::StorageBuffer:
             return vk::DescriptorType::eStorageBuffer;
-        case BindType::SampledImage:
+        case BindType::CombinedSampledImage:
             return vk::DescriptorType::eCombinedImageSampler;
+        case BindType::SampledImage:
+            return vk::DescriptorType::eSampledImage;
         case BindType::StorageImage:
             return vk::DescriptorType::eStorageImage;
         case BindType::Sampler:

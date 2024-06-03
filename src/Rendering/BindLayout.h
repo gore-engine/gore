@@ -14,6 +14,7 @@ enum class BindType : uint8_t
 {
     UniformBuffer,
     StorageBuffer,
+    CombinedSampledImage,
     SampledImage,
     StorageImage,
     Sampler,

@@ -487,12 +487,15 @@ void RenderContext::DestroySampler(SamplerHandle handle)
     m_SamplerPool.destroy(handle);
 }
 
-BindGroupHandle RenderContext::createBindGroup(const BindGroupDesc& desc)
+BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
 {
     vk::DescriptorSetLayout setLayout = desc.bindLayout->layout;
     vk::DescriptorPool pool           = m_DescriptorPool[(uint32_t)desc.updateFrequency];
 
     vk::DescriptorSet descriptorSet = VULKAN_DEVICE.allocateDescriptorSets({pool, 1, &setLayout})[0];
+
+    std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+    writeDescriptorSets.reserve(desc.buffers.size() + desc.textures.size() + desc.samplers.size());
 
     std::vector<vk::DescriptorBufferInfo> bufferInfos;
     bufferInfos.reserve(desc.buffers.size());
@@ -502,15 +505,83 @@ BindGroupHandle RenderContext::createBindGroup(const BindGroupDesc& desc)
         const Buffer& bufferInfo     = GetBuffer(buffer.handle);
 
         bufferInfos.push_back({GetBuffer(buffer.handle).vkBuffer.vkBuffer, buffer.byteOffset, bufferDesc.byteSize});
+
+        vk::WriteDescriptorSet writeDescriptorSet(
+            descriptorSet,
+            buffer.binding,
+            0,
+            1,
+            VulkanHelper::GetVkDescriptorType(buffer.bindType),
+            nullptr,
+            &bufferInfos.back(),
+            nullptr);
+
+        writeDescriptorSets.push_back(writeDescriptorSet);
     }
-    
+
     std::vector<vk::DescriptorImageInfo> imageInfos;
     imageInfos.reserve(desc.textures.size());
+    for (const auto& textureBinding : desc.textures)
+    {
+        TextureHandle handle = textureBinding.handle;
 
-    std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+        const TextureDesc& textureDesc = GetTextureDesc(handle);
+        const Texture& textureInfo     = GetTexture(handle);
 
+        vk::ImageView imageView = textureInfo.imageView;
 
-    return BindGroupHandle();
+        vk::DescriptorImageInfo imageInfo;
+        imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        imageInfo.imageView   = imageView;
+        imageInfo.sampler     = textureBinding.bindType == BindType::CombinedSampledImage ? GetSampler(textureBinding.samplerHandle).vkSampler : VK_NULL_HANDLE;
+
+        imageInfos.push_back(imageInfo);
+
+        vk::WriteDescriptorSet writeDescriptorSet(
+            descriptorSet,
+            textureBinding.binding,
+            textureBinding.arrayIndex,
+            1,
+            VulkanHelper::GetVkDescriptorType(textureBinding.bindType),
+            &imageInfos.back(),
+            nullptr,
+            nullptr);
+
+        writeDescriptorSets.push_back(writeDescriptorSet);
+    }
+
+    std::vector<vk::DescriptorImageInfo> samplerInfos;  
+    samplerInfos.reserve(desc.samplers.size());
+    for (const auto& samplerBinding : desc.samplers)
+    {
+        SamplerHandle handle = samplerBinding.handle;
+
+        const SamplerDesc& samplerDesc = GetSamplerDesc(handle);
+        const Sampler& samplerInfo     = GetSampler(handle);
+
+        vk::DescriptorImageInfo imageInfo;
+        imageInfo.sampler = samplerInfo.vkSampler;
+
+        samplerInfos.push_back(imageInfo);
+
+        vk::WriteDescriptorSet writeDescriptorSet(
+            descriptorSet,
+            samplerBinding.binding,
+            0,
+            1,
+            VulkanHelper::GetVkDescriptorType(samplerBinding.bindType),
+            &samplerInfos.back(),
+            nullptr,
+            nullptr);
+
+        writeDescriptorSets.push_back(writeDescriptorSet);
+    }
+
+    VULKAN_DEVICE.updateDescriptorSets(writeDescriptorSets, {});
+
+    return m_BindGroupPool.create(
+        std::move(desc),
+        BindGroup{descriptorSet}); 
 }
 
 

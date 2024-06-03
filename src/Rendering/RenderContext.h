@@ -69,7 +69,7 @@ public:
     const Sampler& GetSampler(SamplerHandle handle);
     void DestroySampler(SamplerHandle handle);
 
-    BindGroupHandle createBindGroup(const BindGroupDesc& desc);
+    BindGroupHandle createBindGroup(BindGroupDesc&& desc);
     void destroyBindGroup(BindGroupHandle handle);
     const BindGroup& GetBindGroup(BindGroupHandle handle);
     const BindGroupDesc& GetBindGroupDesc(BindGroupHandle handle);
