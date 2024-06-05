@@ -585,4 +585,8 @@ BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
 }
 
 
+void RenderContext::PrepareRendering()
+{
+    CreateDescriptorPools();
+}
 } // namespace gore::gfx

@@ -41,6 +41,8 @@ public:
     void BeginRenderPass(RenderPass* renderPass);
     void EndRenderPass();
 
+    void PrepareRendering();
+
     // Draw Call
     void DrawMesh(int instanceCount = 1, int firstInstance = 0);
     void DrawMeshIndirect();
@@ -81,10 +83,6 @@ public:
 
     GraphicsPipelineHandle CreateGraphicsPipeline(GraphicsPipelineDesc&& desc);
     const GraphicsPipeline& GetGraphicsPipeline(GraphicsPipelineHandle handle);
-
-    void destroyTexture(TextureHandle handle);
-    void destroySampler(SamplerHandle handle);
-    void destroyPipeline(GraphicsPipelineHandle handle);
 
     BindLayout GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo);
 
