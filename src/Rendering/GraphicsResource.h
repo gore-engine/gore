@@ -36,6 +36,5 @@ struct ShaderModule
 };
 
 using BufferHandle       = Handle<Buffer>;
-using BindGroupHandle    = Handle<BindGroup>;
 using ShaderModuleHandle = Handle<ShaderModule>;
 } // namespace gore

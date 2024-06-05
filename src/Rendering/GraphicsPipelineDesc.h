@@ -10,7 +10,7 @@
 
 #include <vector>
 
-namespace gore
+namespace gore::gfx
 {
 enum class TopologyType : uint8_t
 {

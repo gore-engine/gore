@@ -4,6 +4,7 @@
 #include "GraphicsResource.h"
 #include "Texture.h"
 #include "BindLayout.h"
+#include "Sampler.h"
 
 #include <vector>
 
