@@ -13,6 +13,22 @@ namespace gore::gfx::VulkanHelper
 {
 std::vector<VkFormat> GetVkFormats(const std::vector<GraphicsFormat>& formats);
 
+inline vk::ImageViewType GetVkImageViewType(TextureType type)
+{
+    switch (type)
+    {
+    case TextureType::Tex1D:
+        return vk::ImageViewType::e1D;
+    case TextureType::Tex2D:
+        return vk::ImageViewType::e2D;
+    case TextureType::Tex3D:
+        return vk::ImageViewType::e3D;    
+    default:
+        LOG_STREAM(ERROR) << "Unknown texture type: " << static_cast<int>(type) << std::endl; 
+        return vk::ImageViewType::e2D;
+    }
+}
+
 inline VkImageType GetVkImageType(TextureType type)
 {
     return static_cast<VkImageType>(type);
