@@ -67,16 +67,7 @@ void RenderContext::clear()
     m_GraphicsPipelinePool.clear();
     m_BufferPool.clear();
 
-    for (auto& texture : m_TexturePool.objects)
-    {
-        DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
-    }
     m_TexturePool.clear();
-
-    for (auto& sampler : m_SamplerPool.objects)
-    {
-        DestroyVulkanSampler(VULKAN_DEVICE, sampler.vkSampler);
-    }
     m_SamplerPool.clear();
 
     ClearDescriptorPools();
@@ -336,6 +327,19 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
     Texture texture;
     VK_CHECK_RESULT(vmaCreateImage(m_DevicePtr->GetVmaAllocator(), &imageInfo, &allocCreateInfo, &texture.image, &texture.vmaAllocation, &texture.vmaAllocationInfo));
 
+    vk::ImageViewCreateInfo imageViewInfo;
+    imageViewInfo.image                           = texture.image;
+    imageViewInfo.viewType                        = VulkanHelper::GetVkImageViewType(desc.type);
+    imageViewInfo.format                          = VulkanHelper::GetVkFormat(desc.format);
+    imageViewInfo.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
+    imageViewInfo.subresourceRange.baseMipLevel   = 0;
+    imageViewInfo.subresourceRange.levelCount     = desc.numMips;
+    imageViewInfo.subresourceRange.baseArrayLayer = 0;
+    imageViewInfo.subresourceRange.layerCount     = desc.numLayers;
+    vk::ImageView imageView                       = VULKAN_DEVICE.createImageView(imageViewInfo);
+
+    texture.imageView = imageView;
+
     TextureHandle handle = m_TexturePool.create(std::move(desc), std::move(texture));
 
     if (desc.data == nullptr && desc.dataSize == 0)
@@ -359,7 +363,7 @@ void RenderContext::DestroyTexture(TextureHandle handle)
     auto& texture = m_TexturePool.getObject(handle);
 
     DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
-    // TODO: Destroy Texture View
+    VULKAN_DEVICE.destroyImageView(texture.imageView);
     m_TexturePool.destroy(handle);
 }
 
@@ -584,6 +588,15 @@ BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
         BindGroup{descriptorSet}); 
 }
 
+const BindGroup& RenderContext::GetBindGroup(BindGroupHandle handle)
+{
+    return m_BindGroupPool.getObject(handle);
+}
+
+const BindGroupDesc& RenderContext::GetBindGroupDesc(BindGroupHandle handle)
+{
+    return m_BindGroupPool.getObjectDesc(handle);
+}
 
 void RenderContext::PrepareRendering()
 {
