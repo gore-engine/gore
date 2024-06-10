@@ -19,15 +19,7 @@ enum TextureUsageBits : uint8_t
     Count
 };
 
-inline TextureUsageBits operator|(TextureUsageBits a, TextureUsageBits b)
-{
-    return static_cast<TextureUsageBits>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
-}
-
-inline TextureUsageBits operator&(TextureUsageBits a, TextureUsageBits b)
-{
-    return static_cast<TextureUsageBits>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
-}
+FLAG_ENUM_CLASS(TextureUsageBits, uint8_t)
 
 enum class TextureType : uint8_t
 {
@@ -64,7 +56,6 @@ struct Texture
 
     VkImage image                       = VK_NULL_HANDLE;
     vk::DeviceMemory memory             = VK_NULL_HANDLE;
-    vk::ImageView imageView             = VK_NULL_HANDLE;
     vk::DeviceAddress deviceAddress     = 0;
     VmaAllocation vmaAllocation         = VK_NULL_HANDLE;
     VmaAllocationInfo vmaAllocationInfo = {};

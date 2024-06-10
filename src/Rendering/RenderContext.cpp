@@ -336,9 +336,11 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
     imageViewInfo.subresourceRange.levelCount     = desc.numMips;
     imageViewInfo.subresourceRange.baseArrayLayer = 0;
     imageViewInfo.subresourceRange.layerCount     = desc.numLayers;
-    vk::ImageView imageView                       = VULKAN_DEVICE.createImageView(imageViewInfo);
 
-    texture.imageView = imageView;
+    if (HasFlag(desc.usage, TextureUsageBits::Sampled))
+    {
+        texture.srv = VULKAN_DEVICE.createImageView(imageViewInfo);
+    }
 
     TextureHandle handle = m_TexturePool.create(std::move(desc), std::move(texture));
 
@@ -360,10 +362,23 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
 
 void RenderContext::DestroyTexture(TextureHandle handle)
 {
-    auto& texture = m_TexturePool.getObject(handle);
+    auto& textureDesc = m_TexturePool.getObjectDesc(handle);
+    auto& texture     = m_TexturePool.getObject(handle);
 
     DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
-    VULKAN_DEVICE.destroyImageView(texture.imageView);
+
+    if (HasFlag(textureDesc.usage, TextureUsageBits::Sampled))
+        VULKAN_DEVICE.destroyImageView(texture.srv);
+
+    if (HasFlag(textureDesc.usage, TextureUsageBits::Storage))
+    {
+        for (int i = 0; i < textureDesc.numMips; i++)
+            VULKAN_DEVICE.destroyImageView(texture.uav[i]);
+    }
+
+    if (HasFlag(textureDesc.usage, TextureUsageBits::DepthStencil))
+        VULKAN_DEVICE.destroyImageView(texture.srvStencil);
+
     m_TexturePool.destroy(handle);
 }
 
@@ -532,7 +547,17 @@ BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
         const TextureDesc& textureDesc = GetTextureDesc(handle);
         const Texture& textureInfo     = GetTexture(handle);
 
-        vk::ImageView imageView = textureInfo.imageView;
+        vk::ImageView imageView = VK_NULL_HANDLE;
+
+        if (HasFlag(textureBinding.usage, TextureUsageBits::Sampled))
+        {
+            imageView = textureInfo.srv;
+        }
+
+        if (HasFlag(textureBinding.usage, TextureUsageBits::Storage))
+        {
+            imageView = textureInfo.uav[0];
+        }
 
         vk::DescriptorImageInfo imageInfo;
         imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -554,7 +579,7 @@ BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
         writeDescriptorSets.push_back(writeDescriptorSet);
     }
 
-    std::vector<vk::DescriptorImageInfo> samplerInfos;  
+    std::vector<vk::DescriptorImageInfo> samplerInfos;
     samplerInfos.reserve(desc.samplers.size());
     for (const auto& samplerBinding : desc.samplers)
     {
@@ -585,7 +610,7 @@ BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
 
     return m_BindGroupPool.create(
         std::move(desc),
-        BindGroup{descriptorSet}); 
+        BindGroup{descriptorSet});
 }
 
 const BindGroup& RenderContext::GetBindGroup(BindGroupHandle handle)
