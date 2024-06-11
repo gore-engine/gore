@@ -1,9 +1,7 @@
 #include "../ShaderLibrary/Utils/Quad.hlsl"
+#include "../ShaderLibrary/Core/Common.hlsl"
 
-[[vk::combinedImageSampler]][[vk::binding(0, 0)]]
-Texture2D<float4> myTexture;
-[[vk::combinedImageSampler]][[vk::binding(0, 0)]]
-SamplerState mySampler;
+COMBINED_SAMPLE_TEXTURE(GLOBAL, 0, myTexture, float4)
 
 struct Attributes
 {
@@ -29,6 +27,6 @@ Varyings vs(Attributes IN)
 
 float4 ps(Varyings v) : SV_Target0
 {
-    return myTexture.Sample(mySampler, v.uv);
+    return SAMPLE_TEXTURE_2D(myTexture, v.uv);
 }
 

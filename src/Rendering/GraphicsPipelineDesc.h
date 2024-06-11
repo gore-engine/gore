@@ -10,7 +10,7 @@
 
 #include <vector>
 
-namespace gore
+namespace gore::gfx
 {
 enum class TopologyType : uint8_t
 {
@@ -38,6 +38,14 @@ enum class CullMode : uint8_t
     Count
 };
 
+struct ShaderModuleDesc final
+{
+    const char* debugName = "Noname ShaderModuleDesc";
+    uint8_t* byteCode     = nullptr;
+    uint32_t byteSize     = 0;
+    const char* entryFunc = "main";
+};
+
 struct ShaderBinding final
 {
     uint8_t* byteCode;
@@ -61,40 +69,6 @@ struct VertexBufferBinding final
 {
     uint32_t byteStride;
     std::vector<VertexAttributeDesc> attributes;
-};
-
-enum class LogicOp : uint8_t
-{
-    Clear,
-    And,
-    AndReverse,
-    Copy,
-    AndInverted,
-    NoOp,
-    Xor,
-    Or,
-    Nor,
-    Equivalent,
-    Invert,
-    OrReverse,
-    CopyInverted,
-    OrInverted,
-    Nand,
-    Set,
-    Count
-};
-
-enum class CompareOp : uint8_t
-{
-    Never,
-    Less,
-    Equal,
-    LessEqual,
-    Greater,
-    NotEqual,
-    GreaterEqual,
-    AlwaysTrue,
-    Count
 };
 
 // 1, 2, 4, 8 enough for everyone

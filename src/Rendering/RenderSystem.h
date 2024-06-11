@@ -102,13 +102,11 @@ private:
     std::vector<BufferHandle> m_GlobalConstantBuffers;
     
     // Material Descriptors
-    vk::DescriptorPool m_MaterialDescriptorPool;
-    vk::DescriptorSetLayout m_UVQuadDescriptorSetLayout;
-    vk::DescriptorSet m_UVQuadDescriptorSet;
+    BindLayout m_UVQuadBindLayout;
+    BindGroupHandle m_UVQuadBindGroup;
 
     TextureHandle m_UVCheckTextureHandle;
     SamplerHandle m_UVCheckSamplerHandle;
-    vk::ImageView m_UVCheckImageView;
 
     // Synchronization
     std::vector<vk::raii::Semaphore> m_RenderFinishedSemaphores;
@@ -135,7 +133,6 @@ private:
     void CreateVertexBuffer();
     void CreateGlobalDescriptorSets();
     void CreateUVQuadDescriptorSets();
-    void UpdateUVQuadDescriptorSets();
     void CreatePipeline();
     void CreateTextureObjects();
     void GetQueues();

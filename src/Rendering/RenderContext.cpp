@@ -27,25 +27,54 @@ RenderContext::~RenderContext()
     clear();
 }
 
+BindLayout RenderContext::GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo)
+{
+    std::size_t hash{0u};
+    utils::hash_combine(hash, createInfo);
+
+    auto it = m_ResourceCache.bindLayouts.find(hash);
+    if (it != m_ResourceCache.bindLayouts.end())
+    {
+        return it->second;
+    }
+
+    BindLayout bindLayout;
+    std::vector<vk::DescriptorSetLayoutBinding> bindings;
+    for (const auto& binding : createInfo.bindings)
+    {
+        vk::DescriptorSetLayoutBinding layoutBinding(
+            binding.binding,
+            VulkanHelper::GetVkDescriptorType(binding.type),
+            binding.descriptorCount,
+            VulkanHelper::GetVkShaderStageFlags(binding.stage),
+            nullptr);
+
+        bindings.push_back(layoutBinding);
+    }
+
+    bindLayout.layout = VULKAN_DEVICE.createDescriptorSetLayout({{}, static_cast<uint32_t>(bindings.size()), bindings.data()});
+
+    // m_DevicePtr->SetName(bindLayout.layout, createInfo.name != nullptr ? createInfo.name : "NoNameBindLayout");
+
+    m_ResourceCache.bindLayouts[hash] = bindLayout;
+
+    return bindLayout;
+}
+
 void RenderContext::clear()
 {
     m_ShaderModulePool.clear();
     m_GraphicsPipelinePool.clear();
     m_BufferPool.clear();
 
-    for(auto& texture : m_TexturePool.objects)
-    {
-        DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
-    }
     m_TexturePool.clear();
-
-    for(auto& sampler : m_SamplerPool.objects)
-    {
-        DestroyVulkanSampler(VULKAN_DEVICE, sampler.vkSampler);    
-    }
     m_SamplerPool.clear();
 
+    ClearDescriptorPools();
+
     m_CommandPool.clear();
+
+    ClearCache(m_ResourceCache, VULKAN_DEVICE);
 }
 
 VulkanBuffer RenderContext::CreateStagingBuffer(const Device& device, void const* data, size_t size)
@@ -98,6 +127,42 @@ void RenderContext::FlushCommandBuffer(vk::raii::CommandBuffer& commandBuffer, v
     queue.submit(submitInfo, *fence);
     auto res = m_DevicePtr->Get().waitForFences(*fence, VK_TRUE, UINT64_MAX);
     VK_CHECK_RESULT(res);
+}
+
+void RenderContext::CreateDescriptorPools()
+{
+    vk::DescriptorPoolSize poolSizes[] = {
+        {       vk::DescriptorType::eUniformBuffer, 1000},
+        {vk::DescriptorType::eCombinedImageSampler, 1000},
+        {       vk::DescriptorType::eStorageBuffer, 1000},
+        {        vk::DescriptorType::eStorageImage, 1000},
+        {             vk::DescriptorType::eSampler, 1000},
+    };
+
+    vk::DescriptorPoolCreateInfo poolCreateInfo(
+        {},
+        1,
+        static_cast<uint32_t>(std::size(poolSizes)),
+        poolSizes);
+
+    m_DescriptorPool[(uint32_t)UpdateFrequency::None] = VULKAN_DEVICE.createDescriptorPool(poolCreateInfo);
+
+    poolCreateInfo.maxSets                                = 100;
+    m_DescriptorPool[(uint32_t)UpdateFrequency::PerFrame] = VULKAN_DEVICE.createDescriptorPool(poolCreateInfo);
+
+    poolCreateInfo.maxSets                                = 100;
+    m_DescriptorPool[(uint32_t)UpdateFrequency::PerBatch] = VULKAN_DEVICE.createDescriptorPool(poolCreateInfo);
+
+    poolCreateInfo.maxSets                               = 100;
+    m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw] = VULKAN_DEVICE.createDescriptorPool(poolCreateInfo);
+}
+
+void RenderContext::ClearDescriptorPools()
+{
+    VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::None]);
+    VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::PerFrame]);
+    VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::PerBatch]);
+    VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw]);
 }
 
 ShaderModuleHandle RenderContext::createShaderModule(ShaderModuleDesc&& desc)
@@ -262,6 +327,21 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
     Texture texture;
     VK_CHECK_RESULT(vmaCreateImage(m_DevicePtr->GetVmaAllocator(), &imageInfo, &allocCreateInfo, &texture.image, &texture.vmaAllocation, &texture.vmaAllocationInfo));
 
+    vk::ImageViewCreateInfo imageViewInfo;
+    imageViewInfo.image                           = texture.image;
+    imageViewInfo.viewType                        = VulkanHelper::GetVkImageViewType(desc.type);
+    imageViewInfo.format                          = VulkanHelper::GetVkFormat(desc.format);
+    imageViewInfo.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
+    imageViewInfo.subresourceRange.baseMipLevel   = 0;
+    imageViewInfo.subresourceRange.levelCount     = desc.numMips;
+    imageViewInfo.subresourceRange.baseArrayLayer = 0;
+    imageViewInfo.subresourceRange.layerCount     = desc.numLayers;
+
+    if (HasFlag(desc.usage, TextureUsageBits::Sampled))
+    {
+        texture.srv = VULKAN_DEVICE.createImageView(imageViewInfo);
+    }
+
     TextureHandle handle = m_TexturePool.create(std::move(desc), std::move(texture));
 
     if (desc.data == nullptr && desc.dataSize == 0)
@@ -282,10 +362,23 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
 
 void RenderContext::DestroyTexture(TextureHandle handle)
 {
-    auto& texture = m_TexturePool.getObject(handle);
+    auto& textureDesc = m_TexturePool.getObjectDesc(handle);
+    auto& texture     = m_TexturePool.getObject(handle);
 
     DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
-    // TODO: Destroy Texture View
+
+    if (HasFlag(textureDesc.usage, TextureUsageBits::Sampled))
+        VULKAN_DEVICE.destroyImageView(texture.srv);
+
+    if (HasFlag(textureDesc.usage, TextureUsageBits::Storage))
+    {
+        for (int i = 0; i < textureDesc.numMips; i++)
+            VULKAN_DEVICE.destroyImageView(texture.uav[i]);
+    }
+
+    if (HasFlag(textureDesc.usage, TextureUsageBits::DepthStencil))
+        VULKAN_DEVICE.destroyImageView(texture.srvStencil);
+
     m_TexturePool.destroy(handle);
 }
 
@@ -413,5 +506,125 @@ void RenderContext::DestroySampler(SamplerHandle handle)
     m_SamplerPool.destroy(handle);
 }
 
+BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
+{
+    vk::DescriptorSetLayout setLayout = desc.bindLayout->layout;
+    vk::DescriptorPool pool           = m_DescriptorPool[(uint32_t)desc.updateFrequency];
 
+    vk::DescriptorSet descriptorSet = VULKAN_DEVICE.allocateDescriptorSets({pool, 1, &setLayout})[0];
+
+    std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+    writeDescriptorSets.reserve(desc.buffers.size() + desc.textures.size() + desc.samplers.size());
+
+    std::vector<vk::DescriptorBufferInfo> bufferInfos;
+    bufferInfos.reserve(desc.buffers.size());
+    for (const auto& buffer : desc.buffers)
+    {
+        const BufferDesc& bufferDesc = GetBufferDesc(buffer.handle);
+        const Buffer& bufferInfo     = GetBuffer(buffer.handle);
+
+        bufferInfos.push_back({GetBuffer(buffer.handle).vkBuffer.vkBuffer, buffer.byteOffset, bufferDesc.byteSize});
+
+        vk::WriteDescriptorSet writeDescriptorSet(
+            descriptorSet,
+            buffer.binding,
+            0,
+            1,
+            VulkanHelper::GetVkDescriptorType(buffer.bindType),
+            nullptr,
+            &bufferInfos.back(),
+            nullptr);
+
+        writeDescriptorSets.push_back(writeDescriptorSet);
+    }
+
+    std::vector<vk::DescriptorImageInfo> imageInfos;
+    imageInfos.reserve(desc.textures.size());
+    for (const auto& textureBinding : desc.textures)
+    {
+        TextureHandle handle = textureBinding.handle;
+
+        const TextureDesc& textureDesc = GetTextureDesc(handle);
+        const Texture& textureInfo     = GetTexture(handle);
+
+        vk::ImageView imageView = VK_NULL_HANDLE;
+
+        if (HasFlag(textureBinding.usage, TextureUsageBits::Sampled))
+        {
+            imageView = textureInfo.srv;
+        }
+
+        if (HasFlag(textureBinding.usage, TextureUsageBits::Storage))
+        {
+            imageView = textureInfo.uav[0];
+        }
+
+        vk::DescriptorImageInfo imageInfo;
+        imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        imageInfo.imageView   = imageView;
+        imageInfo.sampler     = textureBinding.bindType == BindType::CombinedSampledImage ? GetSampler(textureBinding.samplerHandle).vkSampler : VK_NULL_HANDLE;
+
+        imageInfos.push_back(imageInfo);
+
+        vk::WriteDescriptorSet writeDescriptorSet(
+            descriptorSet,
+            textureBinding.binding,
+            textureBinding.arrayIndex,
+            1,
+            VulkanHelper::GetVkDescriptorType(textureBinding.bindType),
+            &imageInfos.back(),
+            nullptr,
+            nullptr);
+
+        writeDescriptorSets.push_back(writeDescriptorSet);
+    }
+
+    std::vector<vk::DescriptorImageInfo> samplerInfos;
+    samplerInfos.reserve(desc.samplers.size());
+    for (const auto& samplerBinding : desc.samplers)
+    {
+        SamplerHandle handle = samplerBinding.handle;
+
+        const SamplerDesc& samplerDesc = GetSamplerDesc(handle);
+        const Sampler& samplerInfo     = GetSampler(handle);
+
+        vk::DescriptorImageInfo imageInfo;
+        imageInfo.sampler = samplerInfo.vkSampler;
+
+        samplerInfos.push_back(imageInfo);
+
+        vk::WriteDescriptorSet writeDescriptorSet(
+            descriptorSet,
+            samplerBinding.binding,
+            0,
+            1,
+            VulkanHelper::GetVkDescriptorType(samplerBinding.bindType),
+            &samplerInfos.back(),
+            nullptr,
+            nullptr);
+
+        writeDescriptorSets.push_back(writeDescriptorSet);
+    }
+
+    VULKAN_DEVICE.updateDescriptorSets(writeDescriptorSets, {});
+
+    return m_BindGroupPool.create(
+        std::move(desc),
+        BindGroup{descriptorSet});
+}
+
+const BindGroup& RenderContext::GetBindGroup(BindGroupHandle handle)
+{
+    return m_BindGroupPool.getObject(handle);
+}
+
+const BindGroupDesc& RenderContext::GetBindGroupDesc(BindGroupHandle handle)
+{
+    return m_BindGroupPool.getObjectDesc(handle);
+}
+
+void RenderContext::PrepareRendering()
+{
+    CreateDescriptorPools();
+}
 } // namespace gore::gfx

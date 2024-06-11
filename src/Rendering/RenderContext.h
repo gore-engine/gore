@@ -7,7 +7,8 @@
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/VulkanBuffer.h"
 
-#include "GraphicsResourceDesc.h"
+#include "GraphicsCaching/ResourceCache.h"
+
 #include "GraphicsResource.h"
 
 #include "Texture.h"
@@ -40,6 +41,8 @@ public:
     void BeginRenderPass(RenderPass* renderPass);
     void EndRenderPass();
 
+    void PrepareRendering();
+
     // Draw Call
     void DrawMesh(int instanceCount = 1, int firstInstance = 0);
     void DrawMeshIndirect();
@@ -47,7 +50,7 @@ public:
     void DrawProceduralIndirect();
 
     TextureHandle createTexture(TextureDesc&& desc);
-    void DestroyTexture(TextureHandle handle); 
+    void DestroyTexture(TextureHandle handle);
     const Texture& GetTexture(TextureHandle handle);
     const TextureDesc& GetTextureDesc(TextureHandle handle);
 
@@ -68,7 +71,10 @@ public:
     const Sampler& GetSampler(SamplerHandle handle);
     void DestroySampler(SamplerHandle handle);
 
-    BindGroupHandle createBindGroup(const BindGroupDesc& desc);
+    BindGroupHandle createBindGroup(BindGroupDesc&& desc);
+    void destroyBindGroup(BindGroupHandle handle);
+    const BindGroup& GetBindGroup(BindGroupHandle handle);
+    const BindGroupDesc& GetBindGroupDesc(BindGroupHandle handle);
 
     ShaderModuleHandle createShaderModule(ShaderModuleDesc&& desc);
     const ShaderModuleDesc& getShaderModuleDesc(ShaderModuleHandle handle);
@@ -78,12 +84,10 @@ public:
     GraphicsPipelineHandle CreateGraphicsPipeline(GraphicsPipelineDesc&& desc);
     const GraphicsPipeline& GetGraphicsPipeline(GraphicsPipelineHandle handle);
 
-    void destroyTexture(TextureHandle handle);
-    void destroySampler(SamplerHandle handle);
-    void destroyBindGroup(BindGroupHandle handle);
-    void destroyPipeline(GraphicsPipelineHandle handle);
+    BindLayout GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo);
 
     void clear();
+
 private:
     template <typename T>
     static VulkanBuffer CreateStagingBuffer(const Device& device, std::vector<T> const& data)
@@ -96,18 +100,27 @@ private:
     vk::raii::CommandBuffer CreateCommandBuffer(vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary, bool begin = true);
     void FlushCommandBuffer(vk::raii::CommandBuffer& commandBuffer, vk::raii::Queue& queue);
 
+    void CreateDescriptorPools();
+    void ClearDescriptorPools();
+
 private:
     using ShaderModulePool     = Pool<ShaderModuleDesc, ShaderModule>;
     using BufferPool           = Pool<BufferDesc, Buffer>;
     using TexturePool          = Pool<TextureDesc, Texture>;
     using GraphicsPipelinePool = Pool<GraphicsPipelineDesc, GraphicsPipeline>;
     using SamplerPool          = Pool<SamplerDesc, Sampler>;
+    using BindGroupPool        = Pool<BindGroupDesc, BindGroup>;
 
     ShaderModulePool m_ShaderModulePool;
     BufferPool m_BufferPool;
     TexturePool m_TexturePool;
     GraphicsPipelinePool m_GraphicsPipelinePool;
     SamplerPool m_SamplerPool;
+    BindGroupPool m_BindGroupPool;
+
+    vk::DescriptorPool m_DescriptorPool[(uint32_t)UpdateFrequency::Count];
+
+    ResourceCache m_ResourceCache;
 
     vk::raii::CommandPool m_CommandPool;
 

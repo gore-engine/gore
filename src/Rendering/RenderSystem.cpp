@@ -98,6 +98,7 @@ void RenderSystem::Initialize()
     m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
 
     m_RenderContext = std::make_unique<RenderContext>(&m_Device);
+    m_RenderContext->PrepareRendering();
 
     CreateDepthBuffer();
     CreateVertexBuffer();
@@ -106,7 +107,6 @@ void RenderSystem::Initialize()
 
     CreateGlobalDescriptorSets();
     CreateUVQuadDescriptorSets();
-    UpdateUVQuadDescriptorSets();
     CreatePipeline();
     GetQueues();
 
@@ -205,7 +205,10 @@ void RenderSystem::Update()
     // commandBuffer.draw(3, 1, 0, 0);
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_QuadPipelineHandle).pipeline);
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_UVQuadPipelineLayout, 0, {m_UVQuadDescriptorSet}, {});
+
+    vk::DescriptorSet descriptor = m_RenderContext->GetBindGroup(m_UVQuadBindGroup).set;
+
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_UVQuadPipelineLayout, 0, { descriptor }, {});
     commandBuffer.draw(6, 1, 0, 0);
 
     auto& globalConstantBuffer = m_RenderContext->GetBuffer(m_GlobalConstantBuffers[currentSwapchainImageIndex]);
@@ -592,41 +595,26 @@ void RenderSystem::CreateGlobalDescriptorSets()
 
 void RenderSystem:: CreateUVQuadDescriptorSets()
 {
-    std::vector<vk::DescriptorPoolSize> poolSizes = {
-        {       vk::DescriptorType::eUniformBuffer, 10},
-        {vk::DescriptorType::eUniformBufferDynamic, 10},
-        {       vk::DescriptorType::eCombinedImageSampler, 10}
-    };
- 
-    m_MaterialDescriptorPool = (*m_Device.Get()).createDescriptorPool({vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 10, poolSizes});
-
-    std::vector<vk::DescriptorSetLayoutBinding> bindings = {
-        {0, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment}
+    std::vector<Binding> bindings {
+        {0, BindType::CombinedSampledImage, 1, ShaderStage::Fragment}
     };
 
-    m_UVQuadDescriptorSetLayout = (*m_Device.Get()).createDescriptorSetLayout({{}, bindings});
+    BindLayoutCreateInfo bindLayoutCreateInfo = 
+    {
+        .name = "UV Quad Descriptor Set Layout",
+        .bindings = bindings
+    };
+    
+    m_UVQuadBindLayout = m_RenderContext->GetOrCreateBindLayout(bindLayoutCreateInfo);
 
-    vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(m_MaterialDescriptorPool, m_UVQuadDescriptorSetLayout);
-
-    m_UVQuadDescriptorSet = (*m_Device.Get()).allocateDescriptorSets(descriptorSetAllocateInfo).front();
-
-    LOG_STREAM(INFO) << "UV Quad Descriptor Set" << m_UVQuadDescriptorSet << std::endl;    
-
-    m_RenderDeletionQueue.PushFunction(
-        [&](){
-            (*m_Device.Get()).destroyDescriptorPool(m_MaterialDescriptorPool);
-            (*m_Device.Get()).destroyDescriptorSetLayout(m_UVQuadDescriptorSetLayout);
-        }
-    );
-}
-
-void RenderSystem::UpdateUVQuadDescriptorSets()
-{
-    vk::DescriptorImageInfo descriptorImageInfo(m_RenderContext->GetSampler(m_UVCheckSamplerHandle).vkSampler, m_UVCheckImageView, vk::ImageLayout::eShaderReadOnlyOptimal);
-
-    vk::WriteDescriptorSet writeDescriptorSet(m_UVQuadDescriptorSet, 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &descriptorImageInfo);
-
-    (*m_Device.Get()).updateDescriptorSets({writeDescriptorSet}, {});
+    m_UVQuadBindGroup = m_RenderContext->createBindGroup({
+        .debugName = "UV Quad BindGroup",
+        .updateFrequency = UpdateFrequency::PerFrame,
+        .textures = { {0, m_UVCheckTextureHandle, TextureUsageBits::Sampled, 0, 0, BindType::CombinedSampledImage, m_UVCheckSamplerHandle}},
+        .buffers = {},
+        .samplers = {},
+        .bindLayout = &m_UVQuadBindLayout,
+    });
 }
 
 static std::vector<char> LoadShaderBytecode(const std::string& name, const ShaderStage& stage, const std::string& entryPoint)
@@ -667,7 +655,7 @@ void RenderSystem::CreatePipeline()
     m_PipelineLayout = m_Device.Get().createPipelineLayout(pipelineLayoutInfo);
     m_BlankPipelineLayout = m_Device.Get().createPipelineLayout({});
 
-    vk::PipelineLayoutCreateInfo uvQuadPipelineLayoutInfo({}, m_UVQuadDescriptorSetLayout);
+    vk::PipelineLayoutCreateInfo uvQuadPipelineLayoutInfo({}, m_UVQuadBindLayout.layout);
     m_UVQuadPipelineLayout = (*m_Device.Get()).createPipelineLayout(uvQuadPipelineLayoutInfo);
 
     m_CubePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
@@ -768,19 +756,12 @@ void RenderSystem::CreateTextureObjects()
         {
             .debugName = "UV Check Sampler",
         }
-    );
-
-    vk::ImageViewCreateInfo imageViewCreateInfo({},
-                                                m_RenderContext->GetTexture(m_UVCheckTextureHandle).image,
-                                                vk::ImageViewType::e2D,
-                                                vk::Format::eR8G8B8A8Srgb,
-                                                {},
-                                                {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
-    m_UVCheckImageView = (*m_Device.Get()).createImageView(imageViewCreateInfo);
+    );    
 
     m_RenderDeletionQueue.PushFunction(
         [&](){
-            (*m_Device.Get()).destroyImageView(m_UVCheckImageView);
+            m_RenderContext->DestroyTexture(m_UVCheckTextureHandle);
+            m_RenderContext->DestroySampler(m_UVCheckSamplerHandle);
         }
     );
 }

@@ -3,13 +3,31 @@
 #include "Prefix.h"
 
 #include "Graphics/Vulkan/VulkanIncludes.h"
-#include "GraphicsResourceDesc.h"
 #include "GraphicsPipelineDesc.h"
+
+#include "Texture.h"
+#include "Sampler.h"
 
 #include <vector>
 namespace gore::gfx::VulkanHelper
 {
 std::vector<VkFormat> GetVkFormats(const std::vector<GraphicsFormat>& formats);
+
+inline vk::ImageViewType GetVkImageViewType(TextureType type)
+{
+    switch (type)
+    {
+    case TextureType::Tex1D:
+        return vk::ImageViewType::e1D;
+    case TextureType::Tex2D:
+        return vk::ImageViewType::e2D;
+    case TextureType::Tex3D:
+        return vk::ImageViewType::e3D;    
+    default:
+        LOG_STREAM(ERROR) << "Unknown texture type: " << static_cast<int>(type) << std::endl; 
+        return vk::ImageViewType::e2D;
+    }
+}
 
 inline VkImageType GetVkImageType(TextureType type)
 {
@@ -200,6 +218,59 @@ inline vk::SamplerAddressMode GetVkAddressMode(SamplerAddressMode mode)
         default:
             return vk::SamplerAddressMode::eRepeat;
     }
+}
+
+inline vk::DescriptorType GetVkDescriptorType(BindType type)
+{
+    switch (type)
+    {
+        case BindType::UniformBuffer:
+            return vk::DescriptorType::eUniformBuffer;
+        case BindType::StorageBuffer:
+            return vk::DescriptorType::eStorageBuffer;
+        case BindType::CombinedSampledImage:
+            return vk::DescriptorType::eCombinedImageSampler;
+        case BindType::SampledImage:
+            return vk::DescriptorType::eSampledImage;
+        case BindType::StorageImage:
+            return vk::DescriptorType::eStorageImage;
+        case BindType::Sampler:
+            return vk::DescriptorType::eSampler;
+        default:
+            return vk::DescriptorType::eUniformBuffer;
+    }
+}
+
+inline vk::ShaderStageFlags GetVkShaderStageFlags(ShaderStage stage)
+{
+    vk::ShaderStageFlags flags{0};
+
+    if (HasFlag(stage, ShaderStage::Vertex))
+    {
+        flags |= vk::ShaderStageFlagBits::eVertex;
+    }
+
+    if (HasFlag(stage, ShaderStage::Fragment))
+    {
+        flags |= vk::ShaderStageFlagBits::eFragment;
+    }
+
+    if (HasFlag(stage, ShaderStage::Compute))
+    {
+        flags |= vk::ShaderStageFlagBits::eCompute;
+    }
+
+    if (HasFlag(stage, ShaderStage::Task))
+    {
+        flags |= vk::ShaderStageFlagBits::eTaskNV;
+    }
+
+    if (HasFlag(stage, ShaderStage::Mesh))
+    {
+        flags |= vk::ShaderStageFlagBits::eMeshNV;
+    }
+
+    return flags;
 }
 
 vk::Format GetVkFormat(GraphicsFormat format);
