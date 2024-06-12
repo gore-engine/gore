@@ -5,7 +5,7 @@
 
 #include "Object/Object.h"
 
-namespace gore::gfx
+namespace gore
 {
 ENGINE_CLASS(Mesh) :
     public Object
