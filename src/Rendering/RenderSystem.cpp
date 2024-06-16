@@ -214,10 +214,10 @@ void RenderSystem::Update()
     auto& globalConstantBuffer = m_RenderContext->GetBuffer(m_GlobalConstantBuffers[currentSwapchainImageIndex]);
 
     void* mappedData;
-    vmaMapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vkBuffer.vmaAllocation, &mappedData);
+    vmaMapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vmaAllocation, &mappedData);
     auto& globalConstantBufferData = *reinterpret_cast<GlobalConstantBuffer*>(mappedData);
     globalConstantBufferData.vpMatrix = camera->GetViewProjectionMatrix();
-    vmaUnmapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vkBuffer.vmaAllocation);
+    vmaUnmapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vmaAllocation);
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_CubePipelineHandle).pipeline);
 
@@ -237,8 +237,8 @@ void RenderSystem::Update()
         };
         std::array<PushConstant, 1> pushConstantData = {pushConstant};
         commandBuffer.pushConstants<PushConstant>(*m_PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, pushConstantData);
-        commandBuffer.bindVertexBuffers(0, {vertexBuffer.vkBuffer.vkBuffer}, {0});
-        commandBuffer.bindIndexBuffer(indexBuffer.vkBuffer.vkBuffer, 0, vk::IndexType::eUint16);
+        commandBuffer.bindVertexBuffers(0, {vertexBuffer.vkBuffer}, {0});
+        commandBuffer.bindIndexBuffer(indexBuffer.vkBuffer, 0, vk::IndexType::eUint16);
 
         commandBuffer.drawIndexed(36, 1, 0, 0, 0);
     }
@@ -522,9 +522,9 @@ void RenderSystem::CreateVertexBuffer()
 
     void* mappedData;
     auto& vertexBuffer = m_RenderContext->GetBuffer(m_VertexBufferHandle);
-    vmaMapMemory(m_Device.GetVmaAllocator(), vertexBuffer.vkBuffer.vmaAllocation, &mappedData);
+    vmaMapMemory(m_Device.GetVmaAllocator(), vertexBuffer.vmaAllocation, &mappedData);
     memcpy(mappedData, vertices.data(), sizeof(Vector3) * vertices.size());
-    vmaUnmapMemory(m_Device.GetVmaAllocator(), vertexBuffer.vkBuffer.vmaAllocation);
+    vmaUnmapMemory(m_Device.GetVmaAllocator(), vertexBuffer.vmaAllocation);
 
     m_IndexBufferHandle = m_RenderContext->CreateBuffer({
         .debugName = "Index Buffer",
@@ -535,9 +535,9 @@ void RenderSystem::CreateVertexBuffer()
 
     auto& indexBuffer = m_RenderContext->GetBuffer(m_IndexBufferHandle);
 
-    vmaMapMemory(m_Device.GetVmaAllocator(), indexBuffer.vkBuffer.vmaAllocation, &mappedData);
+    vmaMapMemory(m_Device.GetVmaAllocator(), indexBuffer.vmaAllocation, &mappedData);
     memcpy(mappedData, indices.data(), sizeof(uint16_t) * indices.size());
-    vmaUnmapMemory(m_Device.GetVmaAllocator(), indexBuffer.vkBuffer.vmaAllocation);
+    vmaUnmapMemory(m_Device.GetVmaAllocator(), indexBuffer.vmaAllocation);
 
     m_RenderDeletionQueue.PushFunction(
         [&](){
@@ -577,7 +577,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
         vk::raii::DescriptorSets descriptorSets(m_Device.Get(), descriptorSetAllocateInfo);
         m_GlobalDescriptorSets.emplace_back(std::move(descriptorSets[0]));
 
-        vk::DescriptorBufferInfo globalConstantBufferInfo(m_RenderContext->GetBuffer(m_GlobalConstantBuffers[i]).vkBuffer.vkBuffer, 0, sizeof(GlobalConstantBuffer));
+        vk::DescriptorBufferInfo globalConstantBufferInfo(m_RenderContext->GetBuffer(m_GlobalConstantBuffers[i]).vkBuffer, 0, sizeof(GlobalConstantBuffer));
         vk::WriteDescriptorSet globalConstantBufferWrite(*m_GlobalDescriptorSets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &globalConstantBufferInfo, nullptr);
 
         m_Device.Get().updateDescriptorSets({globalConstantBufferWrite}, {});

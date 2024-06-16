@@ -5,13 +5,12 @@
 #include "DummyVertex.h"
 
 #include "Graphics/Vulkan/VulkanIncludes.h"
-#include "Graphics/VulkanBuffer.h"
-
 #include "GraphicsCaching/ResourceCache.h"
 
 #include "GraphicsResource.h"
 
 #include "Texture.h"
+#include "Buffer.h"
 #include "Sampler.h"
 #include "BindGroup.h"
 
@@ -90,12 +89,12 @@ public:
 
 private:
     template <typename T>
-    static VulkanBuffer CreateStagingBuffer(const Device& device, std::vector<T> const& data)
+    static Buffer CreateStagingBuffer(const Device& device, std::vector<T> const& data)
     {
         return CreateStagingBuffer(device, data.data(), data.size() * sizeof(T));
     }
 
-    static VulkanBuffer CreateStagingBuffer(const Device& device, void const* data, size_t size);
+    static Buffer CreateStagingBuffer(const Device& device, void const* data, size_t size);
 
     vk::raii::CommandBuffer CreateCommandBuffer(vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary, bool begin = true);
     void FlushCommandBuffer(vk::raii::CommandBuffer& commandBuffer, vk::raii::Queue& queue);

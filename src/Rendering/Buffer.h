@@ -1,5 +1,7 @@
 #pragma once
+#include "Prefix.h"
 
+#include "Handle.h"
 #include "Rendering/GraphicsResourcePrefix.h"
 
 #include "Graphics/Vulkan/VulkanIncludes.h"
@@ -15,7 +17,7 @@ struct BufferDesc final
     MemoryUsage memUsage  = MemoryUsage::GPU;
 };
 
-struct VulkanBuffer
+struct Buffer
 {
     VmaAllocator vmaAllocator;
     VkBuffer vkBuffer; // TODO: better name!
@@ -24,18 +26,19 @@ struct VulkanBuffer
     VmaAllocationInfo vmaAllocationInfo;
 };
 
+using BufferHandle = Handle<Buffer>;
+
 void ClearVulkanBuffer(VmaAllocator allocator, VkBuffer buffer, VmaAllocation allocation);
 
-bool IsMappableVulkanBuffer(const VulkanBuffer& buffer);
+bool IsMappableVulkanBuffer(const Buffer& buffer);
 
-void* MapVulkanBuffer(const VulkanBuffer& buffer);
+void* MapVulkanBuffer(const Buffer& buffer);
 
-void UnmapVulkanBuffer(const VulkanBuffer& buffer);
+void UnmapVulkanBuffer(const Buffer& buffer);
 
-void FlushVulkanBuffer(const VulkanBuffer& buffer, const uint32_t size);
+void FlushVulkanBuffer(const Buffer& buffer, const uint32_t size);
 
-void SetBufferData(const VulkanBuffer& buffer, const uint8_t* data, const uint32_t size, const uint32_t offset);
+void SetBufferData(const Buffer& buffer, const uint8_t* data, const uint32_t size, const uint32_t offset);
 
-void SetBufferData(const VulkanBuffer& buffer, const std::vector<uint8_t>& data, const uint32_t offset);
-
+void SetBufferData(const Buffer& buffer, const std::vector<uint8_t>& data, const uint32_t offset);
 } // namespace gore::gfx

@@ -1,7 +1,5 @@
 #include "RenderContext.h"
 #include "Graphics/Device.h"
-#include "Graphics/VulkanBuffer.h"
-
 #include "RenderContextHelper.h"
 
 #define VULKAN_DEVICE (*m_DevicePtr->Get())
@@ -77,7 +75,7 @@ void RenderContext::clear()
     ClearCache(m_ResourceCache, VULKAN_DEVICE);
 }
 
-VulkanBuffer RenderContext::CreateStagingBuffer(const Device& device, void const* data, size_t size)
+Buffer RenderContext::CreateStagingBuffer(const Device& device, void const* data, size_t size)
 {
     VkBufferCreateInfo bufferInfo = {
         .sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -91,7 +89,7 @@ VulkanBuffer RenderContext::CreateStagingBuffer(const Device& device, void const
         .usage = VMA_MEMORY_USAGE_AUTO,
     };
 
-    VulkanBuffer buffer;
+    Buffer buffer;
     buffer.vmaAllocator = device.GetVmaAllocator();
 
     VK_CHECK_RESULT(vmaCreateBuffer(device.GetVmaAllocator(), &bufferInfo, &allocCreateInfo, &buffer.vkBuffer, &buffer.vmaAllocation, &buffer.vmaAllocationInfo));
@@ -397,7 +395,7 @@ void RenderContext::CopyDataToTexture(TextureHandle handle, const void* data, si
     auto texture     = m_TexturePool.getObject(handle);
     auto textureDesc = m_TexturePool.getObjectDesc(handle);
 
-    VulkanBuffer stagingBuffer = CreateStagingBuffer(*m_DevicePtr, data, size);
+    Buffer stagingBuffer = CreateStagingBuffer(*m_DevicePtr, data, size);
 
     vk::raii::Queue queue = m_DevicePtr->Get().getQueue(m_DevicePtr->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics), 0);
 
@@ -426,7 +424,7 @@ BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
 
     VmaAllocationCreateInfo allocCreateInfo = VulkanHelper::GetVmaAllocationCreateInfo(desc);
 
-    VulkanBuffer buffer;
+    Buffer buffer;
     buffer.vmaAllocator = m_DevicePtr->GetVmaAllocator();
 
     VK_CHECK_RESULT(vmaCreateBuffer(m_DevicePtr->GetVmaAllocator(), &bufferInfo, &allocCreateInfo, &buffer.vkBuffer, &buffer.vmaAllocation, &buffer.vmaAllocationInfo));
@@ -457,7 +455,7 @@ const Buffer& RenderContext::GetBuffer(BufferHandle handle)
 
 void RenderContext::DestroyBuffer(BufferHandle handle)
 {
-    auto buffer = m_BufferPool.getObject(handle).vkBuffer;
+    auto buffer = m_BufferPool.getObject(handle);
 
     ClearVulkanBuffer(m_DevicePtr->GetVmaAllocator(), buffer.vkBuffer, buffer.vmaAllocation);
     m_BufferPool.destroy(handle);
@@ -523,7 +521,7 @@ BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
         const BufferDesc& bufferDesc = GetBufferDesc(buffer.handle);
         const Buffer& bufferInfo     = GetBuffer(buffer.handle);
 
-        bufferInfos.push_back({GetBuffer(buffer.handle).vkBuffer.vkBuffer, buffer.byteOffset, bufferDesc.byteSize});
+        bufferInfos.push_back({GetBuffer(buffer.handle).vkBuffer, buffer.byteOffset, bufferDesc.byteSize});
 
         vk::WriteDescriptorSet writeDescriptorSet(
             descriptorSet,

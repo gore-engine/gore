@@ -4,6 +4,7 @@
 #include "Export.h"
 
 #include "Object/Object.h"
+#include "Rendering/Buffer.h"
 
 namespace gore::gfx
 {
