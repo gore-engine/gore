@@ -162,6 +162,7 @@ add_library(${PROJECT_NAME} ${COMMON_SOURCES} ${PLATFORM_SOURCES})
 
 add_shader_dependencies(${PROJECT_NAME})
 copy_texture_resources(${PROJECT_NAME})
+copy_gltf_resources(${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${COMMON_INCLUDE_FOLDERS} ${PLATFORM_INCLUDE_DIRECTORIES})
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${COMMON_DEFINITIONS})

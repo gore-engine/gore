@@ -1,5 +1,7 @@
 #include "GLTFLoader.h"
 
+#include "Rendering/Components/Mesh.h"
+
 namespace gore::gfx
 {
 GLTFLoader::GLTFLoader(RenderContext& rtx) :
