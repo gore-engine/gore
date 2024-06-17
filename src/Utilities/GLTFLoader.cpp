@@ -15,6 +15,14 @@ GLTFLoader::~GLTFLoader()
 
 std::unique_ptr<Mesh> LoadMesh(const std::string& path, int meshIndex)
 {
+    std::string error;
+    std::string warning;
+
+    tinygltf::Model model;
+
+    tinygltf::TinyGLTF gltf;
+    // std::string gltfImporter = gltf.LoadASCIIFromFile()
+
     return std::unique_ptr<Mesh>();
 }
 } // namespace gore::gfx
