@@ -20,6 +20,8 @@ public:
     [[nodiscard]] std::unique_ptr<Mesh> LoadMesh(const std::string& path, int meshIndex = 0);
 
 private:
+    [[nodiscard]] std::unique_ptr<Mesh> CreateMeshFromGLTF(const tinygltf::Model& model, int meshIndex);
+
     RenderContext & m_RenderContext;
 };
 } // namespace gore::gfx

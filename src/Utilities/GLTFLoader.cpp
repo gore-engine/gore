@@ -13,7 +13,7 @@ GLTFLoader::~GLTFLoader()
 {
 }
 
-std::unique_ptr<Mesh> LoadMesh(const std::string& path, int meshIndex)
+std::unique_ptr<Mesh> GLTFLoader::LoadMesh(const std::string& path, int meshIndex)
 {
     std::string error;
     std::string warning;
@@ -21,8 +21,30 @@ std::unique_ptr<Mesh> LoadMesh(const std::string& path, int meshIndex)
     tinygltf::Model model;
 
     tinygltf::TinyGLTF gltf;
-    // std::string gltfImporter = gltf.LoadASCIIFromFile()
+    bool importResult = gltf.LoadASCIIFromFile(&model, &error, &warning, path);
+    if (importResult == false)
+    {
+        LOG_STREAM(ERROR) << "Failed to load GLTF file: " << path << std::endl;
+        return nullptr;
+    }
 
+    if (error.empty() == false)
+    {
+        LOG_STREAM(ERROR) << "Error loading GLTF file: " << path << std::endl;
+        LOG_STREAM(ERROR) << error << std::endl;
+    }
+
+    if (warning.empty() == false)
+    {
+        LOG_STREAM(WARNING) << "Warning loading GLTF file: " << path << std::endl;
+        LOG_STREAM(WARNING) << warning << std::endl;
+    }    
+
+    return std::move(CreateMeshFromGLTF(model, meshIndex));
+}
+
+std::unique_ptr<Mesh> GLTFLoader::CreateMeshFromGLTF(const tinygltf::Model& model, int meshIndex)
+{
     return std::unique_ptr<Mesh>();
 }
 } // namespace gore::gfx
