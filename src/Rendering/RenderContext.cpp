@@ -3,6 +3,7 @@
 #include "RenderContextHelper.h"
 
 #define VULKAN_DEVICE (*m_DevicePtr->Get())
+#define USE_STAGING_BUFFER 1
 
 namespace gore::gfx
 {
@@ -390,6 +391,25 @@ const TextureDesc& RenderContext::GetTextureDesc(TextureHandle handle)
     return m_TexturePool.getObjectDesc(handle);
 }
 
+void RenderContext::CopyDataToBuffer(BufferHandle handle, const void* data, size_t size)
+{
+    auto buffer = m_BufferPool.getObject(handle);
+
+#if USE_STAGING_BUFFER
+    Buffer stagingBuffer = CreateStagingBuffer(*m_DevicePtr, data, size);
+
+    vk::raii::Queue queue = m_DevicePtr->Get().getQueue(m_DevicePtr->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics), 0);
+
+    vk::raii::CommandBuffer cmd = CreateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
+
+    cmd.copyBuffer(stagingBuffer.vkBuffer, buffer.vkBuffer, vk::BufferCopy(0, 0, size));
+
+    FlushCommandBuffer(cmd, queue);
+
+    ClearVulkanBuffer(m_DevicePtr->GetVmaAllocator(), stagingBuffer.vkBuffer, stagingBuffer.vmaAllocation);
+#endif
+}
+
 void RenderContext::CopyDataToTexture(TextureHandle handle, const void* data, size_t size)
 {
     auto texture     = m_TexturePool.getObject(handle);
@@ -438,9 +458,21 @@ BufferHandle RenderContext::CreateBuffer(BufferDesc&& desc)
 
     m_DevicePtr->SetName(reinterpret_cast<uint64_t>(buffer.vkBuffer), vk::ObjectType::eBuffer, desc.debugName);
 
-    return m_BufferPool.create(
-        std::move(desc),
-        std::move(Buffer(std::move(buffer))));
+    BufferHandle handle = m_BufferPool.create(std::move(desc), std::move(buffer));
+
+    if (desc.data == nullptr)
+        return handle;
+
+    if (desc.memUsage == MemoryUsage::CPU)
+    {
+        SetBufferData(GetBuffer(handle), static_cast<const uint8_t*>(desc.data), byteSize, 0);
+    }
+    else
+    {
+        CopyDataToBuffer(handle, desc.data, byteSize);
+    }
+
+    return handle;
 }
 
 const BufferDesc& RenderContext::GetBufferDesc(BufferHandle handle)

@@ -15,6 +15,7 @@ struct BufferDesc final
     uint32_t byteSize     = 0;
     BufferUsage usage     = BufferUsage::Vertex;
     MemoryUsage memUsage  = MemoryUsage::GPU;
+    const void* data      = nullptr;
 };
 
 struct Buffer

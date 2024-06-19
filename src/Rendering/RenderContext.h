@@ -2,8 +2,6 @@
 
 #include "Prefix.h"
 
-#include "DummyVertex.h"
-
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "GraphicsCaching/ResourceCache.h"
 
@@ -58,7 +56,12 @@ public:
     {
         CopyDataToTexture(handle, data.data(), data.size() * sizeof(T));
     }
-    void CopyDataToTexture(TextureHandle handle, const void* data, size_t size);
+
+    template <typename T>
+    void CopyDataToBuffer(BufferHandle handle, const std::vector<T>& data)
+    {
+        CopyDataToBuffer(handle, data.data(), data.size() * sizeof(T));
+    }
 
     BufferHandle CreateBuffer(BufferDesc&& desc);
     const BufferDesc& GetBufferDesc(BufferHandle handle);
@@ -95,6 +98,9 @@ private:
     }
 
     static Buffer CreateStagingBuffer(const Device& device, void const* data, size_t size);
+    
+    void CopyDataToBuffer(BufferHandle handle, const void* data, size_t size);
+    void CopyDataToTexture(TextureHandle handle, const void* data, size_t size);
 
     vk::raii::CommandBuffer CreateCommandBuffer(vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary, bool begin = true);
     void FlushCommandBuffer(vk::raii::CommandBuffer& commandBuffer, vk::raii::Queue& queue);
