@@ -9,6 +9,14 @@
 namespace gore::gfx::geometry
 {
 
+// Default vertex structure
+struct Vertex
+{
+    Vector3 position;
+    Vector3 normal;
+    Vector2 uv;
+};
+
 const Vector3 k_DefaultPosition = Vector3(0.0f, 0.0f, 0.0f);
 const Vector2 k_DefaultUV = Vector2(0.0f, 0.0f);
 const Vector3 k_DefaultNormal = Vector3(0.0f, 1.0f, 0.0f);
