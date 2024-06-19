@@ -14,7 +14,7 @@ GLTFLoader::~GLTFLoader()
 {
 }
 
-std::unique_ptr<Mesh> GLTFLoader::LoadMesh(const std::string& path, int meshIndex, MeshChannel channels)
+std::unique_ptr<Mesh> GLTFLoader::LoadMesh(const std::string& path, int meshIndex, ShaderChannel channels)
 {
     std::string error;
     std::string warning;
@@ -44,7 +44,7 @@ std::unique_ptr<Mesh> GLTFLoader::LoadMesh(const std::string& path, int meshInde
     return std::move(CreateMeshFromGLTF(model, meshIndex, channels));
 }
 
-std::unique_ptr<Mesh> GLTFLoader::CreateMeshFromGLTF(const tinygltf::Model& model, int meshIndex, MeshChannel channels)
+std::unique_ptr<Mesh> GLTFLoader::CreateMeshFromGLTF(const tinygltf::Model& model, int meshIndex, ShaderChannel channels)
 {
     return std::unique_ptr<Mesh>();
 }

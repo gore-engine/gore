@@ -1,11 +1,20 @@
 #pragma once
 
+#include "Prefix.h"
+#include "Math/Vector2.h"
+#include "Math/Vector3.h"
+#include "Math/Vector4.h"
 #include <stdint.h>
-
-#include "Rendering/Mesh/Mesh.h"
 
 namespace gore::gfx::geometry
 {
+
+const Vector3 k_DefaultPosition = Vector3(0.0f, 0.0f, 0.0f);
+const Vector2 k_DefaultUV = Vector2(0.0f, 0.0f);
+const Vector3 k_DefaultNormal = Vector3(0.0f, 1.0f, 0.0f);
+const Vector4 k_DefaultTangent = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
+const Vector4 k_DefaultColor = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+
 enum class IndexType : uint8_t
 {
     None   = 0,
@@ -37,6 +46,8 @@ enum class ShaderChannel : uint8_t
     Normal   = 1 << 5,
     Tangent  = 1 << 6,
     Color    = 1 << 7,
+
+    Default = Position | UV0 | Normal
 };
 
 FLAG_ENUM_CLASS(ShaderChannel, uint8_t);
