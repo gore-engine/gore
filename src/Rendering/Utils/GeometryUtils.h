@@ -6,7 +6,9 @@
 #include "Math/Vector4.h"
 #include <stdint.h>
 
-namespace gore::gfx::geometry
+#include "Rendering/GraphicsFormat.h"
+
+namespace gore::gfx
 {
 
 // Default vertex structure
@@ -26,14 +28,32 @@ const Vector4 k_DefaultColor = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 enum class IndexType : uint8_t
 {
     None   = 0,
-    UInt16 = 1,
-    UInt32 = 2,
+    UINT8  = 1,
+    UInt16 = 2,
+    UInt32 = 3,
 };
+
+inline IndexType GetIndexTypeByGraphicsFormat(GraphicsFormat format)
+{
+    switch (format)
+    {
+        case GraphicsFormat::R8_UINT:
+            return IndexType::UINT8;
+        case GraphicsFormat::R16_UINT:
+            return IndexType::UInt16;
+        case GraphicsFormat::R32_UINT:
+            return IndexType::UInt32;
+        default:
+            return IndexType::None;
+    }
+}
 
 inline int GetIndexTypeSize(IndexType indexType)
 {
     switch (indexType)
     {
+        case IndexType::UINT8:
+            return sizeof(uint8_t);
         case IndexType::UInt16:
             return sizeof(uint16_t);
         case IndexType::UInt32:
@@ -77,4 +97,4 @@ enum class PrimitiveType : uint8_t
     Plane,
     Count
 };
-} // namespace gore::gfx::geometry
+} // namespace gore::gfx

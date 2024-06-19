@@ -2,7 +2,7 @@
 
 #include "Math/Types.h"
 
-int gore::gfx::geometry::CalculateShaderChannelsByteStrideSize(uint8_t channels)
+int gore::gfx::CalculateShaderChannelsByteStrideSize(uint8_t channels)
 {
     const int k_PositionSize = sizeof(Vector3);
     const int k_UVSize       = sizeof(Vector2);
@@ -54,12 +54,12 @@ int gore::gfx::geometry::CalculateShaderChannelsByteStrideSize(uint8_t channels)
     return byteStride;
 }
 
-int gore::gfx::geometry::CalculateVertexBufferSize(uint8_t channels, uint32_t vertexCount)
+int gore::gfx::CalculateVertexBufferSize(uint8_t channels, uint32_t vertexCount)
 {
     return CalculateShaderChannelsByteStrideSize(channels) * vertexCount;
 }
 
-int gore::gfx::geometry::CalculateIndexBufferSize(IndexType indexType, uint32_t indexCount)
+int gore::gfx::CalculateIndexBufferSize(IndexType indexType, uint32_t indexCount)
 {
     return GetIndexTypeSize(indexType) * indexCount;
 }

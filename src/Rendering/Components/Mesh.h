@@ -4,7 +4,9 @@
 #include "Export.h"
 
 #include "Object/Object.h"
+
 #include "Rendering/Buffer.h"
+#include "Rendering/Utils/GeometryUtils.h"
 
 namespace gore::gfx
 {
@@ -33,6 +35,8 @@ public:
 
 private:
     void DeleteCPUMeshData();
+
+    IndexType m_IndexType;
 
     // CPU vertex data
     // CPU index data
