@@ -22,6 +22,9 @@ enum class GraphicsFormat
     RGB8_UNORM,  // color
     RG16_FLOAT,  // uv
     RG32_FLOAT,  // uv for large texture sample
+    R32_UINT,    // indices
+    R16_UINT,    // indices
+    R8_UINT,     // indices for small mesh
 
     // AttributePosition = RGB32_FLOAT,
     // AttributeNormal   = RGB16_FLOAT,

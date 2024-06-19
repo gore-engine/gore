@@ -2,6 +2,8 @@
 #include "GLTFLoader.h"
 
 #include "Rendering/Components/Mesh.h"
+#include "Rendering/RenderContext.h"
+
 
 namespace gore::gfx
 {
@@ -41,10 +43,29 @@ std::unique_ptr<Mesh> GLTFLoader::LoadMesh(const std::string& path, int meshInde
         LOG_STREAM(WARNING) << warning << std::endl;
     }
 
-    return std::move(CreateMeshFromGLTF(model, meshIndex, channels));
+    auto pos             = path.find_last_of('/');
+    std::string meshName = path.substr(pos + 1, path.size() - pos - 1);
+
+    return std::move(CreateMeshFromGLTF(model, meshIndex, meshName, channels));
 }
 
-std::unique_ptr<Mesh> GLTFLoader::CreateMeshFromGLTF(const tinygltf::Model& model, int meshIndex, ShaderChannel channels)
+static GraphicsFormat GetIndexDataFormat(const tinygltf::Accessor& accessor)
+{
+    switch (accessor.componentType)
+    {
+    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+        return GraphicsFormat::R8_UINT;
+    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+        return GraphicsFormat::R16_UINT;
+    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+        return GraphicsFormat::R32_UINT;
+    default:
+        assert(false);
+        return GraphicsFormat::Undefined;
+    }
+}
+
+std::unique_ptr<Mesh> GLTFLoader::CreateMeshFromGLTF(const tinygltf::Model& model, int meshIndex, const std::string& name, ShaderChannel channels)
 {
     // FIXME: only support default vertex now
     assert(channels == ShaderChannel::Default);
@@ -121,6 +142,17 @@ std::unique_ptr<Mesh> GLTFLoader::CreateMeshFromGLTF(const tinygltf::Model& mode
 
         vertexData.push_back(vertex);
     }
+
+    std::string vertexBufferName = name + "_VertexBuffer";
+
+    BufferHandle vertexBuffer = m_RenderContext.CreateBuffer({
+        .debugName = vertexBufferName.c_str(),
+        .byteSize  = (uint32_t)(vertexData.size() * sizeof(Vertex)),
+        .usage     = BufferUsage::Vertex,
+        .data      = vertexData.data(),
+    });
+
+    std::vector<uint32_t> indexData;
 
 
     return std::unique_ptr<Mesh>();

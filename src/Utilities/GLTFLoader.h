@@ -11,8 +11,6 @@
 
 #include <memory>
 
-using namespace gore::gfx::geometry;
-
 namespace gore::gfx
 {
 class RenderContext;
@@ -28,7 +26,7 @@ public:
     [[nodiscard]] std::unique_ptr<Mesh> LoadMesh(const std::string& path, int meshIndex = 0, ShaderChannel channels = ShaderChannel::Default);
 
 private:
-    [[nodiscard]] std::unique_ptr<Mesh> CreateMeshFromGLTF(const tinygltf::Model& model, int meshIndex, ShaderChannel channels);
+    [[nodiscard]] std::unique_ptr<Mesh> CreateMeshFromGLTF(const tinygltf::Model& model, int meshIndex, const std::string& name, ShaderChannel channels);
 
     RenderContext & m_RenderContext;
 };
