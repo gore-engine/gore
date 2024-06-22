@@ -14,7 +14,7 @@
 namespace gore::gfx
 {
 class RenderContext;
-class Mesh;
+class MeshRenderer;
 class Material;
 
 ENGINE_CLASS(GLTFLoader)
@@ -23,10 +23,10 @@ public:
     GLTFLoader(RenderContext & rtx);
     ~GLTFLoader();
 
-    [[nodiscard]] std::unique_ptr<Mesh> LoadMesh(const std::string& path, int meshIndex = 0, ShaderChannel channels = ShaderChannel::Default);
+    [[nodiscard]] bool LoadMesh(std::unique_ptr<MeshRenderer> & mesh, const std::string& path, int meshIndex = 0, ShaderChannel channels = ShaderChannel::Default);
 
 private:
-    [[nodiscard]] std::unique_ptr<Mesh> CreateMeshFromGLTF(const tinygltf::Model& model, int meshIndex, const std::string& name, ShaderChannel channels);
+    [[nodiscard]] bool CreateMeshFromGLTF(std::unique_ptr<MeshRenderer> & mesh, const tinygltf::Model& model, int meshIndex, const std::string& name, ShaderChannel channels);
 
     RenderContext & m_RenderContext;
 };

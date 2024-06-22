@@ -1,9 +1,8 @@
 #define TINYGLTF_IMPLEMENTATION
 #include "GLTFLoader.h"
 
-#include "Rendering/Components/Mesh.h"
+#include "Rendering/Components/MeshRenderer.h"
 #include "Rendering/RenderContext.h"
-
 
 namespace gore::gfx
 {
@@ -16,7 +15,7 @@ GLTFLoader::~GLTFLoader()
 {
 }
 
-std::unique_ptr<Mesh> GLTFLoader::LoadMesh(const std::string& path, int meshIndex, ShaderChannel channels)
+bool GLTFLoader::LoadMesh(std::unique_ptr<MeshRenderer>& mesh,const std::string& path, int meshIndex, ShaderChannel channels)
 {
     std::string error;
     std::string warning;
@@ -28,7 +27,7 @@ std::unique_ptr<Mesh> GLTFLoader::LoadMesh(const std::string& path, int meshInde
     if (importResult == false)
     {
         LOG_STREAM(ERROR) << "Failed to load GLTF file: " << path << std::endl;
-        return nullptr;
+        return false;
     }
 
     if (error.empty() == false)
@@ -46,26 +45,26 @@ std::unique_ptr<Mesh> GLTFLoader::LoadMesh(const std::string& path, int meshInde
     auto pos             = path.find_last_of('/');
     std::string meshName = path.substr(pos + 1, path.size() - pos - 1);
 
-    return std::move(CreateMeshFromGLTF(model, meshIndex, meshName, channels));
+    return CreateMeshFromGLTF(mesh, model, meshIndex, meshName, channels);
 }
 
 static GraphicsFormat GetIndexDataFormat(const tinygltf::Accessor& accessor)
 {
     switch (accessor.componentType)
     {
-    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-        return GraphicsFormat::R8_UINT;
-    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-        return GraphicsFormat::R16_UINT;
-    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-        return GraphicsFormat::R32_UINT;
-    default:
-        assert(false);
-        return GraphicsFormat::Undefined;
+        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+            return GraphicsFormat::R8_UINT;
+        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+            return GraphicsFormat::R16_UINT;
+        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+            return GraphicsFormat::R32_UINT;
+        default:
+            assert(false);
+            return GraphicsFormat::Undefined;
     }
 }
 
-std::unique_ptr<Mesh> GLTFLoader::CreateMeshFromGLTF(const tinygltf::Model& model, int meshIndex, const std::string& name, ShaderChannel channels)
+bool GLTFLoader::CreateMeshFromGLTF(std::unique_ptr<MeshRenderer>& mesh, const tinygltf::Model& model, int meshIndex, const std::string& name, ShaderChannel channels)
 {
     // FIXME: only support default vertex now
     assert(channels == ShaderChannel::Default);
@@ -152,9 +151,35 @@ std::unique_ptr<Mesh> GLTFLoader::CreateMeshFromGLTF(const tinygltf::Model& mode
         .data      = vertexData.data(),
     });
 
+    IndexType indexType = IndexType::None;
     std::vector<uint32_t> indexData;
+    if (gltfPrimitive.indices >= 0)
+    {
+        const tinygltf::Accessor& accessor     = model.accessors[gltfPrimitive.indices];
+        const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+        const tinygltf::Buffer& buffer         = model.buffers[bufferView.buffer];
 
+        const void* data = &buffer.data[bufferView.byteOffset + accessor.byteOffset];
+        size_t size      = accessor.count * accessor.ByteStride(bufferView);
 
-    return std::unique_ptr<Mesh>();
+        indexData.resize(accessor.count);
+        memcpy(indexData.data(), data, size);
+
+        auto format = GetIndexDataFormat(accessor);
+        indexType   = GetIndexTypeByGraphicsFormat(format);
+    }
+
+    BufferHandle indexBuffer = m_RenderContext.CreateBuffer({
+        .debugName = (name + "_IndexBuffer").c_str(),
+        .byteSize  = (uint32_t)(indexData.size() * GetIndexTypeSize(indexType)),
+        .usage     = BufferUsage::Index,
+        .data      = indexData.data(),
+    });
+
+    mesh->SetVertexBuffer(vertexBuffer);
+    mesh->SetIndexBuffer(indexBuffer);
+    mesh->SetIndexType(indexType);
+
+    return true;
 }
 } // namespace gore::gfx
