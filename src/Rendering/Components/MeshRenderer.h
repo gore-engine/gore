@@ -3,21 +3,21 @@
 #include "Prefix.h"
 #include "Export.h"
 
-#include "Object/Object.h"
+#include "Object/Component.h"
 
 #include "Rendering/Buffer.h"
 #include "Rendering/Utils/GeometryUtils.h"
 
 namespace gore::gfx
 {
-ENGINE_CLASS(Mesh) :
-    public Object
+ENGINE_CLASS(MeshRenderer) :
+    public Component
 {
 public:
-    NON_COPYABLE(Mesh);
+    NON_COPYABLE(MeshRenderer)
 
-    Mesh();
-    ~Mesh() override;
+    explicit MeshRenderer(GameObject* GameObject) noexcept;
+    ~MeshRenderer() override = default;
 
     void UploadMeshData();
 
@@ -33,12 +33,17 @@ public:
     [[nodiscard]] bool HasVertexData() const;
     [[nodiscard]] bool HasIndexData() const;
 
+    GETTER_SETTER(IndexType, IndexType)
+    GETTER_SETTER(BufferHandle, VertexBuffer)
+    GETTER_SETTER(BufferHandle, IndexBuffer)
+
 private:
     void DeleteCPUMeshData();
+    void DeleteGPUData();
 
     IndexType m_IndexType;
 
-    // CPU vertex data
-    // CPU index data
+    BufferHandle m_VertexBuffer;
+    BufferHandle m_IndexBuffer;
 };
 } // namespace gore::gfx

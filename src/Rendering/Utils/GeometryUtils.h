@@ -5,6 +5,7 @@
 #include "Math/Vector3.h"
 #include "Math/Vector4.h"
 #include <stdint.h>
+#include <assert.h>
 
 #include "Rendering/GraphicsFormat.h"
 
@@ -44,6 +45,7 @@ inline IndexType GetIndexTypeByGraphicsFormat(GraphicsFormat format)
         case GraphicsFormat::R32_UINT:
             return IndexType::UInt32;
         default:
+            assert(false && "Invalid index format");
             return IndexType::None;
     }
 }

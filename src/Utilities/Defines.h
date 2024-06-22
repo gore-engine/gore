@@ -12,6 +12,10 @@
     CLASS_NAME(CLASS_NAME&&)                 = default; \
     CLASS_NAME& operator=(CLASS_NAME&&)      = default;
 
+#define GETTER_SETTER(TYPE, NAME) \
+    [[nodiscard]] TYPE Get##NAME() const { return m_##NAME; } \
+    void Set##NAME(TYPE NAME) { m_##NAME = NAME; }
+
 #define FLAG_ENUM_CLASS(ENUM_CLASS_NAME, ENUM_CLASS_TYPE)                                                       \
     inline ENUM_CLASS_NAME operator|(ENUM_CLASS_NAME a, ENUM_CLASS_NAME b)                                      \
     {                                                                                                           \
