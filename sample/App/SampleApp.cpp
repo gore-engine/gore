@@ -53,11 +53,31 @@ void SampleApp::Initialize()
     cameraTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
     cameraTransform->SetLocalPosition((gore::Vector3::Backward + gore::Vector3::Up) * 7.5f);
 
-    gore::GameObject* gameObject = scene->NewObject();
-    gameObject->SetName("Root");
-    gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
-    renderContext.LoadMesh("cube.gltf", *meshRenderer);
+   {
+        gore::GameObject* gameObject = scene->NewObject();
+        gameObject->SetName("cube");
+        gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
+        renderContext.LoadMesh("cube.gltf", *meshRenderer);    
 
+        gore::Transform* transform = gameObject->GetTransform();
+        transform->SetLocalPosition(gore::Vector3::Right * 20.0f);
+    }
+    
+    {
+        gore::GameObject* gameObject = scene->NewObject();
+        gameObject->SetName("teapot");
+        gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
+        renderContext.LoadMesh("teapot.gltf", *meshRenderer);
+    }    
+    
+    {
+        gore::GameObject* gameObject = scene->NewObject();
+        gameObject->SetName("rock");
+        gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
+        renderContext.LoadMesh("rock.gltf", *meshRenderer);
+        gore::Transform* transform = gameObject->GetTransform();
+        transform->SetLocalPosition(gore::Vector3::Left * 10.0f);
+    }
     // gore::GameObject* gameObject = scene->NewObject();
     // gameObject->SetName("TestObject O, T&R&S");
 
