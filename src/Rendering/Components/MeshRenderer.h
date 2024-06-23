@@ -36,6 +36,8 @@ public:
     GETTER_SETTER(IndexType, IndexType)
     GETTER_SETTER(BufferHandle, VertexBuffer)
     GETTER_SETTER(BufferHandle, IndexBuffer)
+    GETTER_SETTER(uint32_t, VertexCount)
+    GETTER_SETTER(uint32_t, IndexCount)
 
     void Start() override;
     void Update() override;
@@ -45,8 +47,11 @@ private:
     void DeleteGPUData();
 
     IndexType m_IndexType;
-
+    
     BufferHandle m_VertexBuffer;
+    uint32_t m_VertexCount;
+
     BufferHandle m_IndexBuffer;
+    uint32_t m_IndexCount;
 };
 } // namespace gore::gfx

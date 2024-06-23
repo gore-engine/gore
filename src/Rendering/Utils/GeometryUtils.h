@@ -30,8 +30,8 @@ enum class IndexType : uint8_t
 {
     None   = 0,
     UINT8  = 1,
-    UInt16 = 2,
-    UInt32 = 3,
+    UINT16 = 2,
+    UINT32 = 3,
 };
 
 inline IndexType GetIndexTypeByGraphicsFormat(GraphicsFormat format)
@@ -41,9 +41,9 @@ inline IndexType GetIndexTypeByGraphicsFormat(GraphicsFormat format)
         case GraphicsFormat::R8_UINT:
             return IndexType::UINT8;
         case GraphicsFormat::R16_UINT:
-            return IndexType::UInt16;
+            return IndexType::UINT16;
         case GraphicsFormat::R32_UINT:
-            return IndexType::UInt32;
+            return IndexType::UINT32;
         default:
             assert(false && "Invalid index format");
             return IndexType::None;
@@ -56,9 +56,9 @@ inline int GetIndexTypeSize(IndexType indexType)
     {
         case IndexType::UINT8:
             return sizeof(uint8_t);
-        case IndexType::UInt16:
+        case IndexType::UINT16:
             return sizeof(uint16_t);
-        case IndexType::UInt32:
+        case IndexType::UINT32:
             return sizeof(uint32_t);
         default:
             return 0;

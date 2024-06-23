@@ -84,6 +84,7 @@ bool GLTFLoader::CreateMeshFromGLTF(MeshRenderer& mesh, const tinygltf::Model& m
     const tinygltf::Accessor& accessor = model.accessors[gltfPrimitive.attributes.find("POSITION")->second];
 
     int vertexCount = accessor.count;
+    mesh.SetVertexCount(vertexCount);
 
     const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
     const tinygltf::Buffer& buffer         = model.buffers[bufferView.buffer];
@@ -152,20 +153,36 @@ bool GLTFLoader::CreateMeshFromGLTF(MeshRenderer& mesh, const tinygltf::Model& m
     });
 
     IndexType indexType = IndexType::None;
-    std::vector<uint32_t> indexData;
+    std::vector<uint8_t> indexData;
     if (gltfPrimitive.indices >= 0)
     {
         const tinygltf::Accessor& accessor     = model.accessors[gltfPrimitive.indices];
         const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
         const tinygltf::Buffer& buffer         = model.buffers[bufferView.buffer];
 
+        mesh.SetIndexCount(accessor.count);
+
         const void* data = &buffer.data[bufferView.byteOffset + accessor.byteOffset];
         size_t size      = accessor.count * accessor.ByteStride(bufferView);
 
-        indexData.resize(accessor.count);
-        memcpy(indexData.data(), data, size);
-
         auto format = GetIndexDataFormat(accessor);
+        // Convert UINT8 to UINT16
+        if (format == GraphicsFormat::R8_UINT)
+        {
+            format = GraphicsFormat::R16_UINT;
+            indexData.resize(size * 2);
+            for (size_t i = 0; i < size; ++i)
+            {
+                indexData[i * 2]     = ((uint8_t*)data)[i];
+                indexData[i * 2 + 1] = 0;
+            }
+        }
+        else
+        {
+            indexData.resize(size);
+            memcpy(indexData.data(), data, size);
+        }
+
         indexType   = GetIndexTypeByGraphicsFormat(format);
     }
 
