@@ -80,7 +80,7 @@ private:
     // Surface & Swapchain
     Swapchain m_Swapchain;
 
-    GraphicsPipelineHandle m_CubePipelineHandle;
+    GraphicsPipelineHandle m_UnLitPipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
     GraphicsPipelineHandle m_QuadPipelineHandle;
 
@@ -121,9 +121,6 @@ private:
     VmaAllocation m_DepthImageAllocation;
     vk::raii::ImageView m_DepthImageView;
 
-    BufferHandle m_IndexBufferHandle;
-    BufferHandle m_VertexBufferHandle;
-
     DeletionQueue m_RenderDeletionQueue;
 
 private:
@@ -134,7 +131,6 @@ private:
     void CreateSurface();
     void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
     void CreateDepthBuffer();
-    void CreateVertexBuffer();
     void CreateGlobalDescriptorSets();
     void CreateUVQuadDescriptorSets();
     void CreatePipeline();
