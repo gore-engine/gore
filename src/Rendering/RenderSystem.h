@@ -56,14 +56,18 @@ public:
     void Update() override;
     void Shutdown() override;
 
+    RenderContext& GetRenderContext() const { return *m_RenderContext; }
+
     void OnResize(Window* window, int width, int height);
+
 private:
     // Imgui
     void InitImgui();
     void ShutdownImgui();
-    
+
     ImGui_ImplVulkanH_Window m_ImguiWindowData;
     vk::raii::DescriptorPool m_ImguiDescriptorPool;
+
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
 
@@ -79,7 +83,7 @@ private:
     GraphicsPipelineHandle m_CubePipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
     GraphicsPipelineHandle m_QuadPipelineHandle;
-    
+
     // Pipeline
     vk::raii::PipelineLayout m_PipelineLayout;
     vk::raii::PipelineLayout m_BlankPipelineLayout;
@@ -100,7 +104,7 @@ private:
     std::vector<vk::raii::DescriptorSet> m_GlobalDescriptorSets;
 
     std::vector<BufferHandle> m_GlobalConstantBuffers;
-    
+
     // Material Descriptors
     BindLayout m_UVQuadBindLayout;
     BindGroupHandle m_UVQuadBindGroup;

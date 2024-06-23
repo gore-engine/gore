@@ -23,10 +23,10 @@ public:
     GLTFLoader(RenderContext & rtx);
     ~GLTFLoader();
 
-    [[nodiscard]] bool LoadMesh(std::unique_ptr<MeshRenderer> & mesh, const std::string& path, int meshIndex = 0, ShaderChannel channels = ShaderChannel::Default);
+    [[nodiscard]] bool LoadMesh(MeshRenderer & mesh, const std::string& path, int meshIndex = 0, ShaderChannel channels = ShaderChannel::Default);
 
 private:
-    [[nodiscard]] bool CreateMeshFromGLTF(std::unique_ptr<MeshRenderer> & mesh, const tinygltf::Model& model, int meshIndex, const std::string& name, ShaderChannel channels);
+    [[nodiscard]] bool CreateMeshFromGLTF(MeshRenderer & mesh, const tinygltf::Model& model, int meshIndex, const std::string& name, ShaderChannel channels);
 
     RenderContext & m_RenderContext;
 };

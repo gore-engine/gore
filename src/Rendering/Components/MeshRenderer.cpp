@@ -9,4 +9,12 @@ MeshRenderer::MeshRenderer(GameObject* GameObject) noexcept :
     m_IndexBuffer()
 {
 }
+
+void MeshRenderer::Start()
+{
+}
+
+void MeshRenderer::Update()
+{
+}
 } // namespace gore::gfx

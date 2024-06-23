@@ -7,6 +7,9 @@
 
 #include "GraphicsResource.h"
 
+#include "Rendering/Utils/GeometryUtils.h"
+#include "Rendering/Components/MeshRenderer.h"
+
 #include "Texture.h"
 #include "Buffer.h"
 #include "Sampler.h"
@@ -22,7 +25,7 @@ namespace gore::gfx
 
 class Device;
 
-class RenderContext final
+ENGINE_CLASS(RenderContext) final
 {
     // TODO: actually we can copy this class??
     NON_COPYABLE(RenderContext);
@@ -30,6 +33,9 @@ class RenderContext final
 public:
     RenderContext(const Device* device);
     ~RenderContext();
+
+    void LoadMesh(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex = 0, ShaderChannel channel = ShaderChannel::Default);
+    void LoadMesh();
 
     // RenderPass
     RenderPass* CreateRenderPass(const RenderPassDesc& desc);

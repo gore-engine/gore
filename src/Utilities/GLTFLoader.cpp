@@ -15,7 +15,7 @@ GLTFLoader::~GLTFLoader()
 {
 }
 
-bool GLTFLoader::LoadMesh(std::unique_ptr<MeshRenderer>& mesh,const std::string& path, int meshIndex, ShaderChannel channels)
+bool GLTFLoader::LoadMesh(MeshRenderer& mesh, const std::string& path, int meshIndex, ShaderChannel channels)
 {
     std::string error;
     std::string warning;
@@ -64,7 +64,7 @@ static GraphicsFormat GetIndexDataFormat(const tinygltf::Accessor& accessor)
     }
 }
 
-bool GLTFLoader::CreateMeshFromGLTF(std::unique_ptr<MeshRenderer>& mesh, const tinygltf::Model& model, int meshIndex, const std::string& name, ShaderChannel channels)
+bool GLTFLoader::CreateMeshFromGLTF(MeshRenderer& mesh, const tinygltf::Model& model, int meshIndex, const std::string& name, ShaderChannel channels)
 {
     // FIXME: only support default vertex now
     assert(channels == ShaderChannel::Default);
@@ -176,9 +176,9 @@ bool GLTFLoader::CreateMeshFromGLTF(std::unique_ptr<MeshRenderer>& mesh, const t
         .data      = indexData.data(),
     });
 
-    mesh->SetVertexBuffer(vertexBuffer);
-    mesh->SetIndexBuffer(indexBuffer);
-    mesh->SetIndexType(indexType);
+    mesh.SetVertexBuffer(vertexBuffer);
+    mesh.SetIndexBuffer(indexBuffer);
+    mesh.SetIndexType(indexType);
 
     return true;
 }

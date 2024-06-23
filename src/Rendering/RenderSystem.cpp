@@ -17,6 +17,9 @@
 #include "Object/Camera.h"
 #include "Object/GameObject.h"
 
+#include "Rendering/Components/MeshRenderer.h"
+#include "Utilities/GLTFLoader.h"
+
 #include "Rendering/GPUData/GlobalConstantBuffer.h"
 #include "RenderContextHelper.h"
 
@@ -538,13 +541,6 @@ void RenderSystem::CreateVertexBuffer()
     vmaMapMemory(m_Device.GetVmaAllocator(), indexBuffer.vmaAllocation, &mappedData);
     memcpy(mappedData, indices.data(), sizeof(uint16_t) * indices.size());
     vmaUnmapMemory(m_Device.GetVmaAllocator(), indexBuffer.vmaAllocation);
-
-    m_RenderDeletionQueue.PushFunction(
-        [&](){
-            m_RenderContext->DestroyBuffer(m_VertexBufferHandle);
-            m_RenderContext->DestroyBuffer(m_IndexBufferHandle);
-        }
-    );
 }
 
 void RenderSystem::CreateGlobalDescriptorSets()
@@ -582,15 +578,6 @@ void RenderSystem::CreateGlobalDescriptorSets()
 
         m_Device.Get().updateDescriptorSets({globalConstantBufferWrite}, {});
     }
-
-    m_RenderDeletionQueue.PushFunction(
-        [&](){
-            for (auto& globalConstantBuffer : m_GlobalConstantBuffers)
-            {
-                m_RenderContext->DestroyBuffer(globalConstantBuffer);
-            }
-        }
-    );
 }
 
 void RenderSystem:: CreateUVQuadDescriptorSets()

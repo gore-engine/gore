@@ -10,7 +10,7 @@
 
 namespace gore::gfx
 {
-ENGINE_CLASS(MeshRenderer) :
+ENGINE_CLASS(MeshRenderer) final:
     public Component
 {
 public:
@@ -36,6 +36,9 @@ public:
     GETTER_SETTER(IndexType, IndexType)
     GETTER_SETTER(BufferHandle, VertexBuffer)
     GETTER_SETTER(BufferHandle, IndexBuffer)
+
+    void Start() override;
+    void Update() override;
 
 private:
     void DeleteCPUMeshData();

@@ -2,6 +2,10 @@
 #include "Graphics/Device.h"
 #include "RenderContextHelper.h"
 
+#include "Filesystem/FileSystem.h"
+
+#include "Utilities/GLTFLoader.h"
+
 #define VULKAN_DEVICE (*m_DevicePtr->Get())
 #define USE_STAGING_BUFFER 1
 
@@ -24,6 +28,20 @@ RenderContext::RenderContext(const Device* device) :
 RenderContext::~RenderContext()
 {
     clear();
+}
+
+void RenderContext::LoadMesh(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex, ShaderChannel channel)
+{
+    static const std::filesystem::path kGLTFFolder = FileSystem::GetResourceFolder() / "GLTF";
+    auto gltfPath = kGLTFFolder / name;
+    GLTFLoader gltfLoader(*this);
+
+    bool ret = gltfLoader.LoadMesh(meshRenderer, gltfPath.generic_string(), meshIndex, channel);
+
+    if (ret == false)
+    {
+        LOG_STREAM(ERROR) << "Failed to load mesh at " << gltfPath << std::endl;
+    }
 }
 
 BindLayout RenderContext::GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo)
@@ -64,6 +82,13 @@ void RenderContext::clear()
 {
     m_ShaderModulePool.clear();
     m_GraphicsPipelinePool.clear();
+
+    auto& buffers = m_BufferPool.objects;
+    for (auto& buffer : buffers)
+    {
+        ClearVulkanBuffer(m_DevicePtr->GetVmaAllocator(), buffer.vkBuffer, buffer.vmaAllocation);
+    }
+
     m_BufferPool.clear();
 
     m_TexturePool.clear();
