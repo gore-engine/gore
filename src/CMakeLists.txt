@@ -134,9 +134,9 @@ list(APPEND COMMON_INCLUDE_FOLDERS ${Stb_INCLUDE_DIR})
 find_package(assimp CONFIG REQUIRED)
 list(APPEND COMMON_LIBRARIES assimp::assimp)
 
-# cgltf
-find_path(CGLTF_INCLUDE_DIRS "cgltf.h")
-list(APPEND COMMON_INCLUDE_FOLDERS ${CGLTF_INCLUDE_DIRS})
+# tinygltf
+find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
+list(APPEND COMMON_INCLUDE_FOLDERS ${TINYGLTF_INCLUDE_DIRS})
 
 # Manually add RealtimeMath
 add_subdirectory(External/rtm)
