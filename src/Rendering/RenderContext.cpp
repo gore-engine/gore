@@ -2,7 +2,7 @@
 #include "Graphics/Device.h"
 #include "RenderContextHelper.h"
 
-#include "Filesystem/FileSystem.h"
+#include "FileSystem/FileSystem.h"
 
 #include "Utilities/GLTFLoader.h"
 
