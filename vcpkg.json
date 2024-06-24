@@ -5,7 +5,6 @@
   "builtin-baseline": "209485d769dfa674872dacfef5b2755a77d5f2fe",
   "dependencies": [
     "assimp",
-    "cgltf",
     "glfw3",
     {
       "name":"imgui",
@@ -26,6 +25,7 @@
     "vulkan",
     "vulkan-memory-allocator",
     "spirv-cross",
-    "catch2"
+    "catch2",
+    "tinygltf"
   ]
 }

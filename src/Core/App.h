@@ -50,11 +50,12 @@ private:
     std::vector<std::string> m_Args;
     std::string m_ExecutablePath;
 
-private:
+protected:
     Time* m_TimeSystem;
     InputSystem* m_InputSystem;
     RenderSystem* m_RenderSystem;
 
+private:
     Window* m_Window;
 };
 

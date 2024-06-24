@@ -2,16 +2,16 @@
 
 #include "Prefix.h"
 
-#include "DummyVertex.h"
-
 #include "Graphics/Vulkan/VulkanIncludes.h"
-#include "Graphics/VulkanBuffer.h"
-
 #include "GraphicsCaching/ResourceCache.h"
 
 #include "GraphicsResource.h"
 
+#include "Rendering/Utils/GeometryUtils.h"
+#include "Rendering/Components/MeshRenderer.h"
+
 #include "Texture.h"
+#include "Buffer.h"
 #include "Sampler.h"
 #include "BindGroup.h"
 
@@ -25,7 +25,7 @@ namespace gore::gfx
 
 class Device;
 
-class RenderContext final
+ENGINE_CLASS(RenderContext) final
 {
     // TODO: actually we can copy this class??
     NON_COPYABLE(RenderContext);
@@ -33,6 +33,9 @@ class RenderContext final
 public:
     RenderContext(const Device* device);
     ~RenderContext();
+
+    void LoadMesh(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex = 0, ShaderChannel channel = ShaderChannel::Default);
+    void LoadMesh();
 
     // RenderPass
     RenderPass* CreateRenderPass(const RenderPassDesc& desc);
@@ -59,7 +62,12 @@ public:
     {
         CopyDataToTexture(handle, data.data(), data.size() * sizeof(T));
     }
-    void CopyDataToTexture(TextureHandle handle, const void* data, size_t size);
+
+    template <typename T>
+    void CopyDataToBuffer(BufferHandle handle, const std::vector<T>& data)
+    {
+        CopyDataToBuffer(handle, data.data(), data.size() * sizeof(T));
+    }
 
     BufferHandle CreateBuffer(BufferDesc&& desc);
     const BufferDesc& GetBufferDesc(BufferHandle handle);
@@ -90,12 +98,15 @@ public:
 
 private:
     template <typename T>
-    static VulkanBuffer CreateStagingBuffer(const Device& device, std::vector<T> const& data)
+    static Buffer CreateStagingBuffer(const Device& device, std::vector<T> const& data)
     {
         return CreateStagingBuffer(device, data.data(), data.size() * sizeof(T));
     }
 
-    static VulkanBuffer CreateStagingBuffer(const Device& device, void const* data, size_t size);
+    static Buffer CreateStagingBuffer(const Device& device, void const* data, size_t size);
+    
+    void CopyDataToBuffer(BufferHandle handle, const void* data, size_t size);
+    void CopyDataToTexture(TextureHandle handle, const void* data, size_t size);
 
     vk::raii::CommandBuffer CreateCommandBuffer(vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary, bool begin = true);
     void FlushCommandBuffer(vk::raii::CommandBuffer& commandBuffer, vk::raii::Queue& queue);

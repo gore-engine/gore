@@ -3,6 +3,7 @@
 #include "Handle.h"
 #include "GraphicsResource.h"
 #include "Texture.h"
+#include "Buffer.h"
 #include "BindLayout.h"
 #include "Sampler.h"
 

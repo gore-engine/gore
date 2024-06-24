@@ -57,6 +57,8 @@ compile_shader("Shaders/sample/triangle.hlsl" "vulkan" "pixel" "ps")
 compile_shader("Shaders/sample/quad.hlsl" "vulkan" "vertex" "vs")
 compile_shader("Shaders/sample/quad.hlsl" "vulkan" "pixel" "ps")
 
+compile_shader("Shaders/sample/UnLit.hlsl" "vulkan" "vertex" "vs")
+compile_shader("Shaders/sample/UnLit.hlsl" "vulkan" "pixel" "ps")
 # Platform Specific Configurations
 
 if (${TARGET_PLATFORM} STREQUAL "Windows")
@@ -132,9 +134,9 @@ list(APPEND COMMON_INCLUDE_FOLDERS ${Stb_INCLUDE_DIR})
 find_package(assimp CONFIG REQUIRED)
 list(APPEND COMMON_LIBRARIES assimp::assimp)
 
-# cgltf
-find_path(CGLTF_INCLUDE_DIRS "cgltf.h")
-list(APPEND COMMON_INCLUDE_FOLDERS ${CGLTF_INCLUDE_DIRS})
+# tinygltf
+find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
+list(APPEND COMMON_INCLUDE_FOLDERS ${TINYGLTF_INCLUDE_DIRS})
 
 # Manually add RealtimeMath
 add_subdirectory(External/rtm)
@@ -162,6 +164,7 @@ add_library(${PROJECT_NAME} ${COMMON_SOURCES} ${PLATFORM_SOURCES})
 
 add_shader_dependencies(${PROJECT_NAME})
 copy_texture_resources(${PROJECT_NAME})
+copy_gltf_resources(${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${COMMON_INCLUDE_FOLDERS} ${PLATFORM_INCLUDE_DIRECTORIES})
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${COMMON_DEFINITIONS})

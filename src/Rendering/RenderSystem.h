@@ -56,14 +56,18 @@ public:
     void Update() override;
     void Shutdown() override;
 
+    RenderContext& GetRenderContext() const { return *m_RenderContext; }
+
     void OnResize(Window* window, int width, int height);
+
 private:
     // Imgui
     void InitImgui();
     void ShutdownImgui();
-    
+
     ImGui_ImplVulkanH_Window m_ImguiWindowData;
     vk::raii::DescriptorPool m_ImguiDescriptorPool;
+
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
 
@@ -76,10 +80,10 @@ private:
     // Surface & Swapchain
     Swapchain m_Swapchain;
 
-    GraphicsPipelineHandle m_CubePipelineHandle;
+    GraphicsPipelineHandle m_UnLitPipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
     GraphicsPipelineHandle m_QuadPipelineHandle;
-    
+
     // Pipeline
     vk::raii::PipelineLayout m_PipelineLayout;
     vk::raii::PipelineLayout m_BlankPipelineLayout;
@@ -100,7 +104,7 @@ private:
     std::vector<vk::raii::DescriptorSet> m_GlobalDescriptorSets;
 
     std::vector<BufferHandle> m_GlobalConstantBuffers;
-    
+
     // Material Descriptors
     BindLayout m_UVQuadBindLayout;
     BindGroupHandle m_UVQuadBindGroup;
@@ -117,9 +121,6 @@ private:
     VmaAllocation m_DepthImageAllocation;
     vk::raii::ImageView m_DepthImageView;
 
-    BufferHandle m_IndexBufferHandle;
-    BufferHandle m_VertexBufferHandle;
-
     DeletionQueue m_RenderDeletionQueue;
 
 private:
@@ -130,7 +131,6 @@ private:
     void CreateSurface();
     void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
     void CreateDepthBuffer();
-    void CreateVertexBuffer();
     void CreateGlobalDescriptorSets();
     void CreateUVQuadDescriptorSets();
     void CreatePipeline();

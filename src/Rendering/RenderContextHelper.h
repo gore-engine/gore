@@ -4,6 +4,7 @@
 
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "GraphicsPipelineDesc.h"
+#include "Rendering/Utils/GeometryUtils.h"
 
 #include "Texture.h"
 #include "Sampler.h"
@@ -12,6 +13,21 @@
 namespace gore::gfx::VulkanHelper
 {
 std::vector<VkFormat> GetVkFormats(const std::vector<GraphicsFormat>& formats);
+
+inline vk::IndexType GetVkIndexType(IndexType type)
+{
+    switch (type)
+    {
+    case IndexType::UINT8:
+        return vk::IndexType::eUint8EXT;
+    case IndexType::UINT16:
+        return vk::IndexType::eUint16;
+    case IndexType::UINT32:
+        return vk::IndexType::eUint32;
+    default:
+        return vk::IndexType::eUint16;
+    }
+}
 
 inline vk::ImageViewType GetVkImageViewType(TextureType type)
 {
