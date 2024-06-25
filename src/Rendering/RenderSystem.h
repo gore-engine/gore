@@ -138,8 +138,6 @@ private:
     void GetQueues();
     void CreateSynchronization();
 
-    TextureHandle CreateTextureHandle(const std::string& name);
-
     [[nodiscard]] const PhysicalDevice& GetBestDevice(const std::vector<PhysicalDevice>& devices) const;
 };
 

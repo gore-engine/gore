@@ -34,7 +34,7 @@ public:
     RenderContext(const Device* device);
     ~RenderContext();
 
-    void LoadMesh(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex = 0, ShaderChannel channel = ShaderChannel::Default);
+    void LoadMeshToMeshRenderer(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex = 0, ShaderChannel channel = ShaderChannel::Default);
     void LoadMesh();
 
     // RenderPass
@@ -52,7 +52,8 @@ public:
     void DrawProcedural();
     void DrawProceduralIndirect();
 
-    TextureHandle createTexture(TextureDesc&& desc);
+    TextureHandle CreateTextureHandle(const std::string& name);
+
     void DestroyTexture(TextureHandle handle);
     const Texture& GetTexture(TextureHandle handle);
     const TextureDesc& GetTextureDesc(TextureHandle handle);
@@ -98,6 +99,7 @@ public:
 
 private:
     void DestroyTextureObject(const Texture& texture, const TextureDesc& desc);
+    TextureHandle CreateTexture(TextureDesc&& desc);
 
     template <typename T>
     static Buffer CreateStagingBuffer(const Device& device, std::vector<T> const& data)

@@ -4,6 +4,9 @@
 
 #include "FileSystem/FileSystem.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #include "Utilities/GLTFLoader.h"
 
 #define VULKAN_DEVICE (*m_DevicePtr->Get())
@@ -30,7 +33,7 @@ RenderContext::~RenderContext()
     clear();
 }
 
-void RenderContext::LoadMesh(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex, ShaderChannel channel)
+void RenderContext::LoadMeshToMeshRenderer(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex, ShaderChannel channel)
 {
     static const std::filesystem::path kGLTFFolder = FileSystem::GetResourceFolder() / "GLTF";
     auto gltfPath = kGLTFFolder / name;
@@ -338,7 +341,36 @@ const GraphicsPipeline& RenderContext::GetGraphicsPipeline(GraphicsPipelineHandl
     return m_GraphicsPipelinePool.getObject(handle);
 }
 
-TextureHandle RenderContext::createTexture(TextureDesc&& desc)
+TextureHandle RenderContext::CreateTextureHandle(const std::string& name)
+{
+    static const std::filesystem::path kTextureFolder = FileSystem::GetResourceFolder() / "Textures";
+    auto texturePath = kTextureFolder / name;
+
+    // TODO: change to use std::vector?
+
+    int width, height, channel;
+    stbi_uc* pixels = stbi_load(texturePath.generic_string().c_str(), &width, &height, &channel, STBI_rgb_alpha);
+
+    if (pixels == nullptr)
+    {
+        LOG_STREAM(ERROR) << "RenderSystem CreateTextureHandle: Failed to load texture: " << name << std::endl;
+        return TextureHandle();
+    }
+
+    TextureHandle handle = CreateTexture({
+        .debugName = name.c_str(),
+        .width = static_cast<uint32_t>(width),
+        .height = static_cast<uint32_t>(height),
+        .data = pixels,
+        .dataSize = static_cast<uint32_t>(width * height * 4)
+    });
+
+    stbi_image_free(pixels);
+
+    return handle;
+}
+
+TextureHandle RenderContext::CreateTexture(TextureDesc&& desc)
 {
     VkImageCreateInfo imageInfo = {
         .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
