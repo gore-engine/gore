@@ -88,10 +88,21 @@ void RenderContext::clear()
     {
         ClearVulkanBuffer(m_DevicePtr->GetVmaAllocator(), buffer.vkBuffer, buffer.vmaAllocation);
     }
-
     m_BufferPool.clear();
 
+    auto& textures = m_TexturePool.objects;
+    auto& textureDescs = m_TexturePool.objectDesc;
+    for (int i = 0; i < textures.size(); i++)
+    {
+        DestroyTextureObject(textures[i], textureDescs[i].objDesc);
+    }
     m_TexturePool.clear();
+
+    auto& samplers = m_SamplerPool.objects;
+    for (auto& sampler : samplers)
+    {
+        VULKAN_DEVICE.destroySampler(sampler.vkSampler);
+    }
     m_SamplerPool.clear();
 
     ClearDescriptorPools();
@@ -384,25 +395,30 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
     return handle;
 }
 
+void RenderContext::DestroyTextureObject(const Texture& texture, const TextureDesc& desc)
+{
+    DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
+
+    if (HasFlag(desc.usage, TextureUsageBits::Sampled))
+        VULKAN_DEVICE.destroyImageView(texture.srv);
+
+    if (HasFlag(desc.usage, TextureUsageBits::Storage))
+    {
+        for (int i = 0; i < desc.numMips; i++)
+            VULKAN_DEVICE.destroyImageView(texture.uav[i]);
+    }
+
+    if (HasFlag(desc.usage, TextureUsageBits::DepthStencil))
+        VULKAN_DEVICE.destroyImageView(texture.srvStencil);
+}
+
 void RenderContext::DestroyTexture(TextureHandle handle)
 {
     auto& textureDesc = m_TexturePool.getObjectDesc(handle);
     auto& texture     = m_TexturePool.getObject(handle);
 
-    DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
-
-    if (HasFlag(textureDesc.usage, TextureUsageBits::Sampled))
-        VULKAN_DEVICE.destroyImageView(texture.srv);
-
-    if (HasFlag(textureDesc.usage, TextureUsageBits::Storage))
-    {
-        for (int i = 0; i < textureDesc.numMips; i++)
-            VULKAN_DEVICE.destroyImageView(texture.uav[i]);
-    }
-
-    if (HasFlag(textureDesc.usage, TextureUsageBits::DepthStencil))
-        VULKAN_DEVICE.destroyImageView(texture.srvStencil);
-
+    DestroyTextureObject(texture, textureDesc);
+    
     m_TexturePool.destroy(handle);
 }
 

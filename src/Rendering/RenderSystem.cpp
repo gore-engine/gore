@@ -703,13 +703,6 @@ void RenderSystem::CreateTextureObjects()
         {
             .debugName = "UV Check Sampler",
         }
-    );    
-
-    m_RenderDeletionQueue.PushFunction(
-        [&](){
-            m_RenderContext->DestroyTexture(m_UVCheckTextureHandle);
-            m_RenderContext->DestroySampler(m_UVCheckSamplerHandle);
-        }
     );
 }
 

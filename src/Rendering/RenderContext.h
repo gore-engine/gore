@@ -97,6 +97,8 @@ public:
     void clear();
 
 private:
+    void DestroyTextureObject(const Texture& texture, const TextureDesc& desc);
+
     template <typename T>
     static Buffer CreateStagingBuffer(const Device& device, std::vector<T> const& data)
     {
