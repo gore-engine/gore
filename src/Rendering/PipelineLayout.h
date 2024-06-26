@@ -4,10 +4,10 @@
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 
-namespace gore
+namespace gore::gfx
 {
 struct PipelineLayout
 {
     vk::PipelineLayout layout = VK_NULL_HANDLE;
 };
-} // namespace gore
+} // namespace gore::gfx

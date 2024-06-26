@@ -7,9 +7,8 @@
 
 #include <vector>
 
-namespace gore
+namespace gore ::gfx
 {
-
 enum class BindType : uint8_t
 {
     UniformBuffer,
@@ -23,10 +22,10 @@ enum class BindType : uint8_t
 
 struct Binding final
 {
-    uint8_t binding;
-    BindType type;
-    uint8_t descriptorCount;
-    ShaderStage stage;
+    uint8_t binding         = 0;
+    BindType type           = BindType::UniformBuffer;
+    uint8_t descriptorCount = 1;
+    ShaderStage stage       = ShaderStage::Vertex;
 };
 
 struct BindLayoutCreateInfo final
@@ -40,4 +39,4 @@ struct BindLayout final
     /// @brief Vulkan : DescriptorSetLayout
     vk::DescriptorSetLayout layout;
 };
-} // namespace gore
+} // namespace gore::gfx

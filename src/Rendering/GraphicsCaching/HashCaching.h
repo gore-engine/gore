@@ -46,9 +46,9 @@ struct hash<std::vector<T>>
 };
 
 template <>
-struct hash<BindLayoutCreateInfo>
+struct hash<gfx::BindLayoutCreateInfo>
 {
-    size_t operator()(BindLayoutCreateInfo const& bindings) const
+    size_t operator()(gfx::BindLayoutCreateInfo const& bindings) const
     {
         size_t result = 0;
         utils::hash_combine(result, bindings.bindings.size());
