@@ -58,7 +58,6 @@ void SampleApp::Initialize()
         gameObject->SetName("cube");
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
         renderContext.LoadMeshToMeshRenderer("cube.gltf", *meshRenderer);    
-        meshRenderer->SetBindGroup(bindGroup);
 
         gore::Transform* transform = gameObject->GetTransform();
         transform->SetLocalPosition(gore::Vector3::Right * 20.0f);
