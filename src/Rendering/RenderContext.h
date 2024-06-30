@@ -14,11 +14,14 @@
 #include "Buffer.h"
 #include "Sampler.h"
 #include "BindGroup.h"
+#include "PipelineLayout.h"
 
 #include "GraphicsPipelineDesc.h"
 #include "Pipeline.h"
 #include "RenderPass.h"
 #include "Pool.h"
+
+#include <vector>
 
 namespace gore::gfx
 {
@@ -94,6 +97,7 @@ public:
     const GraphicsPipeline& GetGraphicsPipeline(GraphicsPipelineHandle handle);
 
     BindLayout GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo);
+    PipelineLayout GetOrCreatePipelineLayout(const std::vector<BindLayout>& createInfo);
 
     void clear();
 

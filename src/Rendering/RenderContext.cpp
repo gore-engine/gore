@@ -730,4 +730,37 @@ void RenderContext::PrepareRendering()
 {
     CreateDescriptorPools();
 }
+
+PipelineLayout RenderContext::GetOrCreatePipelineLayout(const std::vector<BindLayout>& createInfo)
+{
+    std::size_t hash{0u};
+    utils::hash_combine(hash, createInfo);
+
+    auto it = m_ResourceCache.pipelineLayouts.find(hash);
+    if (it != m_ResourceCache.pipelineLayouts.end())
+    {
+        return it->second;
+    }
+
+    std::vector<vk::DescriptorSetLayout> layouts;
+    layouts.reserve(createInfo.size());
+    for (const auto& layout : createInfo)
+    {
+        layouts.push_back(layout.layout);
+    }
+
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfo(
+        {},
+        static_cast<uint32_t>(layouts.size()),
+        layouts.data(),
+        0,
+        nullptr);
+
+    PipelineLayout pipelineLayout;
+    pipelineLayout.layout = VULKAN_DEVICE.createPipelineLayout(pipelineLayoutInfo);
+
+    m_ResourceCache.pipelineLayouts[hash] = pipelineLayout;
+
+    return pipelineLayout;
+}
 } // namespace gore::gfx

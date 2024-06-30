@@ -268,7 +268,7 @@ struct GraphicsPipelineDesc final
 
     std::vector<VertexBufferBinding> vertexBufferBindings;
 
-    std::vector<BindLayout> bindLayouts;
+    std::vector<BindLayout> bindLayouts = {};
 
     InputAssemblyState assemblyState;
 
@@ -280,7 +280,6 @@ struct GraphicsPipelineDesc final
     RasterizationState rasterizeState   = {};
     BlendState blendState               = {};
 
-    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     VkRenderPass renderPass         = VK_NULL_HANDLE;
     uint32_t subpassIndex           = 0;
 

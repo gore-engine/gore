@@ -63,4 +63,15 @@ struct hash<BindLayoutCreateInfo>
     }
 };
 
+template <>
+struct hash<BindLayout>
+{
+    size_t operator()(BindLayout const& bindings) const
+    {
+        size_t result = 0;
+        utils::hash_combine(result, bindings.layout);
+        return result;
+    }
+};
+
 } // namespace std
