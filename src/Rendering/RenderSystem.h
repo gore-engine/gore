@@ -84,11 +84,6 @@ private:
     GraphicsPipelineHandle m_TrianglePipelineHandle;
     GraphicsPipelineHandle m_QuadPipelineHandle;
 
-    // Pipeline
-    vk::raii::PipelineLayout m_PipelineLayout;
-    vk::raii::PipelineLayout m_BlankPipelineLayout;
-    vk::PipelineLayout m_UVQuadPipelineLayout;
-
     // Queue
     vk::raii::Queue m_GraphicsQueue;
     uint32_t m_GraphicsQueueFamilyIndex;

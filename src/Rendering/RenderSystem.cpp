@@ -42,10 +42,6 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_Device(),
     // Surface & Swapchain
     m_Swapchain(),
-    // Pipeline
-    m_BlankPipelineLayout(nullptr),
-    m_PipelineLayout(nullptr),
-    m_UVQuadPipelineLayout(VK_NULL_HANDLE),
     // Queue
     m_GraphicsQueue(nullptr),
     m_GraphicsQueueFamilyIndex(0),
@@ -116,11 +112,6 @@ void RenderSystem::Initialize()
 
     InitImgui();
 }
-
-struct PushConstant
-{
-    Matrix4x4 m;
-};
 
 void RenderSystem::Update()
 {
@@ -201,11 +192,13 @@ void RenderSystem::Update()
     // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
     // commandBuffer.draw(3, 1, 0, 0);
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_QuadPipelineHandle).pipeline);
+    auto& quadPipeline = m_RenderContext->GetGraphicsPipeline(m_QuadPipelineHandle);
+
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, quadPipeline.pipeline);
 
     vk::DescriptorSet descriptor = m_RenderContext->GetBindGroup(m_UVQuadBindGroup).set;
 
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_UVQuadPipelineLayout, 0, { descriptor }, {});
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, quadPipeline.layout, 0, { descriptor }, {});
     commandBuffer.draw(6, 1, 0, 0);
 
     auto& globalConstantBuffer = m_RenderContext->GetBuffer(m_GlobalConstantBuffers[currentSwapchainImageIndex]);
@@ -216,26 +209,20 @@ void RenderSystem::Update()
     globalConstantBufferData.vpMatrix = camera->GetViewProjectionMatrix();
     vmaUnmapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vmaAllocation);
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_UnLitPipelineHandle).pipeline);
+    auto& unlitPipeline = m_RenderContext->GetGraphicsPipeline(m_UnLitPipelineHandle);
 
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_PipelineLayout, 0, {*m_GlobalDescriptorSets[currentSwapchainImageIndex]}, {});
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, unlitPipeline.pipeline);
+
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, unlitPipeline.layout, 0, {*m_GlobalDescriptorSets[currentSwapchainImageIndex]}, {});
 
     for (auto& gameObject : Scene::GetActiveScene()->GetGameObjects())
     {
         if (gameObject == camera->GetGameObject())
             continue;
 
-        PushConstant pushConstant
-        {
-            .m = gameObject->GetTransform()->GetLocalToWorldMatrix()
-        };
-
         MeshRenderer* meshRenderer = gameObject->GetComponent<MeshRenderer>();
         if (meshRenderer == nullptr)
             continue;
-        
-        std::array<PushConstant, 1> pushConstantData = {pushConstant};
-        commandBuffer.pushConstants<PushConstant>(*m_PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, pushConstantData);
 
         auto& vertexBuffer = m_RenderContext->GetBuffer(meshRenderer->GetVertexBuffer());
         commandBuffer.bindVertexBuffers(0, {vertexBuffer.vkBuffer}, {0});
@@ -560,54 +547,41 @@ void RenderSystem::CreatePipeline()
     std::vector<char> quadVertBytecode = LoadShaderBytecode("sample/quad", ShaderStage::Vertex, "vs");
     std::vector<char> quadFragBytecode = LoadShaderBytecode("sample/quad", ShaderStage::Fragment, "ps");
 
-    // TODO: this is temporary now!
-    vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstant));
-    std::vector<vk::PushConstantRange> pushConstantRanges = {pushConstantRange};
-
-    // TODO: change this when we have a working descriptor management system
-    vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, *m_GlobalDescriptorSetLayout, pushConstantRanges);
-
-    m_PipelineLayout = m_Device.Get().createPipelineLayout(pipelineLayoutInfo);
-    m_BlankPipelineLayout = m_Device.Get().createPipelineLayout({});
-
-    vk::PipelineLayoutCreateInfo uvQuadPipelineLayoutInfo({}, m_UVQuadBindLayout.layout);
-    m_UVQuadPipelineLayout = (*m_Device.Get()).createPipelineLayout(uvQuadPipelineLayoutInfo);
-
-    m_UnLitPipelineHandle = m_RenderContext->CreateGraphicsPipeline(
-        GraphicsPipelineDesc
-        {
-            .debugName = "UnLit Pipeline",
-            .VS
-            {
-                .byteCode = reinterpret_cast<uint8_t*>(cubeVertBytecode.data()),
-                .byteSize = static_cast<uint32_t>(cubeVertBytecode.size()), 
-                .entryFunc = "vs"
-            },
-            .PS
-            {
-                .byteCode = reinterpret_cast<uint8_t*>(cubeFragBytecode.data()), 
-                .byteSize = static_cast<uint32_t>(cubeFragBytecode.size()), 
-                .entryFunc = "ps"
-            },
-            .colorFormats = { GraphicsFormat::BGRA8_SRGB },
-            .depthFormat = GraphicsFormat::D32_FLOAT,
-            .stencilFormat = GraphicsFormat::Undefined,
-            .vertexBufferBindings
-            {
-                {
-                    .byteStride = sizeof(Vector3) + sizeof(Vector2) + sizeof(Vector3), 
-                    .attributes = 
-                    {
-                        { .byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT },
-                        { .byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT },
-                        { .byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT }
-                    }
-                }
-            },
-            .pipelineLayout { *m_PipelineLayout },
-            .subpassIndex = 0
-        }
-    );
+    // m_UnLitPipelineHandle = m_RenderContext->CreateGraphicsPipeline(
+    //     GraphicsPipelineDesc
+    //     {
+    //         .debugName = "UnLit Pipeline",
+    //         .VS
+    //         {
+    //             .byteCode = reinterpret_cast<uint8_t*>(cubeVertBytecode.data()),
+    //             .byteSize = static_cast<uint32_t>(cubeVertBytecode.size()), 
+    //             .entryFunc = "vs"
+    //         },
+    //         .PS
+    //         {
+    //             .byteCode = reinterpret_cast<uint8_t*>(cubeFragBytecode.data()), 
+    //             .byteSize = static_cast<uint32_t>(cubeFragBytecode.size()), 
+    //             .entryFunc = "ps"
+    //         },
+    //         .colorFormats = { GraphicsFormat::BGRA8_SRGB },
+    //         .depthFormat = GraphicsFormat::D32_FLOAT,
+    //         .stencilFormat = GraphicsFormat::Undefined,
+    //         .vertexBufferBindings
+    //         {
+    //             {
+    //                 .byteStride = sizeof(Vector3) + sizeof(Vector2) + sizeof(Vector3), 
+    //                 .attributes = 
+    //                 {
+    //                     { .byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT },
+    //                     { .byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT },
+    //                     { .byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT }
+    //                 }
+    //             }
+    //         },
+    //         .bindLayouts {}
+    //         .subpassIndex = 0
+    //     }
+    // );
 
     m_TrianglePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
         GraphicsPipelineDesc
@@ -628,7 +602,7 @@ void RenderSystem::CreatePipeline()
             .colorFormats = {GraphicsFormat::BGRA8_SRGB},
             .depthFormat = GraphicsFormat::D32_FLOAT,
             .stencilFormat = GraphicsFormat::Undefined,
-            .pipelineLayout { *m_BlankPipelineLayout },
+            .bindLayouts {},
             .subpassIndex = 0
         }
     );
@@ -652,14 +626,8 @@ void RenderSystem::CreatePipeline()
             .colorFormats = {GraphicsFormat::BGRA8_SRGB},
             .depthFormat = GraphicsFormat::D32_FLOAT,
             .stencilFormat = GraphicsFormat::Undefined,
-            .pipelineLayout { m_UVQuadPipelineLayout },
+            .bindLayouts { m_UVQuadBindLayout },
             .subpassIndex = 0
-        }
-    );
-
-    m_RenderDeletionQueue.PushFunction(
-        [&](){
-            (*m_Device.Get()).destroyPipelineLayout(m_UVQuadPipelineLayout);
         }
     );
 }

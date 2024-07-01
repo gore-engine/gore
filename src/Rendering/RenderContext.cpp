@@ -291,6 +291,8 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
         {},
         dynamicStates};
 
+    vk::PipelineLayout pipelineLayout = GetOrCreatePipelineLayout(desc.bindLayouts).layout;
+
     vk::GraphicsPipelineCreateInfo createInfo;
     createInfo.stageCount          = 2;
     createInfo.pStages             = shaderStages.data();
@@ -303,7 +305,7 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
     createInfo.pColorBlendState    = &colorBlendState;
     createInfo.pDynamicState       = &dynamicState;
 
-    createInfo.layout     = desc.pipelineLayout;
+    createInfo.layout     = pipelineLayout;
     createInfo.renderPass = desc.renderPass;
     createInfo.subpass    = desc.subpassIndex;
 
@@ -325,11 +327,11 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
         createInfo.pNext = &rfInfo;
     }
 
-    GraphicsPipeline graphicsPipeline(std::move(m_DevicePtr->Get().createGraphicsPipeline(nullptr, createInfo)));
+    GraphicsPipeline graphicsPipeline(std::move(VULKAN_DEVICE.createGraphicsPipeline(nullptr, createInfo).value));
     graphicsPipeline.renderPass = desc.renderPass;
-    graphicsPipeline.layout     = desc.pipelineLayout;
+    graphicsPipeline.layout     = pipelineLayout;
 
-    m_DevicePtr->SetName(graphicsPipeline.pipeline, desc.debugName);
+    // m_DevicePtr->SetName(graphicsPipeline.pipeline, desc.debugName);
 
     return m_GraphicsPipelinePool.create(
         std::move(desc),
