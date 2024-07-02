@@ -64,9 +64,9 @@ struct hash<gfx::BindLayoutCreateInfo>
 };
 
 template <>
-struct hash<BindLayout>
+struct hash<gfx::BindLayout>
 {
-    size_t operator()(BindLayout const& bindings) const
+    size_t operator()(gfx::BindLayout const& bindings) const
     {
         size_t result = 0;
         utils::hash_combine(result, bindings.layout);
