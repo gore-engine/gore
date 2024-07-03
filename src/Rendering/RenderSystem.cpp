@@ -36,6 +36,7 @@ static RenderSystem* g_RenderSystem = nullptr;
 
 RenderSystem::RenderSystem(gore::App* app) :
     System(app),
+    m_GraphicsCaps(),
     // Instance
     m_Instance(app),
     // Device
@@ -90,6 +91,8 @@ void RenderSystem::Initialize()
 
     m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), 3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
+
+    InitVulkanGraphicsCaps(m_GraphicsCaps, *m_Instance.Get(), *m_Device.GetPhysicalDevice().Get());
 
     m_RenderContext = std::make_unique<RenderContext>(&m_Device);
     m_RenderContext->PrepareRendering();

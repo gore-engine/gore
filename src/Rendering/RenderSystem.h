@@ -7,6 +7,7 @@
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 
+#include "GraphicsCaps.h"
 #include "RenderContext.h"
 
 #include "imgui.h"
@@ -117,6 +118,8 @@ private:
     vk::raii::ImageView m_DepthImageView;
 
     DeletionQueue m_RenderDeletionQueue;
+
+    GraphicsCaps m_GraphicsCaps;
 
 private:
     void UploadPerframeGlobalConstantBuffer(uint32_t imageIndex);
