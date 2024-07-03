@@ -84,7 +84,6 @@ BindLayout RenderContext::GetOrCreateBindLayout(const BindLayoutCreateInfo& crea
 void RenderContext::clear()
 {
     m_ShaderModulePool.clear();
-    m_GraphicsPipelinePool.clear();
 
     auto& buffers = m_BufferPool.objects;
     for (auto& buffer : buffers)
@@ -109,6 +108,13 @@ void RenderContext::clear()
     m_SamplerPool.clear();
 
     ClearDescriptorPools();
+
+    auto& pipelines = m_GraphicsPipelinePool.objects;
+    for (auto& pipeline : pipelines)
+    {
+        VULKAN_DEVICE.destroyPipeline(pipeline.pipeline);
+    }
+    m_GraphicsPipelinePool.clear();
 
     m_CommandPool.clear();
 
