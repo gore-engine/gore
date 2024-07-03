@@ -189,8 +189,8 @@ void RenderSystem::Update()
     vk::Rect2D scissor({0, 0}, surfaceExtent);
     commandBuffer.setScissor(0, {scissor});
 
-    // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
-    // commandBuffer.draw(3, 1, 0, 0);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
+    commandBuffer.draw(3, 1, 0, 0);
 
     auto& quadPipeline = m_RenderContext->GetGraphicsPipeline(m_QuadPipelineHandle);
 
@@ -201,41 +201,41 @@ void RenderSystem::Update()
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, quadPipeline.layout, 0, { descriptor }, {});
     commandBuffer.draw(6, 1, 0, 0);
 
-    auto& globalConstantBuffer = m_RenderContext->GetBuffer(m_GlobalConstantBuffers[currentSwapchainImageIndex]);
+    // auto& globalConstantBuffer = m_RenderContext->GetBuffer(m_GlobalConstantBuffers[currentSwapchainImageIndex]);
 
-    void* mappedData;
-    vmaMapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vmaAllocation, &mappedData);
-    auto& globalConstantBufferData = *reinterpret_cast<GlobalConstantBuffer*>(mappedData);
-    globalConstantBufferData.vpMatrix = camera->GetViewProjectionMatrix();
-    vmaUnmapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vmaAllocation);
+    // void* mappedData;
+    // vmaMapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vmaAllocation, &mappedData);
+    // auto& globalConstantBufferData = *reinterpret_cast<GlobalConstantBuffer*>(mappedData);
+    // globalConstantBufferData.vpMatrix = camera->GetViewProjectionMatrix();
+    // vmaUnmapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vmaAllocation);
 
-    auto& unlitPipeline = m_RenderContext->GetGraphicsPipeline(m_UnLitPipelineHandle);
+    // auto& unlitPipeline = m_RenderContext->GetGraphicsPipeline(m_UnLitPipelineHandle);
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, unlitPipeline.pipeline);
+    // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, unlitPipeline.pipeline);
 
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, unlitPipeline.layout, 0, {*m_GlobalDescriptorSets[currentSwapchainImageIndex]}, {});
+    // commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, unlitPipeline.layout, 0, {*m_GlobalDescriptorSets[currentSwapchainImageIndex]}, {});
 
-    for (auto& gameObject : Scene::GetActiveScene()->GetGameObjects())
-    {
-        if (gameObject == camera->GetGameObject())
-            continue;
+    // for (auto& gameObject : Scene::GetActiveScene()->GetGameObjects())
+    // {
+    //     if (gameObject == camera->GetGameObject())
+    //         continue;
 
-        MeshRenderer* meshRenderer = gameObject->GetComponent<MeshRenderer>();
-        if (meshRenderer == nullptr)
-            continue;
+    //     MeshRenderer* meshRenderer = gameObject->GetComponent<MeshRenderer>();
+    //     if (meshRenderer == nullptr)
+    //         continue;
 
-        auto& vertexBuffer = m_RenderContext->GetBuffer(meshRenderer->GetVertexBuffer());
-        commandBuffer.bindVertexBuffers(0, {vertexBuffer.vkBuffer}, {0});
+    //     auto& vertexBuffer = m_RenderContext->GetBuffer(meshRenderer->GetVertexBuffer());
+    //     commandBuffer.bindVertexBuffers(0, {vertexBuffer.vkBuffer}, {0});
 
-        IndexType indexType = meshRenderer->GetIndexType();
-        if (indexType != IndexType::None)
-        {
-            auto& indexBuffer = m_RenderContext->GetBuffer(meshRenderer->GetIndexBuffer());
-            commandBuffer.bindIndexBuffer(indexBuffer.vkBuffer, 0, VulkanHelper::GetVkIndexType(indexType));
-        }
+    //     IndexType indexType = meshRenderer->GetIndexType();
+    //     if (indexType != IndexType::None)
+    //     {
+    //         auto& indexBuffer = m_RenderContext->GetBuffer(meshRenderer->GetIndexBuffer());
+    //         commandBuffer.bindIndexBuffer(indexBuffer.vkBuffer, 0, VulkanHelper::GetVkIndexType(indexType));
+    //     }
 
-        commandBuffer.drawIndexed(meshRenderer->GetIndexCount(), 1, 0, 0, 0);
-    }
+    //     commandBuffer.drawIndexed(meshRenderer->GetIndexCount(), 1, 0, 0, 0);
+    // }
 
     commandBuffer.endRenderingKHR();
 
