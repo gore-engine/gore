@@ -522,6 +522,41 @@ void RenderSystem:: CreateUVQuadDescriptorSets()
     });
 }
 
+struct PerDrawData
+{
+    Matrix4x4 modelMatrix;
+};
+
+void RenderSystem::CreateDynamicUniformBuffer()
+{
+    std::vector<Binding> bindings {
+        {0, BindType::DynamicUniformBuffer, 1, ShaderStage::Vertex}
+    };
+
+    BindLayoutCreateInfo bindLayoutCreateInfo = 
+    {
+        .name = "Dynamic Uniform Buffer Layout",
+        .bindings = bindings
+    };
+
+    m_DynamicBindingLayout = m_RenderContext->GetOrCreateBindLayout(bindLayoutCreateInfo);
+
+    const int instanceCount = 4;
+
+    size_t bufferSize = m_GraphicsCaps.minUniformBufferOffsetAlignment * instanceCount;
+
+    m_DynamicUniformBuffer = m_RenderContext->CreateBuffer(
+        {
+            .debugName = "Dynamic Uniform Buffer",
+            .byteSize = sizeof(PerDrawData) * 4,
+            .usage = BufferUsage::Uniform,
+            .memUsage = MemoryUsage::GPU
+        }
+    );
+
+
+}
+
 static std::vector<char> LoadShaderBytecode(const std::string& name, const ShaderStage& stage, const std::string& entryPoint)
 {
     static const std::filesystem::path kShaderSourceFolder = FileSystem::GetResourceFolder() / "Shaders";

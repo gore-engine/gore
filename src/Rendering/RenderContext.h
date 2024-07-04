@@ -14,6 +14,7 @@
 #include "Buffer.h"
 #include "Sampler.h"
 #include "BindGroup.h"
+#include "DynamicBuffer.h"
 #include "PipelineLayout.h"
 
 #include "GraphicsPipelineDesc.h"
@@ -88,6 +89,11 @@ public:
     const BindGroup& GetBindGroup(BindGroupHandle handle);
     const BindGroupDesc& GetBindGroupDesc(BindGroupHandle handle);
 
+    DynamicBufferHandle CreateDynamicBuffer(DynamicBufferDesc&& desc);
+    const DynamicBufferDesc& GetDynamicBufferDesc(DynamicBufferHandle handle);
+    const DynamicBuffer& GetDynamicBuffer(DynamicBufferHandle handle);
+    void DestroyDynamicBuffer(DynamicBufferHandle handle);
+
     ShaderModuleHandle createShaderModule(ShaderModuleDesc&& desc);
     const ShaderModuleDesc& getShaderModuleDesc(ShaderModuleHandle handle);
     const ShaderModule& getShaderModule(ShaderModuleHandle handle);
@@ -129,6 +135,7 @@ private:
     using GraphicsPipelinePool = Pool<GraphicsPipelineDesc, GraphicsPipeline>;
     using SamplerPool          = Pool<SamplerDesc, Sampler>;
     using BindGroupPool        = Pool<BindGroupDesc, BindGroup>;
+    using DynamicBufferPool    = Pool<DynamicBufferDesc, DynamicBuffer>;
 
     ShaderModulePool m_ShaderModulePool;
     BufferPool m_BufferPool;
@@ -136,6 +143,7 @@ private:
     GraphicsPipelinePool m_GraphicsPipelinePool;
     SamplerPool m_SamplerPool;
     BindGroupPool m_BindGroupPool;
+    DynamicBufferPool m_DynamicBufferPool;
 
     vk::DescriptorPool m_DescriptorPool[(uint32_t)UpdateFrequency::Count];
 

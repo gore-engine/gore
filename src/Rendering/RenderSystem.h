@@ -105,6 +105,9 @@ private:
     BindLayout m_UVQuadBindLayout;
     BindGroupHandle m_UVQuadBindGroup;
 
+    BufferHandle m_DynamicUniformBuffer;
+    BindLayout m_DynamicBindingLayout;
+
     TextureHandle m_UVCheckTextureHandle;
     SamplerHandle m_UVCheckSamplerHandle;
 
@@ -131,6 +134,7 @@ private:
     void CreateDepthBuffer();
     void CreateGlobalDescriptorSets();
     void CreateUVQuadDescriptorSets();
+    void CreateDynamicUniformBuffer();
     void CreatePipeline();
     void CreateTextureObjects();
     void GetQueues();

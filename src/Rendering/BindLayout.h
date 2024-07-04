@@ -12,6 +12,7 @@ namespace gore ::gfx
 enum class BindType : uint8_t
 {
     UniformBuffer,
+    DynamicUniformBuffer,
     StorageBuffer,
     CombinedSampledImage,
     SampledImage,
