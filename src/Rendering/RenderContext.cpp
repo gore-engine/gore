@@ -181,6 +181,7 @@ void RenderContext::CreateDescriptorPools()
         {       vk::DescriptorType::eStorageBuffer, 1000},
         {        vk::DescriptorType::eStorageImage, 1000},
         {             vk::DescriptorType::eSampler, 1000},
+        {vk::DescriptorType::eUniformBufferDynamic, 100},
     };
 
     vk::DescriptorPoolCreateInfo poolCreateInfo(
