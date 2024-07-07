@@ -16,7 +16,9 @@ struct DynamicBufferDesc
 
 struct DynamicBuffer
 {
-    vk::DescriptorSet set;
+    vk::DescriptorSet set          = {};
+    vk::DescriptorSetLayout layout = {};
+    uint32_t offset                = 0;
 };
 
 using DynamicBufferHandle = Handle<DynamicBuffer>;

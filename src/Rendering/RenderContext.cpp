@@ -9,7 +9,7 @@
 
 #include "Utilities/GLTFLoader.h"
 
-#define VULKAN_DEVICE (*m_DevicePtr->Get())
+#define VULKAN_DEVICE      (*m_DevicePtr->Get())
 #define USE_STAGING_BUFFER 1
 
 namespace gore::gfx
@@ -36,7 +36,7 @@ RenderContext::~RenderContext()
 void RenderContext::LoadMeshToMeshRenderer(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex, ShaderChannel channel)
 {
     static const std::filesystem::path kGLTFFolder = FileSystem::GetResourceFolder() / "GLTF";
-    auto gltfPath = kGLTFFolder / name;
+    auto gltfPath                                  = kGLTFFolder / name;
     GLTFLoader gltfLoader(*this);
 
     bool ret = gltfLoader.LoadMesh(meshRenderer, gltfPath.generic_string(), meshIndex, channel);
@@ -92,7 +92,7 @@ void RenderContext::clear()
     }
     m_BufferPool.clear();
 
-    auto& textures = m_TexturePool.objects;
+    auto& textures     = m_TexturePool.objects;
     auto& textureDescs = m_TexturePool.objectDesc;
     for (int i = 0; i < textures.size(); i++)
     {
@@ -352,7 +352,7 @@ const GraphicsPipeline& RenderContext::GetGraphicsPipeline(GraphicsPipelineHandl
 TextureHandle RenderContext::CreateTextureHandle(const std::string& name)
 {
     static const std::filesystem::path kTextureFolder = FileSystem::GetResourceFolder() / "Textures";
-    auto texturePath = kTextureFolder / name;
+    auto texturePath                                  = kTextureFolder / name;
 
     // TODO: change to use std::vector?
 
@@ -365,13 +365,11 @@ TextureHandle RenderContext::CreateTextureHandle(const std::string& name)
         return TextureHandle();
     }
 
-    TextureHandle handle = CreateTexture({
-        .debugName = name.c_str(),
-        .width = static_cast<uint32_t>(width),
-        .height = static_cast<uint32_t>(height),
-        .data = pixels,
-        .dataSize = static_cast<uint32_t>(width * height * 4)
-    });
+    TextureHandle handle = CreateTexture({.debugName = name.c_str(),
+                                          .width     = static_cast<uint32_t>(width),
+                                          .height    = static_cast<uint32_t>(height),
+                                          .data      = pixels,
+                                          .dataSize  = static_cast<uint32_t>(width * height * 4)});
 
     stbi_image_free(pixels);
 
@@ -458,7 +456,7 @@ void RenderContext::DestroyTexture(TextureHandle handle)
     auto& texture     = m_TexturePool.getObject(handle);
 
     DestroyTextureObject(texture, textureDesc);
-    
+
     m_TexturePool.destroy(handle);
 }
 
@@ -724,6 +722,17 @@ BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
         BindGroup{descriptorSet});
 }
 
+void RenderContext::DestroyBindGroup(BindGroupHandle handle)
+{
+    auto bindGroupDesc = m_BindGroupPool.getObjectDesc(handle);
+    auto bindGroup = m_BindGroupPool.getObject(handle);
+
+    vk::DescriptorPool pool = m_DescriptorPool[(uint32_t)bindGroupDesc.updateFrequency];
+    VULKAN_DEVICE.freeDescriptorSets(pool, bindGroup.set);
+
+    m_BindGroupPool.destroy(handle);
+}
+
 const BindGroup& RenderContext::GetBindGroup(BindGroupHandle handle)
 {
     return m_BindGroupPool.getObject(handle);
@@ -770,5 +779,78 @@ PipelineLayout RenderContext::GetOrCreatePipelineLayout(const std::vector<BindLa
     m_ResourceCache.pipelineLayouts[hash] = pipelineLayout;
 
     return pipelineLayout;
+}
+DynamicBufferHandle RenderContext::CreateDynamicBuffer(DynamicBufferDesc&& desc)
+{
+    std::vector<Binding> bindings = {
+        {0, BindType::DynamicUniformBuffer, 1, ShaderStage::Vertex},
+    };
+
+    BindLayoutCreateInfo bindLayoutCreateInfo = {
+        .name     = desc.debugName,
+        .bindings = bindings,
+    };
+
+    BindLayout bindLayout = GetOrCreateBindLayout(bindLayoutCreateInfo);
+
+    vk::DescriptorSetLayout setLayout = bindLayout.layout;
+
+    vk::DescriptorPool pool = m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw];
+
+    vk::DescriptorSetAllocateInfo allocInfo(
+        pool,
+        1,
+        &setLayout);
+
+    vk::DescriptorSet descriptorSet = VULKAN_DEVICE.allocateDescriptorSets(allocInfo)[0];
+
+    std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+    writeDescriptorSets.reserve(1);
+
+    const BufferDesc& bufferDesc = GetBufferDesc(desc.buffer);
+    const Buffer& bufferInfo     = GetBuffer(desc.buffer);
+
+    vk::DescriptorBufferInfo bufferInfoDesc = {
+        bufferInfo.vkBuffer,
+        0,
+        bufferDesc.byteSize};
+
+    vk::WriteDescriptorSet writeDescriptorSet(
+        descriptorSet,
+        0,
+        0,
+        1,
+        vk::DescriptorType::eUniformBufferDynamic,
+        nullptr,
+        &bufferInfoDesc,
+        nullptr);
+
+    writeDescriptorSets.push_back(writeDescriptorSet);
+
+    VULKAN_DEVICE.updateDescriptorSets(writeDescriptorSets, {});
+
+    return m_DynamicBufferPool.create(
+        std::move(desc),
+        DynamicBuffer{descriptorSet, setLayout, desc.offset});
+}
+
+const DynamicBufferDesc& RenderContext::GetDynamicBufferDesc(DynamicBufferHandle handle)
+{
+    return m_DynamicBufferPool.getObjectDesc(handle);
+}
+
+const DynamicBuffer& RenderContext::GetDynamicBuffer(DynamicBufferHandle handle)
+{
+    return m_DynamicBufferPool.getObject(handle);
+}
+
+void RenderContext::DestroyDynamicBuffer(DynamicBufferHandle handle)
+{
+    auto dynamicBuffer = m_DynamicBufferPool.getObject(handle);
+
+    vk::DescriptorPool pool = m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw];
+    VULKAN_DEVICE.freeDescriptorSets(pool, dynamicBuffer.set);
+
+    m_DynamicBufferPool.destroy(handle);
 }
 } // namespace gore::gfx
