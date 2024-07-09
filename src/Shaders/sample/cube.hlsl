@@ -1,16 +1,18 @@
+#include "../ShaderLibrary/Core/Common.hlsl"
 #include "../ShaderLibrary/GlobalConstantBuffer.hlsl"
+#include "../ShaderLibrary/Utils/Cube.hlsl"
 
 struct Attributes
 {
-    float3 positionOS : POSITION;
+    uint vertexID : SV_VertexID;
 };
 
-struct PushConstant
+struct PerDrawData
 {
     float4x4 m;
 };
 
-[[vk::push_constant]] PushConstant mvpPushConst;
+DESCRIPTOR_SET_BINDING(0, 3) ConstantBuffer<PerDrawData> perDrawData;
 
 struct VertOut
 {
@@ -21,8 +23,8 @@ struct VertOut
 VertOut vs(Attributes IN)
 {
     VertOut vertOut;
-    float4 objVertPos = float4(IN.positionOS, 1);
-    vertOut.pos = mul(_VPMatrix, mul(mvpPushConst.m, objVertPos));
+    float4 objVertPos = float4(cube_pos[cube_indices[IN.vertexID]], 1);
+    vertOut.pos = mul(_VPMatrix, mul(perDrawData.m, objVertPos));
     vertOut.pos.y *= -1.0f;
     vertOut.color = objVertPos.xyz + 0.5f;
     return vertOut;
