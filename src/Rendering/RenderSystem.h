@@ -81,6 +81,7 @@ private:
     // Surface & Swapchain
     Swapchain m_Swapchain;
 
+    GraphicsPipelineHandle m_CubePipelineHandle;
     GraphicsPipelineHandle m_UnLitPipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
     GraphicsPipelineHandle m_QuadPipelineHandle;
@@ -95,18 +96,21 @@ private:
     CommandPool m_CommandPool;
 
     // Global Descriptors
-    vk::raii::DescriptorPool m_GlobalDescriptorPool;
-    vk::raii::DescriptorSetLayout m_GlobalDescriptorSetLayout;
-    std::vector<vk::raii::DescriptorSet> m_GlobalDescriptorSets;
+    // vk::raii::DescriptorPool m_GlobalDescriptorPool;
+    // vk::raii::DescriptorSetLayout m_GlobalDescriptorSetLayout;
+    // std::vector<vk::raii::DescriptorSet> m_GlobalDescriptorSets;
 
-    std::vector<BufferHandle> m_GlobalConstantBuffers;
+    BindLayout m_GlobalBindLayout;
+    BindGroupHandle m_GlobalBindGroup;
+    BufferHandle m_GlobalConstantBuffer;
 
     // Material Descriptors
     BindLayout m_UVQuadBindLayout;
     BindGroupHandle m_UVQuadBindGroup;
 
     BufferHandle m_DynamicUniformBuffer;
-    BindLayout m_DynamicBindingLayout;
+    
+    DynamicBufferHandle m_DynamicBufferHandle;
 
     TextureHandle m_UVCheckTextureHandle;
     SamplerHandle m_UVCheckSamplerHandle;

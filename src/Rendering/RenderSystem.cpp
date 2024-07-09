@@ -19,6 +19,7 @@
 
 #include "Rendering/Components/MeshRenderer.h"
 #include "Utilities/GLTFLoader.h"
+#include "Utilities/Math/MathHelpers.h"
 
 #include "Rendering/GPUData/GlobalConstantBuffer.h"
 #include "RenderContextHelper.h"
@@ -50,11 +51,6 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_PresentQueueFamilyIndex(0),
     // Command Pool & Command Buffer
     m_CommandPool(),
-    // Global Descriptors
-    m_GlobalDescriptorPool(nullptr),
-    m_GlobalDescriptorSetLayout(nullptr),
-    m_GlobalDescriptorSets(),
-    m_GlobalConstantBuffers(),
     // Synchronization
     m_RenderFinishedSemaphores(),
     m_InFlightFences(),
@@ -103,6 +99,7 @@ void RenderSystem::Initialize()
 
     CreateGlobalDescriptorSets();
     CreateUVQuadDescriptorSets();
+    CreateDynamicUniformBuffer();
     CreatePipeline();
     GetQueues();
 
@@ -192,29 +189,43 @@ void RenderSystem::Update()
     vk::Rect2D scissor({0, 0}, surfaceExtent);
     commandBuffer.setScissor(0, {scissor});
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
-    commandBuffer.draw(3, 1, 0, 0);
+    // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
+    // commandBuffer.draw(3, 1, 0, 0);
 
-    auto& quadPipeline = m_RenderContext->GetGraphicsPipeline(m_QuadPipelineHandle);
+    // auto& quadPipeline = m_RenderContext->GetGraphicsPipeline(m_QuadPipelineHandle);
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, quadPipeline.pipeline);
+    // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, quadPipeline.pipeline);
 
-    vk::DescriptorSet descriptor = m_RenderContext->GetBindGroup(m_UVQuadBindGroup).set;
+    // vk::DescriptorSet descriptor = m_RenderContext->GetBindGroup(m_UVQuadBindGroup).set;
 
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, quadPipeline.layout, 0, { descriptor }, {});
-    commandBuffer.draw(6, 1, 0, 0);
+    // commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, quadPipeline.layout, 0, { descriptor }, {});
+    // commandBuffer.draw(6, 1, 0, 0);
 
-    // auto& globalConstantBuffer = m_RenderContext->GetBuffer(m_GlobalConstantBuffers[currentSwapchainImageIndex]);
+    
 
-    // void* mappedData;
-    // vmaMapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vmaAllocation, &mappedData);
-    // auto& globalConstantBufferData = *reinterpret_cast<GlobalConstantBuffer*>(mappedData);
-    // globalConstantBufferData.vpMatrix = camera->GetViewProjectionMatrix();
-    // vmaUnmapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vmaAllocation);
+    auto& globalConstantBuffer = m_RenderContext->GetBuffer(m_GlobalConstantBuffer);
+
+    void* mappedData;
+    vmaMapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vmaAllocation, &mappedData);
+    auto& globalConstantBufferData = *reinterpret_cast<GlobalConstantBuffer*>(mappedData);
+    globalConstantBufferData.vpMatrix = camera->GetViewProjectionMatrix();
+    vmaUnmapMemory(m_Device.GetVmaAllocator(), globalConstantBuffer.vmaAllocation);
 
     // auto& unlitPipeline = m_RenderContext->GetGraphicsPipeline(m_UnLitPipelineHandle);
 
-    // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, unlitPipeline.pipeline);
+    uint32_t dynamicAlignment = 64;
+
+    auto& cubePipeline = m_RenderContext->GetGraphicsPipeline(m_CubePipelineHandle);
+
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, cubePipeline.pipeline);
+    auto& globalBindGroup = m_RenderContext->GetBindGroup(m_GlobalBindGroup);
+    auto& dynamicBuffer = m_RenderContext->GetDynamicBuffer(m_DynamicBufferHandle);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, cubePipeline.layout, 0, {globalBindGroup.set}, {});
+    for (int i = 0; i < 4; i++)
+    {
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, cubePipeline.layout, 3, { dynamicBuffer.set}, { i * dynamicAlignment });
+        commandBuffer.draw(36, 1, 0, 0);
+    }
 
     // commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, unlitPipeline.layout, 0, {*m_GlobalDescriptorSets[currentSwapchainImageIndex]}, {});
 
@@ -463,39 +474,34 @@ void RenderSystem::CreateDepthBuffer()
 
 void RenderSystem::CreateGlobalDescriptorSets()
 {
-    std::vector<vk::DescriptorPoolSize> poolSizes = {
-        {       vk::DescriptorType::eUniformBuffer, 10},
-        {vk::DescriptorType::eUniformBufferDynamic, 10}
+    m_GlobalConstantBuffer = m_RenderContext->CreateBuffer({
+        .debugName = "Global Constant Buffer",
+        .byteSize  = sizeof(GlobalConstantBuffer),
+        .range     = sizeof(GlobalConstantBuffer),
+        .usage     = BufferUsage::Uniform,
+        .memUsage  = MemoryUsage::CPU_TO_GPU
+    });
+
+    std::vector<Binding> bindings {
+        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex}
     };
 
-    vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo( vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 10, poolSizes);
-    m_GlobalDescriptorPool = m_Device.Get().createDescriptorPool(descriptorPoolCreateInfo);
-
-    vk::DescriptorSetLayoutBinding globalConstantBufferBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
-
-    std::vector<vk::DescriptorSetLayoutBinding> bindings = {globalConstantBufferBinding};
-
-    vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo({}, {bindings});
-    m_GlobalDescriptorSetLayout = m_Device.Get().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
-
-    m_GlobalDescriptorSets.clear();
-    m_GlobalDescriptorSets.reserve(m_Swapchain.GetImageCount());
-    for (int i = 0; i < m_Swapchain.GetImageCount(); ++i)
+    BindLayoutCreateInfo bindLayoutCreateInfo = 
     {
-        m_GlobalConstantBuffers.emplace_back(m_RenderContext->CreateBuffer({.debugName = "Global Constant Buffer",
-                                                                            .byteSize  = sizeof(GlobalConstantBuffer),
-                                                                            .usage     = BufferUsage::Uniform,
-                                                                            .memUsage  = MemoryUsage::CPU_TO_GPU}));
+        .name = "Global Descriptor Set Layout",
+        .bindings = bindings
+    };
 
-        vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(*m_GlobalDescriptorPool, *m_GlobalDescriptorSetLayout);
-        vk::raii::DescriptorSets descriptorSets(m_Device.Get(), descriptorSetAllocateInfo);
-        m_GlobalDescriptorSets.emplace_back(std::move(descriptorSets[0]));
+    m_GlobalBindLayout = m_RenderContext->GetOrCreateBindLayout(bindLayoutCreateInfo);
 
-        vk::DescriptorBufferInfo globalConstantBufferInfo(m_RenderContext->GetBuffer(m_GlobalConstantBuffers[i]).vkBuffer, 0, sizeof(GlobalConstantBuffer));
-        vk::WriteDescriptorSet globalConstantBufferWrite(*m_GlobalDescriptorSets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &globalConstantBufferInfo, nullptr);
-
-        m_Device.Get().updateDescriptorSets({globalConstantBufferWrite}, {});
-    }
+    m_GlobalBindGroup = m_RenderContext->createBindGroup({
+        .debugName = "Global BindGroup",
+        .updateFrequency = UpdateFrequency::PerFrame,
+        .textures = {},
+        .buffers = {{0, m_GlobalConstantBuffer, 0, BindType::UniformBuffer}},
+        .samplers = {},
+        .bindLayout = &m_GlobalBindLayout,
+    });
 }
 
 void RenderSystem:: CreateUVQuadDescriptorSets()
@@ -529,32 +535,34 @@ struct PerDrawData
 
 void RenderSystem::CreateDynamicUniformBuffer()
 {
-    std::vector<Binding> bindings {
-        {0, BindType::DynamicUniformBuffer, 1, ShaderStage::Vertex}
-    };
+    size_t alignmentSize = utils::AlignUp(sizeof(PerDrawData), m_GraphicsCaps.minUniformBufferOffsetAlignment);
 
-    BindLayoutCreateInfo bindLayoutCreateInfo = 
+    size_t renderCount = 4;
+    std::vector<uint8_t> dynamicUniformBufferData(alignmentSize * renderCount);
+    
+    for (size_t i = 0; i < renderCount; ++i)
     {
-        .name = "Dynamic Uniform Buffer Layout",
-        .bindings = bindings
-    };
-
-    m_DynamicBindingLayout = m_RenderContext->GetOrCreateBindLayout(bindLayoutCreateInfo);
-
-    const int instanceCount = 4;
-
-    size_t bufferSize = m_GraphicsCaps.minUniformBufferOffsetAlignment * instanceCount;
+        PerDrawData* perDrawData = reinterpret_cast<PerDrawData*>(dynamicUniformBufferData.data() + (i * alignmentSize));
+        perDrawData->modelMatrix = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
+    }
 
     m_DynamicUniformBuffer = m_RenderContext->CreateBuffer(
         {
             .debugName = "Dynamic Uniform Buffer",
-            .byteSize = sizeof(PerDrawData) * 4,
+            .byteSize = static_cast<uint32_t>(dynamicUniformBufferData.size()),
+            .range = static_cast<uint32_t>(sizeof(PerDrawData)),
             .usage = BufferUsage::Uniform,
-            .memUsage = MemoryUsage::GPU
+            .memUsage = MemoryUsage::GPU,
+            .data = dynamicUniformBufferData.data()
         }
     );
 
-
+    m_DynamicBufferHandle = m_RenderContext->CreateDynamicBuffer(
+        {
+            .debugName = "Dynamic Uniform Buffer",
+            .buffer = m_DynamicUniformBuffer,    
+        }
+    );
 }
 
 static std::vector<char> LoadShaderBytecode(const std::string& name, const ShaderStage& stage, const std::string& entryPoint)
@@ -576,14 +584,41 @@ static std::vector<char> LoadShaderBytecode(const std::string& name, const Shade
 
 void RenderSystem::CreatePipeline()
 {
-    std::vector<char> cubeVertBytecode = LoadShaderBytecode("sample/UnLit", ShaderStage::Vertex, "vs");
-    std::vector<char> cubeFragBytecode = LoadShaderBytecode("sample/UnLit", ShaderStage::Fragment, "ps");
+    std::vector<char> cubeVertBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Vertex, "vs");
+    std::vector<char> cubeFragBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Fragment, "ps");
 
-    std::vector<char> triangleVertBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Vertex, "vs");
-    std::vector<char> triangleFragBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Fragment, "ps");
+    m_CubePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
+        GraphicsPipelineDesc
+        {
+            .debugName = "Cube Pipeline",
+            .VS
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(cubeVertBytecode.data()),
+                .byteSize = static_cast<uint32_t>(cubeVertBytecode.size()), 
+                .entryFunc = "vs"
+            },
+            .PS
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(cubeFragBytecode.data()), 
+                .byteSize = static_cast<uint32_t>(cubeFragBytecode.size()), 
+                .entryFunc = "ps"
+            },
+            .colorFormats = { GraphicsFormat::BGRA8_SRGB },
+            .depthFormat = GraphicsFormat::D32_FLOAT,
+            .stencilFormat = GraphicsFormat::Undefined,
+            .bindLayouts = { m_GlobalBindLayout },
+            .dynamicBuffer = m_DynamicBufferHandle
+        }
+    );
 
-    std::vector<char> quadVertBytecode = LoadShaderBytecode("sample/quad", ShaderStage::Vertex, "vs");
-    std::vector<char> quadFragBytecode = LoadShaderBytecode("sample/quad", ShaderStage::Fragment, "ps");
+    // std::vector<char> unlitVertBytecode = LoadShaderBytecode("sample/UnLit", ShaderStage::Vertex, "vs");
+    // std::vector<char> unlitFragBytecode = LoadShaderBytecode("sample/UnLit", ShaderStage::Fragment, "ps");
+
+    // std::vector<char> triangleVertBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Vertex, "vs");
+    // std::vector<char> triangleFragBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Fragment, "ps");
+
+    // std::vector<char> quadVertBytecode = LoadShaderBytecode("sample/quad", ShaderStage::Vertex, "vs");
+    // std::vector<char> quadFragBytecode = LoadShaderBytecode("sample/quad", ShaderStage::Fragment, "ps");
 
     // m_UnLitPipelineHandle = m_RenderContext->CreateGraphicsPipeline(
     //     GraphicsPipelineDesc
@@ -591,14 +626,14 @@ void RenderSystem::CreatePipeline()
     //         .debugName = "UnLit Pipeline",
     //         .VS
     //         {
-    //             .byteCode = reinterpret_cast<uint8_t*>(cubeVertBytecode.data()),
-    //             .byteSize = static_cast<uint32_t>(cubeVertBytecode.size()), 
+    //             .byteCode = reinterpret_cast<uint8_t*>(unlitVertBytecode.data()),
+    //             .byteSize = static_cast<uint32_t>(unlitVertBytecode.size()), 
     //             .entryFunc = "vs"
     //         },
     //         .PS
     //         {
-    //             .byteCode = reinterpret_cast<uint8_t*>(cubeFragBytecode.data()), 
-    //             .byteSize = static_cast<uint32_t>(cubeFragBytecode.size()), 
+    //             .byteCode = reinterpret_cast<uint8_t*>(unlitFragBytecode.data()), 
+    //             .byteSize = static_cast<uint32_t>(unlitFragBytecode.size()), 
     //             .entryFunc = "ps"
     //         },
     //         .colorFormats = { GraphicsFormat::BGRA8_SRGB },
@@ -616,58 +651,58 @@ void RenderSystem::CreatePipeline()
     //                 }
     //             }
     //         },
-    //         .bindLayouts {}
+    //         .bindLayouts {},
     //         .subpassIndex = 0
     //     }
     // );
 
-    m_TrianglePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
-        GraphicsPipelineDesc
-        {
-            .debugName = "Triangle Pipeline",
-            .VS
-            {
-                .byteCode = reinterpret_cast<uint8_t*>(triangleVertBytecode.data()),
-                .byteSize = static_cast<uint32_t>(triangleVertBytecode.size()), 
-                .entryFunc = "vs"
-            },
-            .PS
-            {
-                .byteCode = reinterpret_cast<uint8_t*>(triangleFragBytecode.data()), 
-                .byteSize = static_cast<uint32_t>(triangleFragBytecode.size()), 
-                .entryFunc = "ps"
-            },            
-            .colorFormats = {GraphicsFormat::BGRA8_SRGB},
-            .depthFormat = GraphicsFormat::D32_FLOAT,
-            .stencilFormat = GraphicsFormat::Undefined,
-            .bindLayouts {},
-            .subpassIndex = 0
-        }
-    );
+    // m_TrianglePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
+    //     GraphicsPipelineDesc
+    //     {
+    //         .debugName = "Triangle Pipeline",
+    //         .VS
+    //         {
+    //             .byteCode = reinterpret_cast<uint8_t*>(triangleVertBytecode.data()),
+    //             .byteSize = static_cast<uint32_t>(triangleVertBytecode.size()), 
+    //             .entryFunc = "vs"
+    //         },
+    //         .PS
+    //         {
+    //             .byteCode = reinterpret_cast<uint8_t*>(triangleFragBytecode.data()), 
+    //             .byteSize = static_cast<uint32_t>(triangleFragBytecode.size()), 
+    //             .entryFunc = "ps"
+    //         },            
+    //         .colorFormats = {GraphicsFormat::BGRA8_SRGB},
+    //         .depthFormat = GraphicsFormat::D32_FLOAT,
+    //         .stencilFormat = GraphicsFormat::Undefined,
+    //         .bindLayouts {},
+    //         .subpassIndex = 0
+    //     }
+    // );
 
-    m_QuadPipelineHandle = m_RenderContext->CreateGraphicsPipeline(
-        GraphicsPipelineDesc
-        {
-            .debugName = "UV Quad Pipeline",
-            .VS
-            {
-                .byteCode = reinterpret_cast<uint8_t*>(quadVertBytecode.data()),
-                .byteSize = static_cast<uint32_t>(quadVertBytecode.size()), 
-                .entryFunc = "vs"
-            },
-            .PS
-            {
-                .byteCode = reinterpret_cast<uint8_t*>(quadFragBytecode.data()), 
-                .byteSize = static_cast<uint32_t>(quadFragBytecode.size()), 
-                .entryFunc = "ps"
-            },
-            .colorFormats = {GraphicsFormat::BGRA8_SRGB},
-            .depthFormat = GraphicsFormat::D32_FLOAT,
-            .stencilFormat = GraphicsFormat::Undefined,
-            .bindLayouts { m_UVQuadBindLayout },
-            .subpassIndex = 0
-        }
-    );
+    // m_QuadPipelineHandle = m_RenderContext->CreateGraphicsPipeline(
+    //     GraphicsPipelineDesc
+    //     {
+    //         .debugName = "UV Quad Pipeline",
+    //         .VS
+    //         {
+    //             .byteCode = reinterpret_cast<uint8_t*>(quadVertBytecode.data()),
+    //             .byteSize = static_cast<uint32_t>(quadVertBytecode.size()), 
+    //             .entryFunc = "vs"
+    //         },
+    //         .PS
+    //         {
+    //             .byteCode = reinterpret_cast<uint8_t*>(quadFragBytecode.data()), 
+    //             .byteSize = static_cast<uint32_t>(quadFragBytecode.size()), 
+    //             .entryFunc = "ps"
+    //         },
+    //         .colorFormats = {GraphicsFormat::BGRA8_SRGB},
+    //         .depthFormat = GraphicsFormat::D32_FLOAT,
+    //         .stencilFormat = GraphicsFormat::Undefined,
+    //         .bindLayouts { m_UVQuadBindLayout },
+    //         .subpassIndex = 0
+    //     }
+    // );
 }
 
 void RenderSystem::CreateTextureObjects()
