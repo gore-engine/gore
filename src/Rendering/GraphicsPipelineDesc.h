@@ -265,8 +265,6 @@ struct GraphicsPipelineDesc final
     GraphicsFormat depthFormat               = GraphicsFormat::Undefined;
     GraphicsFormat stencilFormat             = GraphicsFormat::Undefined;
 
-    // std::vector<BindGroupHandle> bindGroups;
-
     std::vector<VertexBufferBinding> vertexBufferBindings;
 
     std::vector<BindLayout> bindLayouts = {};

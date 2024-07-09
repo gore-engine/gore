@@ -302,7 +302,9 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
         {},
         dynamicStates};
 
-    vk::PipelineLayout pipelineLayout = GetOrCreatePipelineLayout(desc.bindLayouts).layout;
+    auto& dynamicBuffer = GetDynamicBuffer(desc.dynamicBuffer);
+
+    vk::PipelineLayout pipelineLayout = GetOrCreatePipelineLayout(desc.bindLayouts, &dynamicBuffer).layout;
 
     vk::GraphicsPipelineCreateInfo createInfo;
     createInfo.stageCount          = 2;
@@ -637,7 +639,7 @@ BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
         const BufferDesc& bufferDesc = GetBufferDesc(buffer.handle);
         const Buffer& bufferInfo     = GetBuffer(buffer.handle);
 
-        bufferInfos.push_back({GetBuffer(buffer.handle).vkBuffer, buffer.byteOffset, bufferDesc.byteSize});
+        bufferInfos.push_back({GetBuffer(buffer.handle).vkBuffer, buffer.byteOffset, bufferDesc.range});
 
         vk::WriteDescriptorSet writeDescriptorSet(
             descriptorSet,
@@ -753,7 +755,7 @@ void RenderContext::PrepareRendering()
     CreateDescriptorPools();
 }
 
-PipelineLayout RenderContext::GetOrCreatePipelineLayout(const std::vector<BindLayout>& createInfo)
+PipelineLayout RenderContext::GetOrCreatePipelineLayout(const std::vector<BindLayout>& createInfo, const DynamicBuffer* dynamicBuffer)
 {
     std::size_t hash{0u};
     utils::hash_combine(hash, createInfo);
@@ -764,16 +766,28 @@ PipelineLayout RenderContext::GetOrCreatePipelineLayout(const std::vector<BindLa
         return it->second;
     }
 
+    uint32_t layoutCount = static_cast<uint32_t>(dynamicBuffer != nullptr ? 4 : createInfo.size());
+
     std::vector<vk::DescriptorSetLayout> layouts;
-    layouts.reserve(createInfo.size());
+    layouts.reserve(layoutCount);
     for (const auto& layout : createInfo)
     {
         layouts.push_back(layout.layout);
     }
 
+    for (int i = 0; i < layoutCount - createInfo.size() - 1; i++)
+    {
+        layouts.push_back(m_EmptySetLayout);
+    }
+
+    if (dynamicBuffer != nullptr)
+    {
+        layouts.push_back(dynamicBuffer->layout);
+    }
+
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo(
         {},
-        static_cast<uint32_t>(layouts.size()),
+        layoutCount,
         layouts.data(),
         0,
         nullptr);

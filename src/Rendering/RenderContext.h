@@ -103,7 +103,7 @@ public:
     const GraphicsPipeline& GetGraphicsPipeline(GraphicsPipelineHandle handle);
 
     BindLayout GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo);
-    PipelineLayout GetOrCreatePipelineLayout(const std::vector<BindLayout>& createInfo);
+    PipelineLayout GetOrCreatePipelineLayout(const std::vector<BindLayout>& createInfo, const DynamicBuffer* dynamicBuffer = nullptr);
 
     void clear();
 
