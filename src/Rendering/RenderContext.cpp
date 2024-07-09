@@ -814,7 +814,7 @@ DynamicBufferHandle RenderContext::CreateDynamicBuffer(DynamicBufferDesc&& desc)
     vk::DescriptorBufferInfo bufferInfoDesc = {
         bufferInfo.vkBuffer,
         0,
-        bufferDesc.byteSize};
+        bufferDesc.range};
 
     vk::WriteDescriptorSet writeDescriptorSet(
         descriptorSet,

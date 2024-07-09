@@ -13,6 +13,7 @@ struct BufferDesc final
 {
     const char* debugName = "Noname VertexBufferDesc";
     uint32_t byteSize     = 0;
+    uint32_t range        = 0;
     BufferUsage usage     = BufferUsage::Vertex;
     MemoryUsage memUsage  = MemoryUsage::GPU;
     const void* data      = nullptr;
