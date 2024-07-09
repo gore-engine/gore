@@ -145,6 +145,8 @@ private:
     BindGroupPool m_BindGroupPool;
     DynamicBufferPool m_DynamicBufferPool;
 
+    vk::DescriptorSetLayout m_EmptySetLayout;
+
     vk::DescriptorPool m_DescriptorPool[(uint32_t)UpdateFrequency::Count];
 
     ResourceCache m_ResourceCache;

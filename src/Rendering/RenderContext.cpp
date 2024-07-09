@@ -200,10 +200,14 @@ void RenderContext::CreateDescriptorPools()
 
     poolCreateInfo.maxSets                               = 100;
     m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw] = VULKAN_DEVICE.createDescriptorPool(poolCreateInfo);
+
+    m_EmptySetLayout = VULKAN_DEVICE.createDescriptorSetLayout({});
 }
 
 void RenderContext::ClearDescriptorPools()
 {
+    VULKAN_DEVICE.destroyDescriptorSetLayout(m_EmptySetLayout);
+
     VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::None]);
     VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::PerFrame]);
     VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::PerBatch]);
