@@ -1,5 +1,4 @@
 #include "RenderContext.h"
-#include "Graphics/Device.h"
 #include "RenderContextHelper.h"
 
 #include "FileSystem/FileSystem.h"
@@ -74,7 +73,7 @@ BindLayout RenderContext::GetOrCreateBindLayout(const BindLayoutCreateInfo& crea
 
     bindLayout.layout = VULKAN_DEVICE.createDescriptorSetLayout({{}, static_cast<uint32_t>(bindings.size()), bindings.data()});
 
-    // m_DevicePtr->SetName(bindLayout.layout, createInfo.name != nullptr ? createInfo.name : "NoNameBindLayout");
+    SetObjectDebugName(bindLayout.layout, createInfo.name != nullptr ? createInfo.name : "NoName_BindLayout");
 
     m_ResourceCache.bindLayouts[hash] = bindLayout;
 
@@ -344,7 +343,7 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
     graphicsPipeline.renderPass = desc.renderPass;
     graphicsPipeline.layout     = pipelineLayout;
 
-    // m_DevicePtr->SetName(graphicsPipeline.pipeline, desc.debugName);
+    SetObjectDebugName(graphicsPipeline.pipeline, desc.debugName);
 
     return m_GraphicsPipelinePool.create(
         std::move(desc),
@@ -601,6 +600,8 @@ SamplerHandle RenderContext::CreateSampler(SamplerDesc&& desc)
 
     Sampler sampler = {.vkSampler = VULKAN_DEVICE.createSampler(samplerCreateInfo)};
 
+    SetObjectDebugName(sampler.vkSampler, desc.debugName);
+
     return m_SamplerPool.create(std::move(desc), std::move(sampler));
 }
 
@@ -628,6 +629,8 @@ BindGroupHandle RenderContext::CreateBindGroup(BindGroupDesc&& desc)
     vk::DescriptorPool pool           = m_DescriptorPool[(uint32_t)desc.updateFrequency];
 
     vk::DescriptorSet descriptorSet = VULKAN_DEVICE.allocateDescriptorSets({pool, 1, &setLayout})[0];
+    
+    SetObjectDebugName(descriptorSet, desc.debugName);
 
     std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
     writeDescriptorSets.reserve(desc.buffers.size() + desc.textures.size() + desc.samplers.size());
@@ -825,6 +828,8 @@ DynamicBufferHandle RenderContext::CreateDynamicBuffer(DynamicBufferDesc&& desc)
         &setLayout);
 
     vk::DescriptorSet descriptorSet = VULKAN_DEVICE.allocateDescriptorSets(allocInfo)[0];
+
+    SetObjectDebugName(descriptorSet, desc.debugName);
 
     std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
     writeDescriptorSets.reserve(1);

@@ -2,6 +2,8 @@
 
 #include "Prefix.h"
 
+#include "Graphics/Device.h"
+
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "GraphicsCaching/ResourceCache.h"
 
@@ -26,9 +28,6 @@
 
 namespace gore::gfx
 {
-
-class Device;
-
 ENGINE_CLASS(RenderContext) final
 {
     // TODO: actually we can copy this class??
@@ -105,9 +104,16 @@ public:
     BindLayout GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo);
     PipelineLayout GetOrCreatePipelineLayout(const std::vector<BindLayout>& createInfo, const DynamicBuffer* dynamicBuffer = nullptr);
 
+
     void Clear();
 
 private:
+    template <typename VkHPPObject>
+    void SetObjectDebugName(const VkHPPObject& object, const std::string& name)
+    {
+        m_DevicePtr->SetName(*reinterpret_cast<uint64_t const *>(&object), VkHPPObject::objectType, name);
+    }
+
     void DestroyTextureObject(const Texture& texture, const TextureDesc& desc);
     TextureHandle CreateTexture(TextureDesc&& desc);
 
