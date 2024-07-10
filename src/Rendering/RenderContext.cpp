@@ -30,7 +30,7 @@ RenderContext::RenderContext(const Device* device) :
 
 RenderContext::~RenderContext()
 {
-    clear();
+    Clear();
 }
 
 void RenderContext::LoadMeshToMeshRenderer(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex, ShaderChannel channel)
@@ -81,7 +81,7 @@ BindLayout RenderContext::GetOrCreateBindLayout(const BindLayoutCreateInfo& crea
     return bindLayout;
 }
 
-void RenderContext::clear()
+void RenderContext::Clear()
 {
     m_ShaderModulePool.clear();
 
@@ -622,7 +622,7 @@ void RenderContext::DestroySampler(SamplerHandle handle)
     m_SamplerPool.destroy(handle);
 }
 
-BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
+BindGroupHandle RenderContext::CreateBindGroup(BindGroupDesc&& desc)
 {
     vk::DescriptorSetLayout setLayout = desc.bindLayout->layout;
     vk::DescriptorPool pool           = m_DescriptorPool[(uint32_t)desc.updateFrequency];

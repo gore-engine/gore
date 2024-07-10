@@ -84,7 +84,7 @@ public:
     const Sampler& GetSampler(SamplerHandle handle);
     void DestroySampler(SamplerHandle handle);
 
-    BindGroupHandle createBindGroup(BindGroupDesc&& desc);
+    BindGroupHandle CreateBindGroup(BindGroupDesc&& desc);
     void DestroyBindGroup(BindGroupHandle handle);
     const BindGroup& GetBindGroup(BindGroupHandle handle);
     const BindGroupDesc& GetBindGroupDesc(BindGroupHandle handle);
@@ -105,7 +105,7 @@ public:
     BindLayout GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo);
     PipelineLayout GetOrCreatePipelineLayout(const std::vector<BindLayout>& createInfo, const DynamicBuffer* dynamicBuffer = nullptr);
 
-    void clear();
+    void Clear();
 
 private:
     void DestroyTextureObject(const Texture& texture, const TextureDesc& desc);

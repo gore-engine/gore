@@ -95,11 +95,6 @@ private:
     // Command Pool & Command Buffer
     CommandPool m_CommandPool;
 
-    // Global Descriptors
-    // vk::raii::DescriptorPool m_GlobalDescriptorPool;
-    // vk::raii::DescriptorSetLayout m_GlobalDescriptorSetLayout;
-    // std::vector<vk::raii::DescriptorSet> m_GlobalDescriptorSets;
-
     BindLayout m_GlobalBindLayout;
     BindGroupHandle m_GlobalBindGroup;
     BufferHandle m_GlobalConstantBuffer;

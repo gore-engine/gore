@@ -316,7 +316,7 @@ void RenderSystem::Shutdown()
     
     m_RenderDeletionQueue.Flush();
 
-    m_RenderContext->clear();
+    m_RenderContext->Clear();
 
     ShutdownImgui();
 }
@@ -493,7 +493,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
 
     m_GlobalBindLayout = m_RenderContext->GetOrCreateBindLayout(bindLayoutCreateInfo);
 
-    m_GlobalBindGroup = m_RenderContext->createBindGroup({
+    m_GlobalBindGroup = m_RenderContext->CreateBindGroup({
         .debugName = "Global BindGroup",
         .updateFrequency = UpdateFrequency::PerFrame,
         .textures = {},
@@ -517,7 +517,7 @@ void RenderSystem:: CreateUVQuadDescriptorSets()
     
     m_UVQuadBindLayout = m_RenderContext->GetOrCreateBindLayout(bindLayoutCreateInfo);
 
-    m_UVQuadBindGroup = m_RenderContext->createBindGroup({
+    m_UVQuadBindGroup = m_RenderContext->CreateBindGroup({
         .debugName = "UV Quad BindGroup",
         .updateFrequency = UpdateFrequency::PerFrame,
         .textures = { {0, m_UVCheckTextureHandle, TextureUsageBits::Sampled, 0, 0, BindType::CombinedSampledImage, m_UVCheckSamplerHandle}},
