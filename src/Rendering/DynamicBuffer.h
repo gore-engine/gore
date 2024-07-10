@@ -12,6 +12,7 @@ struct DynamicBufferDesc
     const char* debugName = "Noname DynamicBuffer";
     Handle<Buffer> buffer = {};
     uint32_t offset       = 0;
+    uint32_t range        = 0;
 };
 
 struct DynamicBuffer

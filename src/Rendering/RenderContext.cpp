@@ -639,7 +639,10 @@ BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
         const BufferDesc& bufferDesc = GetBufferDesc(buffer.handle);
         const Buffer& bufferInfo     = GetBuffer(buffer.handle);
 
-        bufferInfos.push_back({GetBuffer(buffer.handle).vkBuffer, buffer.byteOffset, bufferDesc.range});
+        bufferInfos.push_back({
+            GetBuffer(buffer.handle).vkBuffer, 
+            buffer.offset, 
+            buffer.range == 0 ? bufferDesc.byteSize : buffer.range});
 
         vk::WriteDescriptorSet writeDescriptorSet(
             descriptorSet,
@@ -831,8 +834,8 @@ DynamicBufferHandle RenderContext::CreateDynamicBuffer(DynamicBufferDesc&& desc)
 
     vk::DescriptorBufferInfo bufferInfoDesc = {
         bufferInfo.vkBuffer,
-        0,
-        bufferDesc.range};
+        desc.offset,
+        desc.range == 0? bufferDesc.byteSize : desc.range};
 
     vk::WriteDescriptorSet writeDescriptorSet(
         descriptorSet,

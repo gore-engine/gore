@@ -477,7 +477,6 @@ void RenderSystem::CreateGlobalDescriptorSets()
     m_GlobalConstantBuffer = m_RenderContext->CreateBuffer({
         .debugName = "Global Constant Buffer",
         .byteSize  = sizeof(GlobalConstantBuffer),
-        .range     = sizeof(GlobalConstantBuffer),
         .usage     = BufferUsage::Uniform,
         .memUsage  = MemoryUsage::CPU_TO_GPU
     });
@@ -498,7 +497,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
         .debugName = "Global BindGroup",
         .updateFrequency = UpdateFrequency::PerFrame,
         .textures = {},
-        .buffers = {{0, m_GlobalConstantBuffer, 0, BindType::UniformBuffer}},
+        .buffers = {{0, m_GlobalConstantBuffer, 0, sizeof(GlobalConstantBuffer), BindType::UniformBuffer}},
         .samplers = {},
         .bindLayout = &m_GlobalBindLayout,
     });
@@ -550,7 +549,6 @@ void RenderSystem::CreateDynamicUniformBuffer()
         {
             .debugName = "Dynamic Uniform Buffer",
             .byteSize = static_cast<uint32_t>(dynamicUniformBufferData.size()),
-            .range = static_cast<uint32_t>(sizeof(PerDrawData)),
             .usage = BufferUsage::Uniform,
             .memUsage = MemoryUsage::GPU,
             .data = dynamicUniformBufferData.data()
@@ -560,7 +558,9 @@ void RenderSystem::CreateDynamicUniformBuffer()
     m_DynamicBufferHandle = m_RenderContext->CreateDynamicBuffer(
         {
             .debugName = "Dynamic Uniform Buffer",
-            .buffer = m_DynamicUniformBuffer,    
+            .buffer = m_DynamicUniformBuffer,
+            .offset = 0,
+            .range = sizeof(PerDrawData)    
         }
     );
 }
