@@ -1,9 +1,13 @@
+#pragma once
 #include "Prefix.h"
 
-namespace gore
+#include "Graphics/Vulkan/VulkanIncludes.h"
+#include "Graphics/Vulkan/VulkanExtensions.h"
+
+namespace gore::gfx
 {
 struct PipelineLayout
 {
-    VkPipelineLayout layout = VK_NULL_HANDLE;
+    vk::PipelineLayout layout = VK_NULL_HANDLE;
 };
-} // namespace gore
+} // namespace gore::gfx

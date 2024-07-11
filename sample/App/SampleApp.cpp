@@ -57,7 +57,7 @@ void SampleApp::Initialize()
         gore::GameObject* gameObject = scene->NewObject();
         gameObject->SetName("cube");
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
-        renderContext.LoadMesh("cube.gltf", *meshRenderer);    
+        renderContext.LoadMeshToMeshRenderer("cube.gltf", *meshRenderer);    
 
         gore::Transform* transform = gameObject->GetTransform();
         transform->SetLocalPosition(gore::Vector3::Right * 20.0f);
@@ -67,14 +67,14 @@ void SampleApp::Initialize()
         gore::GameObject* gameObject = scene->NewObject();
         gameObject->SetName("teapot");
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
-        renderContext.LoadMesh("teapot.gltf", *meshRenderer);
+        renderContext.LoadMeshToMeshRenderer("teapot.gltf", *meshRenderer);
     }    
     
     {
         gore::GameObject* gameObject = scene->NewObject();
         gameObject->SetName("rock");
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
-        renderContext.LoadMesh("rock.gltf", *meshRenderer);
+        renderContext.LoadMeshToMeshRenderer("rock.gltf", *meshRenderer);
         gore::Transform* transform = gameObject->GetTransform();
         transform->SetLocalPosition(gore::Vector3::Left * 10.0f);
     }

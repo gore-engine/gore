@@ -39,7 +39,8 @@ struct BufferBinding final
 {
     uint32_t binding    = 0;
     BufferHandle handle = {};
-    uint32_t byteOffset = 0;
+    uint32_t offset = 0;
+    uint32_t range      = 0;
     BindType bindType   = BindType::UniformBuffer;
 };
 

@@ -2,6 +2,8 @@
 
 #include "Prefix.h"
 
+#include "Graphics/Device.h"
+
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "GraphicsCaching/ResourceCache.h"
 
@@ -14,17 +16,18 @@
 #include "Buffer.h"
 #include "Sampler.h"
 #include "BindGroup.h"
+#include "DynamicBuffer.h"
+#include "PipelineLayout.h"
 
 #include "GraphicsPipelineDesc.h"
 #include "Pipeline.h"
 #include "RenderPass.h"
 #include "Pool.h"
 
+#include <vector>
+
 namespace gore::gfx
 {
-
-class Device;
-
 ENGINE_CLASS(RenderContext) final
 {
     // TODO: actually we can copy this class??
@@ -34,7 +37,7 @@ public:
     RenderContext(const Device* device);
     ~RenderContext();
 
-    void LoadMesh(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex = 0, ShaderChannel channel = ShaderChannel::Default);
+    void LoadMeshToMeshRenderer(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex = 0, ShaderChannel channel = ShaderChannel::Default);
     void LoadMesh();
 
     // RenderPass
@@ -52,7 +55,8 @@ public:
     void DrawProcedural();
     void DrawProceduralIndirect();
 
-    TextureHandle createTexture(TextureDesc&& desc);
+    TextureHandle CreateTextureHandle(const std::string& name);
+
     void DestroyTexture(TextureHandle handle);
     const Texture& GetTexture(TextureHandle handle);
     const TextureDesc& GetTextureDesc(TextureHandle handle);
@@ -79,10 +83,15 @@ public:
     const Sampler& GetSampler(SamplerHandle handle);
     void DestroySampler(SamplerHandle handle);
 
-    BindGroupHandle createBindGroup(BindGroupDesc&& desc);
-    void destroyBindGroup(BindGroupHandle handle);
+    BindGroupHandle CreateBindGroup(BindGroupDesc&& desc);
+    void DestroyBindGroup(BindGroupHandle handle);
     const BindGroup& GetBindGroup(BindGroupHandle handle);
     const BindGroupDesc& GetBindGroupDesc(BindGroupHandle handle);
+
+    DynamicBufferHandle CreateDynamicBuffer(DynamicBufferDesc&& desc);
+    const DynamicBufferDesc& GetDynamicBufferDesc(DynamicBufferHandle handle);
+    const DynamicBuffer& GetDynamicBuffer(DynamicBufferHandle handle);
+    void DestroyDynamicBuffer(DynamicBufferHandle handle);
 
     ShaderModuleHandle createShaderModule(ShaderModuleDesc&& desc);
     const ShaderModuleDesc& getShaderModuleDesc(ShaderModuleHandle handle);
@@ -93,10 +102,21 @@ public:
     const GraphicsPipeline& GetGraphicsPipeline(GraphicsPipelineHandle handle);
 
     BindLayout GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo);
+    PipelineLayout GetOrCreatePipelineLayout(const std::vector<BindLayout>& createInfo, const DynamicBuffer* dynamicBuffer = nullptr);
 
-    void clear();
+
+    void Clear();
 
 private:
+    template <typename VkHPPObject>
+    void SetObjectDebugName(const VkHPPObject& object, const std::string& name)
+    {
+        m_DevicePtr->SetName(*reinterpret_cast<uint64_t const *>(&object), VkHPPObject::objectType, name);
+    }
+
+    void DestroyTextureObject(const Texture& texture, const TextureDesc& desc);
+    TextureHandle CreateTexture(TextureDesc&& desc);
+
     template <typename T>
     static Buffer CreateStagingBuffer(const Device& device, std::vector<T> const& data)
     {
@@ -121,6 +141,7 @@ private:
     using GraphicsPipelinePool = Pool<GraphicsPipelineDesc, GraphicsPipeline>;
     using SamplerPool          = Pool<SamplerDesc, Sampler>;
     using BindGroupPool        = Pool<BindGroupDesc, BindGroup>;
+    using DynamicBufferPool    = Pool<DynamicBufferDesc, DynamicBuffer>;
 
     ShaderModulePool m_ShaderModulePool;
     BufferPool m_BufferPool;
@@ -128,6 +149,9 @@ private:
     GraphicsPipelinePool m_GraphicsPipelinePool;
     SamplerPool m_SamplerPool;
     BindGroupPool m_BindGroupPool;
+    DynamicBufferPool m_DynamicBufferPool;
+
+    vk::DescriptorSetLayout m_EmptySetLayout;
 
     vk::DescriptorPool m_DescriptorPool[(uint32_t)UpdateFrequency::Count];
 

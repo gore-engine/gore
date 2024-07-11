@@ -5,6 +5,7 @@
 #include "BindGroup.h"
 #include "BindLayout.h"
 #include "PipelineLayout.h"
+#include "DynamicBuffer.h"
 
 #include "Math/Rect.h"
 
@@ -264,11 +265,10 @@ struct GraphicsPipelineDesc final
     GraphicsFormat depthFormat               = GraphicsFormat::Undefined;
     GraphicsFormat stencilFormat             = GraphicsFormat::Undefined;
 
-    std::vector<BindGroupHandle> bindGroups;
-
     std::vector<VertexBufferBinding> vertexBufferBindings;
 
-    std::vector<BindLayout> bindLayouts;
+    std::vector<BindLayout> bindLayouts = {};
+    DynamicBufferHandle dynamicBuffer   = {};
 
     InputAssemblyState assemblyState;
 
@@ -280,13 +280,12 @@ struct GraphicsPipelineDesc final
     RasterizationState rasterizeState   = {};
     BlendState blendState               = {};
 
-    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-    VkRenderPass renderPass         = VK_NULL_HANDLE;
-    uint32_t subpassIndex           = 0;
+    VkRenderPass renderPass = VK_NULL_HANDLE;
+    uint32_t subpassIndex   = 0;
 
     bool UseDynamicRendering() const
     {
         return depthFormat != GraphicsFormat::Undefined || stencilFormat != GraphicsFormat::Undefined || colorFormats.size() > 0;
     }
 };
-} // namespace gore
+} // namespace gore::gfx

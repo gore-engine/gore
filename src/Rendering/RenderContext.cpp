@@ -1,12 +1,14 @@
 #include "RenderContext.h"
-#include "Graphics/Device.h"
 #include "RenderContextHelper.h"
 
 #include "FileSystem/FileSystem.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #include "Utilities/GLTFLoader.h"
 
-#define VULKAN_DEVICE (*m_DevicePtr->Get())
+#define VULKAN_DEVICE      (*m_DevicePtr->Get())
 #define USE_STAGING_BUFFER 1
 
 namespace gore::gfx
@@ -27,13 +29,13 @@ RenderContext::RenderContext(const Device* device) :
 
 RenderContext::~RenderContext()
 {
-    clear();
+    Clear();
 }
 
-void RenderContext::LoadMesh(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex, ShaderChannel channel)
+void RenderContext::LoadMeshToMeshRenderer(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex, ShaderChannel channel)
 {
     static const std::filesystem::path kGLTFFolder = FileSystem::GetResourceFolder() / "GLTF";
-    auto gltfPath = kGLTFFolder / name;
+    auto gltfPath                                  = kGLTFFolder / name;
     GLTFLoader gltfLoader(*this);
 
     bool ret = gltfLoader.LoadMesh(meshRenderer, gltfPath.generic_string(), meshIndex, channel);
@@ -71,30 +73,47 @@ BindLayout RenderContext::GetOrCreateBindLayout(const BindLayoutCreateInfo& crea
 
     bindLayout.layout = VULKAN_DEVICE.createDescriptorSetLayout({{}, static_cast<uint32_t>(bindings.size()), bindings.data()});
 
-    // m_DevicePtr->SetName(bindLayout.layout, createInfo.name != nullptr ? createInfo.name : "NoNameBindLayout");
+    SetObjectDebugName(bindLayout.layout, createInfo.name != nullptr ? createInfo.name : "NoName_BindLayout");
 
     m_ResourceCache.bindLayouts[hash] = bindLayout;
 
     return bindLayout;
 }
 
-void RenderContext::clear()
+void RenderContext::Clear()
 {
     m_ShaderModulePool.clear();
-    m_GraphicsPipelinePool.clear();
 
     auto& buffers = m_BufferPool.objects;
     for (auto& buffer : buffers)
     {
         ClearVulkanBuffer(m_DevicePtr->GetVmaAllocator(), buffer.vkBuffer, buffer.vmaAllocation);
     }
-
     m_BufferPool.clear();
 
+    auto& textures     = m_TexturePool.objects;
+    auto& textureDescs = m_TexturePool.objectDesc;
+    for (int i = 0; i < textures.size(); i++)
+    {
+        DestroyTextureObject(textures[i], textureDescs[i].objDesc);
+    }
     m_TexturePool.clear();
+
+    auto& samplers = m_SamplerPool.objects;
+    for (auto& sampler : samplers)
+    {
+        VULKAN_DEVICE.destroySampler(sampler.vkSampler);
+    }
     m_SamplerPool.clear();
 
     ClearDescriptorPools();
+
+    auto& pipelines = m_GraphicsPipelinePool.objects;
+    for (auto& pipeline : pipelines)
+    {
+        VULKAN_DEVICE.destroyPipeline(pipeline.pipeline);
+    }
+    m_GraphicsPipelinePool.clear();
 
     m_CommandPool.clear();
 
@@ -161,6 +180,7 @@ void RenderContext::CreateDescriptorPools()
         {       vk::DescriptorType::eStorageBuffer, 1000},
         {        vk::DescriptorType::eStorageImage, 1000},
         {             vk::DescriptorType::eSampler, 1000},
+        {vk::DescriptorType::eUniformBufferDynamic, 100},
     };
 
     vk::DescriptorPoolCreateInfo poolCreateInfo(
@@ -179,10 +199,14 @@ void RenderContext::CreateDescriptorPools()
 
     poolCreateInfo.maxSets                               = 100;
     m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw] = VULKAN_DEVICE.createDescriptorPool(poolCreateInfo);
+
+    m_EmptySetLayout = VULKAN_DEVICE.createDescriptorSetLayout({});
 }
 
 void RenderContext::ClearDescriptorPools()
 {
+    VULKAN_DEVICE.destroyDescriptorSetLayout(m_EmptySetLayout);
+
     VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::None]);
     VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::PerFrame]);
     VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::PerBatch]);
@@ -277,6 +301,10 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
         {},
         dynamicStates};
 
+    auto& dynamicBuffer = GetDynamicBuffer(desc.dynamicBuffer);
+
+    vk::PipelineLayout pipelineLayout = GetOrCreatePipelineLayout(desc.bindLayouts, &dynamicBuffer).layout;
+
     vk::GraphicsPipelineCreateInfo createInfo;
     createInfo.stageCount          = 2;
     createInfo.pStages             = shaderStages.data();
@@ -289,7 +317,7 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
     createInfo.pColorBlendState    = &colorBlendState;
     createInfo.pDynamicState       = &dynamicState;
 
-    createInfo.layout     = desc.pipelineLayout;
+    createInfo.layout     = pipelineLayout;
     createInfo.renderPass = desc.renderPass;
     createInfo.subpass    = desc.subpassIndex;
 
@@ -311,11 +339,11 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
         createInfo.pNext = &rfInfo;
     }
 
-    GraphicsPipeline graphicsPipeline(std::move(m_DevicePtr->Get().createGraphicsPipeline(nullptr, createInfo)));
+    GraphicsPipeline graphicsPipeline(std::move(VULKAN_DEVICE.createGraphicsPipeline(nullptr, createInfo).value));
     graphicsPipeline.renderPass = desc.renderPass;
-    graphicsPipeline.layout     = desc.pipelineLayout;
+    graphicsPipeline.layout     = pipelineLayout;
 
-    m_DevicePtr->SetName(graphicsPipeline.pipeline, desc.debugName);
+    SetObjectDebugName(graphicsPipeline.pipeline, desc.debugName);
 
     return m_GraphicsPipelinePool.create(
         std::move(desc),
@@ -327,7 +355,34 @@ const GraphicsPipeline& RenderContext::GetGraphicsPipeline(GraphicsPipelineHandl
     return m_GraphicsPipelinePool.getObject(handle);
 }
 
-TextureHandle RenderContext::createTexture(TextureDesc&& desc)
+TextureHandle RenderContext::CreateTextureHandle(const std::string& name)
+{
+    static const std::filesystem::path kTextureFolder = FileSystem::GetResourceFolder() / "Textures";
+    auto texturePath                                  = kTextureFolder / name;
+
+    // TODO: change to use std::vector?
+
+    int width, height, channel;
+    stbi_uc* pixels = stbi_load(texturePath.generic_string().c_str(), &width, &height, &channel, STBI_rgb_alpha);
+
+    if (pixels == nullptr)
+    {
+        LOG_STREAM(ERROR) << "RenderSystem CreateTextureHandle: Failed to load texture: " << name << std::endl;
+        return TextureHandle();
+    }
+
+    TextureHandle handle = CreateTexture({.debugName = name.c_str(),
+                                          .width     = static_cast<uint32_t>(width),
+                                          .height    = static_cast<uint32_t>(height),
+                                          .data      = pixels,
+                                          .dataSize  = static_cast<uint32_t>(width * height * 4)});
+
+    stbi_image_free(pixels);
+
+    return handle;
+}
+
+TextureHandle RenderContext::CreateTexture(TextureDesc&& desc)
 {
     VkImageCreateInfo imageInfo = {
         .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -384,24 +439,29 @@ TextureHandle RenderContext::createTexture(TextureDesc&& desc)
     return handle;
 }
 
+void RenderContext::DestroyTextureObject(const Texture& texture, const TextureDesc& desc)
+{
+    DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
+
+    if (HasFlag(desc.usage, TextureUsageBits::Sampled))
+        VULKAN_DEVICE.destroyImageView(texture.srv);
+
+    if (HasFlag(desc.usage, TextureUsageBits::Storage))
+    {
+        for (int i = 0; i < desc.numMips; i++)
+            VULKAN_DEVICE.destroyImageView(texture.uav[i]);
+    }
+
+    if (HasFlag(desc.usage, TextureUsageBits::DepthStencil))
+        VULKAN_DEVICE.destroyImageView(texture.srvStencil);
+}
+
 void RenderContext::DestroyTexture(TextureHandle handle)
 {
     auto& textureDesc = m_TexturePool.getObjectDesc(handle);
     auto& texture     = m_TexturePool.getObject(handle);
 
-    DestroyVulkanTexture(m_DevicePtr->GetVmaAllocator(), texture.image, texture.vmaAllocation);
-
-    if (HasFlag(textureDesc.usage, TextureUsageBits::Sampled))
-        VULKAN_DEVICE.destroyImageView(texture.srv);
-
-    if (HasFlag(textureDesc.usage, TextureUsageBits::Storage))
-    {
-        for (int i = 0; i < textureDesc.numMips; i++)
-            VULKAN_DEVICE.destroyImageView(texture.uav[i]);
-    }
-
-    if (HasFlag(textureDesc.usage, TextureUsageBits::DepthStencil))
-        VULKAN_DEVICE.destroyImageView(texture.srvStencil);
+    DestroyTextureObject(texture, textureDesc);
 
     m_TexturePool.destroy(handle);
 }
@@ -540,6 +600,8 @@ SamplerHandle RenderContext::CreateSampler(SamplerDesc&& desc)
 
     Sampler sampler = {.vkSampler = VULKAN_DEVICE.createSampler(samplerCreateInfo)};
 
+    SetObjectDebugName(sampler.vkSampler, desc.debugName);
+
     return m_SamplerPool.create(std::move(desc), std::move(sampler));
 }
 
@@ -561,12 +623,14 @@ void RenderContext::DestroySampler(SamplerHandle handle)
     m_SamplerPool.destroy(handle);
 }
 
-BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
+BindGroupHandle RenderContext::CreateBindGroup(BindGroupDesc&& desc)
 {
     vk::DescriptorSetLayout setLayout = desc.bindLayout->layout;
     vk::DescriptorPool pool           = m_DescriptorPool[(uint32_t)desc.updateFrequency];
 
     vk::DescriptorSet descriptorSet = VULKAN_DEVICE.allocateDescriptorSets({pool, 1, &setLayout})[0];
+    
+    SetObjectDebugName(descriptorSet, desc.debugName);
 
     std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
     writeDescriptorSets.reserve(desc.buffers.size() + desc.textures.size() + desc.samplers.size());
@@ -578,7 +642,10 @@ BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
         const BufferDesc& bufferDesc = GetBufferDesc(buffer.handle);
         const Buffer& bufferInfo     = GetBuffer(buffer.handle);
 
-        bufferInfos.push_back({GetBuffer(buffer.handle).vkBuffer, buffer.byteOffset, bufferDesc.byteSize});
+        bufferInfos.push_back({
+            GetBuffer(buffer.handle).vkBuffer, 
+            buffer.offset, 
+            buffer.range == 0 ? bufferDesc.byteSize : buffer.range});
 
         vk::WriteDescriptorSet writeDescriptorSet(
             descriptorSet,
@@ -668,6 +735,17 @@ BindGroupHandle RenderContext::createBindGroup(BindGroupDesc&& desc)
         BindGroup{descriptorSet});
 }
 
+void RenderContext::DestroyBindGroup(BindGroupHandle handle)
+{
+    auto bindGroupDesc = m_BindGroupPool.getObjectDesc(handle);
+    auto bindGroup = m_BindGroupPool.getObject(handle);
+
+    vk::DescriptorPool pool = m_DescriptorPool[(uint32_t)bindGroupDesc.updateFrequency];
+    VULKAN_DEVICE.freeDescriptorSets(pool, bindGroup.set);
+
+    m_BindGroupPool.destroy(handle);
+}
+
 const BindGroup& RenderContext::GetBindGroup(BindGroupHandle handle)
 {
     return m_BindGroupPool.getObject(handle);
@@ -681,5 +759,125 @@ const BindGroupDesc& RenderContext::GetBindGroupDesc(BindGroupHandle handle)
 void RenderContext::PrepareRendering()
 {
     CreateDescriptorPools();
+}
+
+PipelineLayout RenderContext::GetOrCreatePipelineLayout(const std::vector<BindLayout>& createInfo, const DynamicBuffer* dynamicBuffer)
+{
+    std::size_t hash{0u};
+    utils::hash_combine(hash, createInfo);
+
+    auto it = m_ResourceCache.pipelineLayouts.find(hash);
+    if (it != m_ResourceCache.pipelineLayouts.end())
+    {
+        return it->second;
+    }
+
+    uint32_t layoutCount = static_cast<uint32_t>(dynamicBuffer != nullptr ? 4 : createInfo.size());
+
+    std::vector<vk::DescriptorSetLayout> layouts;
+    layouts.reserve(layoutCount);
+    for (const auto& layout : createInfo)
+    {
+        layouts.push_back(layout.layout);
+    }
+
+    for (int i = 0; i < layoutCount - createInfo.size() - 1; i++)
+    {
+        layouts.push_back(m_EmptySetLayout);
+    }
+
+    if (dynamicBuffer != nullptr)
+    {
+        layouts.push_back(dynamicBuffer->layout);
+    }
+
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfo(
+        {},
+        layoutCount,
+        layouts.data(),
+        0,
+        nullptr);
+
+    PipelineLayout pipelineLayout;
+    pipelineLayout.layout = VULKAN_DEVICE.createPipelineLayout(pipelineLayoutInfo);
+
+    m_ResourceCache.pipelineLayouts[hash] = pipelineLayout;
+
+    return pipelineLayout;
+}
+DynamicBufferHandle RenderContext::CreateDynamicBuffer(DynamicBufferDesc&& desc)
+{
+    std::vector<Binding> bindings = {
+        {0, BindType::DynamicUniformBuffer, 1, ShaderStage::Vertex},
+    };
+
+    BindLayoutCreateInfo bindLayoutCreateInfo = {
+        .name     = desc.debugName,
+        .bindings = bindings,
+    };
+
+    BindLayout bindLayout = GetOrCreateBindLayout(bindLayoutCreateInfo);
+
+    vk::DescriptorSetLayout setLayout = bindLayout.layout;
+
+    vk::DescriptorPool pool = m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw];
+
+    vk::DescriptorSetAllocateInfo allocInfo(
+        pool,
+        1,
+        &setLayout);
+
+    vk::DescriptorSet descriptorSet = VULKAN_DEVICE.allocateDescriptorSets(allocInfo)[0];
+
+    SetObjectDebugName(descriptorSet, desc.debugName);
+
+    std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+    writeDescriptorSets.reserve(1);
+
+    const BufferDesc& bufferDesc = GetBufferDesc(desc.buffer);
+    const Buffer& bufferInfo     = GetBuffer(desc.buffer);
+
+    vk::DescriptorBufferInfo bufferInfoDesc = {
+        bufferInfo.vkBuffer,
+        desc.offset,
+        desc.range == 0? bufferDesc.byteSize : desc.range};
+
+    vk::WriteDescriptorSet writeDescriptorSet(
+        descriptorSet,
+        0,
+        0,
+        1,
+        vk::DescriptorType::eUniformBufferDynamic,
+        nullptr,
+        &bufferInfoDesc,
+        nullptr);
+
+    writeDescriptorSets.push_back(writeDescriptorSet);
+
+    VULKAN_DEVICE.updateDescriptorSets(writeDescriptorSets, {});
+
+    return m_DynamicBufferPool.create(
+        std::move(desc),
+        DynamicBuffer{descriptorSet, setLayout, desc.offset});
+}
+
+const DynamicBufferDesc& RenderContext::GetDynamicBufferDesc(DynamicBufferHandle handle)
+{
+    return m_DynamicBufferPool.getObjectDesc(handle);
+}
+
+const DynamicBuffer& RenderContext::GetDynamicBuffer(DynamicBufferHandle handle)
+{
+    return m_DynamicBufferPool.getObject(handle);
+}
+
+void RenderContext::DestroyDynamicBuffer(DynamicBufferHandle handle)
+{
+    auto dynamicBuffer = m_DynamicBufferPool.getObject(handle);
+
+    vk::DescriptorPool pool = m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw];
+    VULKAN_DEVICE.freeDescriptorSets(pool, dynamicBuffer.set);
+
+    m_DynamicBufferPool.destroy(handle);
 }
 } // namespace gore::gfx

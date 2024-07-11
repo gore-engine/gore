@@ -7,6 +7,7 @@
 #include "Graphics/Vulkan/VulkanIncludes.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 
+#include "GraphicsCaps.h"
 #include "RenderContext.h"
 
 #include "imgui.h"
@@ -80,14 +81,10 @@ private:
     // Surface & Swapchain
     Swapchain m_Swapchain;
 
+    GraphicsPipelineHandle m_CubePipelineHandle;
     GraphicsPipelineHandle m_UnLitPipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
     GraphicsPipelineHandle m_QuadPipelineHandle;
-
-    // Pipeline
-    vk::raii::PipelineLayout m_PipelineLayout;
-    vk::raii::PipelineLayout m_BlankPipelineLayout;
-    vk::PipelineLayout m_UVQuadPipelineLayout;
 
     // Queue
     vk::raii::Queue m_GraphicsQueue;
@@ -98,16 +95,17 @@ private:
     // Command Pool & Command Buffer
     CommandPool m_CommandPool;
 
-    // Global Descriptors
-    vk::raii::DescriptorPool m_GlobalDescriptorPool;
-    vk::raii::DescriptorSetLayout m_GlobalDescriptorSetLayout;
-    std::vector<vk::raii::DescriptorSet> m_GlobalDescriptorSets;
-
-    std::vector<BufferHandle> m_GlobalConstantBuffers;
+    BindLayout m_GlobalBindLayout;
+    BindGroupHandle m_GlobalBindGroup;
+    BufferHandle m_GlobalConstantBuffer;
 
     // Material Descriptors
     BindLayout m_UVQuadBindLayout;
     BindGroupHandle m_UVQuadBindGroup;
+
+    BufferHandle m_DynamicUniformBuffer;
+    
+    DynamicBufferHandle m_DynamicBufferHandle;
 
     TextureHandle m_UVCheckTextureHandle;
     SamplerHandle m_UVCheckSamplerHandle;
@@ -123,6 +121,8 @@ private:
 
     DeletionQueue m_RenderDeletionQueue;
 
+    GraphicsCaps m_GraphicsCaps;
+
 private:
     void UploadPerframeGlobalConstantBuffer(uint32_t imageIndex);
 
@@ -133,12 +133,11 @@ private:
     void CreateDepthBuffer();
     void CreateGlobalDescriptorSets();
     void CreateUVQuadDescriptorSets();
+    void CreateDynamicUniformBuffer();
     void CreatePipeline();
     void CreateTextureObjects();
     void GetQueues();
     void CreateSynchronization();
-
-    TextureHandle CreateTextureHandle(const std::string& name);
 
     [[nodiscard]] const PhysicalDevice& GetBestDevice(const std::vector<PhysicalDevice>& devices) const;
 };

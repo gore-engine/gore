@@ -9,13 +9,13 @@ namespace gore
 
 struct Pipeline
 {
-    Pipeline(vk::raii::Pipeline&& inPipeline) :
+    Pipeline(vk::Pipeline&& inPipeline) :
         pipeline(std::move(inPipeline))
     {
     }
 
-    VkPipelineLayout layout;
-    vk::raii::Pipeline pipeline;
+    vk::PipelineLayout layout;
+    vk::Pipeline pipeline;
 };
 
 struct GraphicsPipeline final : Pipeline

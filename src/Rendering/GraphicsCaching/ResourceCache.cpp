@@ -9,6 +9,11 @@ void ClearCache(ResourceCache& cache, vk::Device device)
         {
             device.destroyDescriptorSetLayout(bindLayout.layout);
         }
+     
+        for (auto& [hash, pipelineLayout] : cache.pipelineLayouts)
+        {
+            device.destroyPipelineLayout(pipelineLayout.layout);
+        }
         cache.bindLayouts.clear();
     }
 }

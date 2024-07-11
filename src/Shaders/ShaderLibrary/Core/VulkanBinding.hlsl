@@ -1,16 +1,16 @@
 #ifndef VULKAN_BINDING
 #define VULKAN_BINDING
 
-// Set 0 is for global resources, set 1 is for material resources, set 2 is for shader resources
+// Set 0 is for global resources, set 1 is for shader resources, set 2 is for material resources
 // eg. Declare your resources like this:
 // COMBINED_SAMPLE_TEXTURE(GLOBAL, 0, myTexture, float4)
 // COMBINED_SAMPLE_TEXTURE(GLOBAL, 1, myMaterialTexture, float4)
-// COMBINED_SAMPLE_TEXTURE(MATERIAL, 0, myMaterialTexture, float4)
 // COMBINED_SAMPLE_TEXTURE(SHADER, 0, myShaderTexture, float4)
+// COMBINED_SAMPLE_TEXTURE(MATERIAL, 0, myMaterialTexture, float4)
 // Binding Model based on resource update frequency
 #define GLOBAL_BINDING_DESCRIPTOR_SET 0
-#define MATERIAL_BINDING_DESCRIPTOR_SET 1
-#define SHADER_BINDING_DESCRIPTOR_SET 2
+#define SHADER_BINDING_DESCRIPTOR_SET 1
+#define MATERIAL_BINDING_DESCRIPTOR_SET 2
 
 // Helper macros for binding
 #define COMBINED_IMAGE_SAMPLER [[vk::combinedImageSampler]]
