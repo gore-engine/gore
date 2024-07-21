@@ -12,6 +12,7 @@
 #include "Rendering/Utils/GeometryUtils.h"
 #include "Rendering/Components/MeshRenderer.h"
 
+#include "CommandRing.h"
 #include "Texture.h"
 #include "Buffer.h"
 #include "Sampler.h"
@@ -48,6 +49,8 @@ public:
     void EndRenderPass();
 
     void PrepareRendering();
+
+    std::unique_ptr<CommandRing> CreateCommandRing(const CommandRingCreateDesc& desc);
 
     // Draw Call
     void DrawMesh(int instanceCount = 1, int firstInstance = 0);
@@ -104,10 +107,14 @@ public:
     BindLayout GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo);
     PipelineLayout GetOrCreatePipelineLayout(const std::vector<BindLayout>& createInfo, const DynamicBuffer* dynamicBuffer = nullptr);
 
-
     void Clear();
 
 private:
+    CommandPool* CreateCommandPool(const CommandPoolCreateDesc& desc);
+    CommandBuffer1* CreateCommandBuffer(const CommandBufferCreateDesc& desc);
+    Semaphore* CreateSemaphore();
+    Fence* CreateFence();
+
     template <typename VkHPPObject>
     void SetObjectDebugName(const VkHPPObject& object, const std::string& name)
     {

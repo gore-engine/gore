@@ -880,4 +880,89 @@ void RenderContext::DestroyDynamicBuffer(DynamicBufferHandle handle)
 
     m_DynamicBufferPool.destroy(handle);
 }
+
+CommandPool* RenderContext::CreateCommandPool(const CommandPoolCreateDesc& desc)
+{
+    CommandPool* commandPool = new CommandPool();
+
+    vk::CommandPoolCreateInfo poolInfo(
+        {},
+        desc.queueFamilyIndex);
+
+    if (desc.transient)
+    {
+        poolInfo.flags |= vk::CommandPoolCreateFlagBits::eTransient;
+    }
+
+    commandPool->cmdPool = VULKAN_DEVICE.createCommandPool(poolInfo);
+
+    return commandPool;
+}
+
+CommandBuffer1* RenderContext::CreateCommandBuffer(const CommandBufferCreateDesc& desc)
+{
+    CommandBuffer1* commandBuffer = new CommandBuffer1();
+
+    vk::CommandBufferAllocateInfo allocInfo(
+        desc.cmdPool->cmdPool,
+        desc.secondary ? vk::CommandBufferLevel::eSecondary : vk::CommandBufferLevel::ePrimary,
+        1);
+
+    commandBuffer->cmdBuffer = VULKAN_DEVICE.allocateCommandBuffers(allocInfo).front();
+
+#if ENGINE_DEBUG
+    SetObjectDebugName(commandBuffer->cmdBuffer, desc.debugName);
+#endif  
+
+    return commandBuffer;
+}
+
+std::unique_ptr<CommandRing> RenderContext::CreateCommandRing(const CommandRingCreateDesc& desc)
+{
+    std::unique_ptr<CommandRing> commandRing = std::make_unique<CommandRing>();
+    commandRing->poolCount = desc.cmdPoolCount;
+    commandRing->cmdBufferCountPerPool = desc.cmdBufferCountPerPool;
+
+    commandRing->hasSyncObjects = desc.addSyncObjects;
+
+    for (int poolIndex = 0; poolIndex < desc.cmdPoolCount; poolIndex++)
+    {
+        commandRing->cmdPools[poolIndex] = CreateCommandPool({desc.queueFamilyIndex, false});
+
+        for (int cmdBufferIndex = 0; cmdBufferIndex < desc.cmdBufferCountPerPool; cmdBufferIndex++)
+        {
+            CommandBufferCreateDesc cmdBufferDesc;
+            cmdBufferDesc.cmdPool = commandRing->cmdPools[poolIndex];
+            cmdBufferDesc.secondary = desc.secondary;
+#if ENGINE_DEBUG
+            std::string debugName = desc.debugName;
+            debugName += std::to_string(poolIndex) + "_" + std::to_string(cmdBufferIndex);
+            cmdBufferDesc.debugName = debugName.c_str();
+#endif
+            commandRing->cmdBuffers[poolIndex][cmdBufferIndex] = CreateCommandBuffer(cmdBufferDesc);
+
+            if (desc.addSyncObjects)
+            {
+                commandRing->semaphores[poolIndex][cmdBufferIndex] = CreateSemaphore();
+                commandRing->fences[poolIndex][cmdBufferIndex] = CreateFence();
+            }
+        }
+    }
+
+    return commandRing;
+}
+
+Semaphore* RenderContext::CreateSemaphore()
+{
+    Semaphore* semaphore = new Semaphore();
+    semaphore->semaphore = VULKAN_DEVICE.createSemaphore({});
+    return semaphore;
+}
+
+Fence* RenderContext::CreateFence()
+{
+    Fence* fence = new Fence();
+    fence->fence = VULKAN_DEVICE.createFence({});
+    return fence;
+}
 } // namespace gore::gfx

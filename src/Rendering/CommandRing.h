@@ -1,3 +1,4 @@
+#pragma once
 #include "Prefix.h"
 
 #include "Graphics/Vulkan/VulkanIncludes.h"
@@ -25,6 +26,8 @@ struct Fence
 
 struct CommandPoolCreateDesc
 {
+    uint32_t queueFamilyIndex = 0;
+    bool transient            = false;
 };
 
 struct CommandPool
@@ -34,6 +37,11 @@ struct CommandPool
 
 struct CommandBufferCreateDesc
 {
+    CommandPool* cmdPool = nullptr;
+#ifdef ENGINE_DEBUG
+    const char* debugName = nullptr;
+#endif
+    bool secondary       = false;
 };
 
 struct CommandBuffer1
@@ -43,10 +51,18 @@ struct CommandBuffer1
     vk::CommandBuffer cmdBuffer;
 };
 
-struct CommandRringCreateDesc
+struct CommandRingCreateDesc
 {
-    uint32_t cmdPoolCount;
-    uint32_t cmdBufferPerPoolCount;
+    uint32_t queueFamilyIndex      = 0;
+    uint32_t cmdPoolCount          = 0;
+    uint32_t cmdBufferCountPerPool = 0;
+    // secondary command buffers
+    bool secondary = false;
+    // add fences and semaphores
+    bool addSyncObjects = false;
+#ifdef ENGINE_DEBUG
+    const char* debugName = nullptr;
+#endif
 };
 
 struct CommandRing
@@ -58,8 +74,10 @@ struct CommandRing
     uint32_t currentPoolIndex      = 0;
     uint32_t currentCmdIndex       = 0;
     uint32_t currentFenceIndex     = 0;
+    uint32_t currentSemaphoreIndex = 0;
     uint32_t poolCount             = 0;
-    uint32_t cmdBufferPerPoolCount = 0;
+    uint32_t cmdBufferCountPerPool = 0;
+    bool hasSyncObjects            = false;
 };
 
 struct CommandRingElement
@@ -70,4 +88,6 @@ struct CommandRingElement
     Semaphore* semaphore       = nullptr;
     uint32_t cmdBufferCount    = 0;
 };
+
+CommandRingElement RequestNextCommandElement(CommandRing* ring, bool cyclePool = false, uint32_t cmdBufferCount = 1);
 } // namespace gore::gfx
