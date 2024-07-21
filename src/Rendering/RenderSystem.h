@@ -9,6 +9,7 @@
 
 #include "GraphicsCaps.h"
 #include "RenderContext.h"
+#include "CommandRing.h"
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -93,7 +94,8 @@ private:
     uint32_t m_PresentQueueFamilyIndex;
 
     // Command Pool & Command Buffer
-    CommandPool m_CommandPool;
+    // CommandPool m_CommandPool;
+    std::unique_ptr<CommandRing> m_GraphicsCommandRing;
 
     BindLayout m_GlobalBindLayout;
     BindGroupHandle m_GlobalBindGroup;

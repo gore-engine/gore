@@ -3,7 +3,6 @@
 #include "Device.h"
 #include "Instance.h"
 #include "Swapchain.h"
-#include "CommandPool.h"
 #include "Utils.h"
 
 #include "Core/App.h"
@@ -374,11 +373,6 @@ void Device::WaitIdle() const
 Swapchain Device::CreateSwapchain(void* nativeWindowHandle, uint32_t imageCount, uint32_t width, uint32_t height) const
 {
     return gfx::Swapchain(*this, nativeWindowHandle, imageCount, width, height);
-}
-
-CommandPool Device::CreateCommandPool(uint32_t queueFamilyIndex) const
-{
-    return gfx::CommandPool(*this, queueFamilyIndex);
 }
 
 void Device::SetName(uint64_t objectHandle, vk::ObjectType objectType, const std::string& name) const

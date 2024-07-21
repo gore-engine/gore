@@ -19,7 +19,6 @@ concept VulkanRAIIType = requires {
 class Instance;
 class Device;
 class Swapchain;
-class CommandPool;
 
 class PhysicalDevice
 {
@@ -73,8 +72,7 @@ public:
     void WaitIdle() const;
 
     [[nodiscard]] Swapchain CreateSwapchain(void* nativeWindowHandle, uint32_t imageCount, uint32_t width, uint32_t height) const;
-    [[nodiscard]] CommandPool CreateCommandPool(uint32_t queueFamilyIndex) const;
-
+    
     template<typename VkRAIIObjectType>
     void SetName(const VkRAIIObjectType& object, const std::string& name) const
     {

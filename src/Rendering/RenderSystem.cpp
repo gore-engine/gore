@@ -50,7 +50,8 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_PresentQueue(nullptr),
     m_PresentQueueFamilyIndex(0),
     // Command Pool & Command Buffer
-    m_CommandPool(),
+    // m_CommandPool(),
+    m_GraphicsCommandRing(),
     // Synchronization
     m_RenderFinishedSemaphores(),
     m_InFlightFences(),
@@ -92,6 +93,7 @@ void RenderSystem::Initialize()
 
     m_RenderContext = std::make_unique<RenderContext>(&m_Device);
     m_RenderContext->PrepareRendering();
+    m_GraphicsCommandRing = m_RenderContext->CreateCommandRing({m_GraphicsQueueFamilyIndex, 3, 1, true});
 
     CreateDepthBuffer();
     
@@ -102,12 +104,7 @@ void RenderSystem::Initialize()
     CreateDynamicUniformBuffer();
     CreatePipeline();
     GetQueues();
-
-    m_CommandPool = m_Device.CreateCommandPool(m_GraphicsQueueFamilyIndex);
-    m_Device.SetName(m_CommandPool.Get(0), "CommandPool 0");
-    m_Device.SetName(m_CommandPool.Get(1), "CommandPool 1");
-    m_Device.SetName(m_CommandPool.Get(2), "CommandPool 2");
-
+    
     CreateSynchronization();
 
     InitImgui();
