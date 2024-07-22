@@ -112,10 +112,6 @@ private:
     TextureHandle m_UVCheckTextureHandle;
     SamplerHandle m_UVCheckSamplerHandle;
 
-    // Synchronization
-    std::vector<vk::raii::Semaphore> m_RenderFinishedSemaphores;
-    std::vector<vk::raii::Fence> m_InFlightFences;
-
     // Depth buffer
     vk::Image m_DepthImage;
     VmaAllocation m_DepthImageAllocation;
@@ -139,8 +135,7 @@ private:
     void CreatePipeline();
     void CreateTextureObjects();
     void GetQueues();
-    void CreateSynchronization();
-
+    
     [[nodiscard]] const PhysicalDevice& GetBestDevice(const std::vector<PhysicalDevice>& devices) const;
 };
 

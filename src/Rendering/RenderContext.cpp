@@ -962,7 +962,29 @@ Semaphore* RenderContext::CreateSemaphore()
 Fence* RenderContext::CreateFence()
 {
     Fence* fence = new Fence();
-    fence->fence = VULKAN_DEVICE.createFence({});
+    fence->fence = VULKAN_DEVICE.createFence({vk::FenceCreateFlagBits::eSignaled});
     return fence;
+}
+
+void RenderContext::DestroyCommandRing(std::unique_ptr<CommandRing>& commandRing)
+{
+    for (int poolIndex = 0; poolIndex < commandRing->poolCount; poolIndex++)
+    {
+        VULKAN_DEVICE.destroyCommandPool(commandRing->cmdPools[poolIndex]->cmdPool);
+
+        if (commandRing->hasSyncObjects == false)
+            continue;
+
+        for (int cmdBufferIndex = 0; cmdBufferIndex < commandRing->cmdBufferCountPerPool; cmdBufferIndex++)
+        {
+            VULKAN_DEVICE.destroySemaphore(commandRing->semaphores[poolIndex][cmdBufferIndex]->semaphore);
+            VULKAN_DEVICE.destroyFence(commandRing->fences[poolIndex][cmdBufferIndex]->fence);
+        }
+    }
+}
+
+void RenderContext::ResetCommandPool(CommandPool* commandPool)
+{
+    VULKAN_DEVICE.resetCommandPool(commandPool->cmdPool);
 }
 } // namespace gore::gfx

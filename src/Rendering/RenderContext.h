@@ -51,6 +51,8 @@ public:
     void PrepareRendering();
 
     std::unique_ptr<CommandRing> CreateCommandRing(const CommandRingCreateDesc& desc);
+    void DestroyCommandRing(std::unique_ptr<CommandRing>& commandRing);
+    void ResetCommandPool(CommandPool* commandPool);
 
     // Draw Call
     void DrawMesh(int instanceCount = 1, int firstInstance = 0);
