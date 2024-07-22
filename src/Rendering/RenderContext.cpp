@@ -180,7 +180,7 @@ void RenderContext::CreateDescriptorPools()
         {       vk::DescriptorType::eStorageBuffer, 1000},
         {        vk::DescriptorType::eStorageImage, 1000},
         {             vk::DescriptorType::eSampler, 1000},
-        {vk::DescriptorType::eUniformBufferDynamic, 100},
+        {vk::DescriptorType::eUniformBufferDynamic,  100},
     };
 
     vk::DescriptorPoolCreateInfo poolCreateInfo(
@@ -629,7 +629,7 @@ BindGroupHandle RenderContext::CreateBindGroup(BindGroupDesc&& desc)
     vk::DescriptorPool pool           = m_DescriptorPool[(uint32_t)desc.updateFrequency];
 
     vk::DescriptorSet descriptorSet = VULKAN_DEVICE.allocateDescriptorSets({pool, 1, &setLayout})[0];
-    
+
     SetObjectDebugName(descriptorSet, desc.debugName);
 
     std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
@@ -642,10 +642,9 @@ BindGroupHandle RenderContext::CreateBindGroup(BindGroupDesc&& desc)
         const BufferDesc& bufferDesc = GetBufferDesc(buffer.handle);
         const Buffer& bufferInfo     = GetBuffer(buffer.handle);
 
-        bufferInfos.push_back({
-            GetBuffer(buffer.handle).vkBuffer, 
-            buffer.offset, 
-            buffer.range == 0 ? bufferDesc.byteSize : buffer.range});
+        bufferInfos.push_back({GetBuffer(buffer.handle).vkBuffer,
+                               buffer.offset,
+                               buffer.range == 0 ? bufferDesc.byteSize : buffer.range});
 
         vk::WriteDescriptorSet writeDescriptorSet(
             descriptorSet,
@@ -738,7 +737,7 @@ BindGroupHandle RenderContext::CreateBindGroup(BindGroupDesc&& desc)
 void RenderContext::DestroyBindGroup(BindGroupHandle handle)
 {
     auto bindGroupDesc = m_BindGroupPool.getObjectDesc(handle);
-    auto bindGroup = m_BindGroupPool.getObject(handle);
+    auto bindGroup     = m_BindGroupPool.getObject(handle);
 
     vk::DescriptorPool pool = m_DescriptorPool[(uint32_t)bindGroupDesc.updateFrequency];
     VULKAN_DEVICE.freeDescriptorSets(pool, bindGroup.set);
@@ -840,7 +839,7 @@ DynamicBufferHandle RenderContext::CreateDynamicBuffer(DynamicBufferDesc&& desc)
     vk::DescriptorBufferInfo bufferInfoDesc = {
         bufferInfo.vkBuffer,
         desc.offset,
-        desc.range == 0? bufferDesc.byteSize : desc.range};
+        desc.range == 0 ? bufferDesc.byteSize : desc.range};
 
     vk::WriteDescriptorSet writeDescriptorSet(
         descriptorSet,
@@ -912,7 +911,7 @@ CommandBuffer1* RenderContext::CreateCommandBuffer(const CommandBufferCreateDesc
 
 #if ENGINE_DEBUG
     SetObjectDebugName(commandBuffer->cmdBuffer, desc.debugName);
-#endif  
+#endif
 
     return commandBuffer;
 }
@@ -920,8 +919,8 @@ CommandBuffer1* RenderContext::CreateCommandBuffer(const CommandBufferCreateDesc
 std::unique_ptr<CommandRing> RenderContext::CreateCommandRing(const CommandRingCreateDesc& desc)
 {
     std::unique_ptr<CommandRing> commandRing = std::make_unique<CommandRing>();
-    commandRing->poolCount = desc.cmdPoolCount;
-    commandRing->cmdBufferCountPerPool = desc.cmdBufferCountPerPool;
+    commandRing->poolCount                   = desc.cmdPoolCount;
+    commandRing->cmdBufferCountPerPool       = desc.cmdBufferCountPerPool;
 
     commandRing->hasSyncObjects = desc.addSyncObjects;
 
@@ -932,7 +931,7 @@ std::unique_ptr<CommandRing> RenderContext::CreateCommandRing(const CommandRingC
         for (int cmdBufferIndex = 0; cmdBufferIndex < desc.cmdBufferCountPerPool; cmdBufferIndex++)
         {
             CommandBufferCreateDesc cmdBufferDesc;
-            cmdBufferDesc.cmdPool = commandRing->cmdPools[poolIndex];
+            cmdBufferDesc.cmdPool   = commandRing->cmdPools[poolIndex];
             cmdBufferDesc.secondary = desc.secondary;
 #if ENGINE_DEBUG
             std::string debugName = desc.debugName;
@@ -944,7 +943,7 @@ std::unique_ptr<CommandRing> RenderContext::CreateCommandRing(const CommandRingC
             if (desc.addSyncObjects)
             {
                 commandRing->semaphores[poolIndex][cmdBufferIndex] = CreateSemaphore();
-                commandRing->fences[poolIndex][cmdBufferIndex] = CreateFence();
+                commandRing->fences[poolIndex][cmdBufferIndex]     = CreateFence();
             }
         }
     }
