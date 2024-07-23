@@ -935,7 +935,7 @@ std::unique_ptr<CommandRing> RenderContext::CreateCommandRing(const CommandRingC
             cmdBufferDesc.secondary = desc.secondary;
 #if ENGINE_DEBUG
             std::string debugName = desc.debugName;
-            debugName += std::to_string(poolIndex) + "_" + std::to_string(cmdBufferIndex);
+            debugName += "_" + std::to_string(poolIndex) + "_" + std::to_string(cmdBufferIndex);
             cmdBufferDesc.debugName = debugName.c_str();
 #endif
             commandRing->cmdBuffers[poolIndex][cmdBufferIndex] = CreateCommandBuffer(cmdBufferDesc);
