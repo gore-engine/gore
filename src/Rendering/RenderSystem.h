@@ -9,6 +9,7 @@
 
 #include "GraphicsCaps.h"
 #include "RenderContext.h"
+#include "CommandRing.h"
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -93,7 +94,8 @@ private:
     uint32_t m_PresentQueueFamilyIndex;
 
     // Command Pool & Command Buffer
-    CommandPool m_CommandPool;
+    // CommandPool m_CommandPool;
+    std::unique_ptr<CommandRing> m_GraphicsCommandRing;
 
     BindLayout m_GlobalBindLayout;
     BindGroupHandle m_GlobalBindGroup;
@@ -109,10 +111,6 @@ private:
 
     TextureHandle m_UVCheckTextureHandle;
     SamplerHandle m_UVCheckSamplerHandle;
-
-    // Synchronization
-    std::vector<vk::raii::Semaphore> m_RenderFinishedSemaphores;
-    std::vector<vk::raii::Fence> m_InFlightFences;
 
     // Depth buffer
     vk::Image m_DepthImage;
@@ -137,8 +135,7 @@ private:
     void CreatePipeline();
     void CreateTextureObjects();
     void GetQueues();
-    void CreateSynchronization();
-
+    
     [[nodiscard]] const PhysicalDevice& GetBestDevice(const std::vector<PhysicalDevice>& devices) const;
 };
 

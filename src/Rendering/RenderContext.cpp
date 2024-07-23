@@ -180,7 +180,7 @@ void RenderContext::CreateDescriptorPools()
         {       vk::DescriptorType::eStorageBuffer, 1000},
         {        vk::DescriptorType::eStorageImage, 1000},
         {             vk::DescriptorType::eSampler, 1000},
-        {vk::DescriptorType::eUniformBufferDynamic, 100},
+        {vk::DescriptorType::eUniformBufferDynamic,  100},
     };
 
     vk::DescriptorPoolCreateInfo poolCreateInfo(
@@ -629,7 +629,7 @@ BindGroupHandle RenderContext::CreateBindGroup(BindGroupDesc&& desc)
     vk::DescriptorPool pool           = m_DescriptorPool[(uint32_t)desc.updateFrequency];
 
     vk::DescriptorSet descriptorSet = VULKAN_DEVICE.allocateDescriptorSets({pool, 1, &setLayout})[0];
-    
+
     SetObjectDebugName(descriptorSet, desc.debugName);
 
     std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
@@ -642,10 +642,9 @@ BindGroupHandle RenderContext::CreateBindGroup(BindGroupDesc&& desc)
         const BufferDesc& bufferDesc = GetBufferDesc(buffer.handle);
         const Buffer& bufferInfo     = GetBuffer(buffer.handle);
 
-        bufferInfos.push_back({
-            GetBuffer(buffer.handle).vkBuffer, 
-            buffer.offset, 
-            buffer.range == 0 ? bufferDesc.byteSize : buffer.range});
+        bufferInfos.push_back({GetBuffer(buffer.handle).vkBuffer,
+                               buffer.offset,
+                               buffer.range == 0 ? bufferDesc.byteSize : buffer.range});
 
         vk::WriteDescriptorSet writeDescriptorSet(
             descriptorSet,
@@ -738,7 +737,7 @@ BindGroupHandle RenderContext::CreateBindGroup(BindGroupDesc&& desc)
 void RenderContext::DestroyBindGroup(BindGroupHandle handle)
 {
     auto bindGroupDesc = m_BindGroupPool.getObjectDesc(handle);
-    auto bindGroup = m_BindGroupPool.getObject(handle);
+    auto bindGroup     = m_BindGroupPool.getObject(handle);
 
     vk::DescriptorPool pool = m_DescriptorPool[(uint32_t)bindGroupDesc.updateFrequency];
     VULKAN_DEVICE.freeDescriptorSets(pool, bindGroup.set);
@@ -840,7 +839,7 @@ DynamicBufferHandle RenderContext::CreateDynamicBuffer(DynamicBufferDesc&& desc)
     vk::DescriptorBufferInfo bufferInfoDesc = {
         bufferInfo.vkBuffer,
         desc.offset,
-        desc.range == 0? bufferDesc.byteSize : desc.range};
+        desc.range == 0 ? bufferDesc.byteSize : desc.range};
 
     vk::WriteDescriptorSet writeDescriptorSet(
         descriptorSet,
@@ -879,5 +878,112 @@ void RenderContext::DestroyDynamicBuffer(DynamicBufferHandle handle)
     VULKAN_DEVICE.freeDescriptorSets(pool, dynamicBuffer.set);
 
     m_DynamicBufferPool.destroy(handle);
+}
+
+CommandPool* RenderContext::CreateCommandPool(const CommandPoolCreateDesc& desc)
+{
+    CommandPool* commandPool = new CommandPool();
+
+    vk::CommandPoolCreateInfo poolInfo(
+        {},
+        desc.queueFamilyIndex);
+
+    if (desc.transient)
+    {
+        poolInfo.flags |= vk::CommandPoolCreateFlagBits::eTransient;
+    }
+
+    commandPool->cmdPool = VULKAN_DEVICE.createCommandPool(poolInfo);
+
+    return commandPool;
+}
+
+CommandBuffer1* RenderContext::CreateCommandBuffer(const CommandBufferCreateDesc& desc)
+{
+    CommandBuffer1* commandBuffer = new CommandBuffer1();
+
+    vk::CommandBufferAllocateInfo allocInfo(
+        desc.cmdPool->cmdPool,
+        desc.secondary ? vk::CommandBufferLevel::eSecondary : vk::CommandBufferLevel::ePrimary,
+        1);
+
+    commandBuffer->cmdBuffer = VULKAN_DEVICE.allocateCommandBuffers(allocInfo).front();
+
+#if ENGINE_DEBUG
+    SetObjectDebugName(commandBuffer->cmdBuffer, desc.debugName);
+#endif
+
+    return commandBuffer;
+}
+
+std::unique_ptr<CommandRing> RenderContext::CreateCommandRing(const CommandRingCreateDesc& desc)
+{
+    std::unique_ptr<CommandRing> commandRing = std::make_unique<CommandRing>();
+    commandRing->poolCount                   = desc.cmdPoolCount;
+    commandRing->cmdBufferCountPerPool       = desc.cmdBufferCountPerPool;
+
+    commandRing->hasSyncObjects = desc.addSyncObjects;
+
+    for (int poolIndex = 0; poolIndex < desc.cmdPoolCount; poolIndex++)
+    {
+        commandRing->cmdPools[poolIndex] = CreateCommandPool({desc.queueFamilyIndex, false});
+
+        for (int cmdBufferIndex = 0; cmdBufferIndex < desc.cmdBufferCountPerPool; cmdBufferIndex++)
+        {
+            CommandBufferCreateDesc cmdBufferDesc;
+            cmdBufferDesc.cmdPool   = commandRing->cmdPools[poolIndex];
+            cmdBufferDesc.secondary = desc.secondary;
+#if ENGINE_DEBUG
+            std::string debugName = desc.debugName;
+            debugName += std::to_string(poolIndex) + "_" + std::to_string(cmdBufferIndex);
+            cmdBufferDesc.debugName = debugName.c_str();
+#endif
+            commandRing->cmdBuffers[poolIndex][cmdBufferIndex] = CreateCommandBuffer(cmdBufferDesc);
+
+            if (desc.addSyncObjects)
+            {
+                commandRing->semaphores[poolIndex][cmdBufferIndex] = CreateSemaphore();
+                commandRing->fences[poolIndex][cmdBufferIndex]     = CreateFence();
+            }
+        }
+    }
+
+    return commandRing;
+}
+
+Semaphore* RenderContext::CreateSemaphore()
+{
+    Semaphore* semaphore = new Semaphore();
+    semaphore->semaphore = VULKAN_DEVICE.createSemaphore({});
+    return semaphore;
+}
+
+Fence* RenderContext::CreateFence()
+{
+    Fence* fence = new Fence();
+    fence->fence = VULKAN_DEVICE.createFence({vk::FenceCreateFlagBits::eSignaled});
+    return fence;
+}
+
+void RenderContext::DestroyCommandRing(std::unique_ptr<CommandRing>& commandRing)
+{
+    for (int poolIndex = 0; poolIndex < commandRing->poolCount; poolIndex++)
+    {
+        VULKAN_DEVICE.destroyCommandPool(commandRing->cmdPools[poolIndex]->cmdPool);
+
+        if (commandRing->hasSyncObjects == false)
+            continue;
+
+        for (int cmdBufferIndex = 0; cmdBufferIndex < commandRing->cmdBufferCountPerPool; cmdBufferIndex++)
+        {
+            VULKAN_DEVICE.destroySemaphore(commandRing->semaphores[poolIndex][cmdBufferIndex]->semaphore);
+            VULKAN_DEVICE.destroyFence(commandRing->fences[poolIndex][cmdBufferIndex]->fence);
+        }
+    }
+}
+
+void RenderContext::ResetCommandPool(CommandPool* commandPool)
+{
+    VULKAN_DEVICE.resetCommandPool(commandPool->cmdPool);
 }
 } // namespace gore::gfx

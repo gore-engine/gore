@@ -50,10 +50,7 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_PresentQueue(nullptr),
     m_PresentQueueFamilyIndex(0),
     // Command Pool & Command Buffer
-    m_CommandPool(),
-    // Synchronization
-    m_RenderFinishedSemaphores(),
-    m_InFlightFences(),
+    m_GraphicsCommandRing(),
     // Depth Buffer
     m_DepthImage(nullptr),
     m_DepthImageAllocation(VK_NULL_HANDLE),
@@ -93,6 +90,22 @@ void RenderSystem::Initialize()
     m_RenderContext = std::make_unique<RenderContext>(&m_Device);
     m_RenderContext->PrepareRendering();
 
+    CommandRingCreateDesc cmdRingDesc = {};
+    cmdRingDesc.queueFamilyIndex = m_GraphicsQueueFamilyIndex;
+    cmdRingDesc.cmdPoolCount = 3;
+    cmdRingDesc.cmdBufferCountPerPool = 1;
+    cmdRingDesc.addSyncObjects = true;
+#if ENGINE_DEBUG
+    cmdRingDesc.debugName = "Graphics Command Ring";
+#endif
+
+    m_GraphicsCommandRing = m_RenderContext->CreateCommandRing(cmdRingDesc);
+
+    m_RenderDeletionQueue.PushFunction([this]()
+    {
+        m_RenderContext->DestroyCommandRing(m_GraphicsCommandRing);
+    });
+    
     CreateDepthBuffer();
     
     CreateTextureObjects();
@@ -102,13 +115,6 @@ void RenderSystem::Initialize()
     CreateDynamicUniformBuffer();
     CreatePipeline();
     GetQueues();
-
-    m_CommandPool = m_Device.CreateCommandPool(m_GraphicsQueueFamilyIndex);
-    m_Device.SetName(m_CommandPool.Get(0), "CommandPool 0");
-    m_Device.SetName(m_CommandPool.Get(1), "CommandPool 1");
-    m_Device.SetName(m_CommandPool.Get(2), "CommandPool 2");
-
-    CreateSynchronization();
 
     InitImgui();
 }
@@ -139,14 +145,16 @@ void RenderSystem::Update()
     const std::vector<vk::Image>& swapchainImages = m_Swapchain.GetImages();
     const std::vector<vk::raii::ImageView>& swapchainImageViews = m_Swapchain.GetImageViews();
 
-    vk::Fence inFlightFence = *m_InFlightFences[currentSwapchainImageIndex];
+    CommandRingElement commandElement = RequestNextCommandElement(m_GraphicsCommandRing.get(), true, 1);
+
+    vk::Fence inFlightFence = commandElement.fence->fence;
 
     vk::Result result = m_Device.Get().waitForFences({inFlightFence}, true, UINT64_MAX);
     m_Device.Get().resetFences({inFlightFence});
 
-    m_CommandPool.Reset(currentSwapchainImageIndex);
+    m_RenderContext->ResetCommandPool(commandElement.cmdPool);
 
-    const vk::raii::CommandBuffer& commandBuffer = m_CommandPool.GetCommandBuffer(currentSwapchainImageIndex);
+    vk::CommandBuffer commandBuffer = commandElement.cmdBuffer[0]->cmdBuffer;
 
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     commandBuffer.begin(beginInfo);
@@ -257,7 +265,7 @@ void RenderSystem::Update()
     vk::RenderingInfoKHR imguiRenderInfo({}, vk::Rect2D{{0, 0}, surfaceExtent}, 1, 0, 1, &renderingAttachmentInfo, nullptr);
     commandBuffer.beginRenderingKHR(imguiRenderInfo);
 
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *commandBuffer);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
     commandBuffer.endRenderingKHR();
 
@@ -280,8 +288,8 @@ void RenderSystem::Update()
 
     std::vector<vk::Semaphore> waitSemaphores = {};
     std::vector<vk::PipelineStageFlags> waitStages = {};
-    std::vector<vk::CommandBuffer> submitCommandBuffers = {*commandBuffer};
-    std::vector<vk::Semaphore> renderFinishedSemaphores = {*m_RenderFinishedSemaphores[currentSwapchainImageIndex]};
+    std::vector<vk::CommandBuffer> submitCommandBuffers = { commandBuffer };
+    std::vector<vk::Semaphore> renderFinishedSemaphores = { commandElement.semaphore->semaphore };
     vk::SubmitInfo submitInfo(waitSemaphores, waitStages, submitCommandBuffers, renderFinishedSemaphores);
     m_GraphicsQueue.submit({submitInfo}, inFlightFence);
 
@@ -297,7 +305,6 @@ void RenderSystem::Update()
         int width, height;
         window->GetSize(&width, &height);
         CreateDepthBuffer();
-        CreateSynchronization();
 
         m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
     }
@@ -776,23 +783,4 @@ const PhysicalDevice& RenderSystem::GetBestDevice(const std::vector<PhysicalDevi
 
     return devices[physicalDeviceIndex];
 }
-
-void RenderSystem::CreateSynchronization()
-{
-    m_RenderFinishedSemaphores.clear();
-    m_InFlightFences.clear();
-
-    uint32_t imageCount = m_Swapchain.GetImageCount();
-    m_RenderFinishedSemaphores.reserve(imageCount);
-    m_InFlightFences.reserve(imageCount);
-    for (uint32_t i = 0; i < imageCount; ++i)
-    {
-        m_RenderFinishedSemaphores.emplace_back(m_Device.Get().createSemaphore({}));
-        m_InFlightFences.emplace_back(m_Device.Get().createFence({vk::FenceCreateFlagBits::eSignaled}));
-
-        m_Device.SetName(m_RenderFinishedSemaphores[i], "Render Finished Semaphore " + std::to_string(i));
-        m_Device.SetName(m_InFlightFences[i], "In Flight Fence " + std::to_string(i));
-    }
-}
-
 } // namespace gore
