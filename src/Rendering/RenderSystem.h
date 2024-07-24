@@ -97,7 +97,6 @@ private:
     uint32_t m_PresentQueueFamilyIndex;
 
     // Command Pool & Command Buffer
-    // CommandPool m_CommandPool;
     std::unique_ptr<CommandRing> m_GraphicsCommandRing;
 
     BindLayout m_GlobalBindLayout;
