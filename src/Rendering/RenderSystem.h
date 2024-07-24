@@ -76,6 +76,10 @@ private:
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
 
+    // Rps
+    std::unique_ptr<RpsDevice> m_RpsDevice;
+    std::unique_ptr<RpsRenderGraph> m_RpsRenderGraph;
+    
     // Instance
     Instance m_Instance;
 
