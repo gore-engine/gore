@@ -142,6 +142,9 @@ list(APPEND COMMON_INCLUDE_FOLDERS ${TINYGLTF_INCLUDE_DIRS})
 add_subdirectory(External/rtm)
 list(APPEND COMMON_LIBRARIES RealtimeMath)
 
+# Gore AMD Render Pipeline Shaders
+add_subdirectory(External/AMDRenderPipelineShaders)
+list(APPEND COMMON_LIBRARIES AMDRps)
 
 # catch2
 if (${ENABLE_TEST})

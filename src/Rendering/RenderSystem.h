@@ -18,6 +18,9 @@
 #include <functional>
 #include <deque>
 
+#define RPS_VK_RUNTIME 1
+#include "rps/rps.h"
+
 namespace gore
 {
 
