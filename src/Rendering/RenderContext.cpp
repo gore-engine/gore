@@ -986,4 +986,25 @@ void RenderContext::ResetCommandPool(CommandPool* commandPool)
 {
     VULKAN_DEVICE.resetCommandPool(commandPool->cmdPool);
 }
+
+void RenderContext::BeginDebugLabel(CommandBuffer1& cmd, const char* label, float r, float g, float b)
+{
+#if ENGINE_DEBUG
+    vk::DebugUtilsLabelEXT labelInfo;
+    labelInfo.pLabelName = label;
+    labelInfo.color[0]   = r;
+    labelInfo.color[1]   = g;
+    labelInfo.color[2]   = b;
+    labelInfo.color[3]   = 1.0f;
+
+    cmd.cmdBuffer.beginDebugUtilsLabelEXT(labelInfo);
+#endif
+}
+
+void RenderContext::EndDebugLabel(CommandBuffer1& cmd)
+{
+#if ENGINE_DEBUG
+    cmd.cmdBuffer.endDebugUtilsLabelEXT();
+#endif
+}
 } // namespace gore::gfx

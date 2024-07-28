@@ -41,6 +41,10 @@ public:
     void LoadMeshToMeshRenderer(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex = 0, ShaderChannel channel = ShaderChannel::Default);
     void LoadMesh();
 
+    // Debug Utils
+    void BeginDebugLabel(CommandBuffer1& cmd, const char* label, float r, float g, float b);
+    void EndDebugLabel(CommandBuffer1& cmd);
+
     // RenderPass
     RenderPass* CreateRenderPass(const RenderPassDesc& desc);
     RenderPass& GetCurrentRenderPass();
