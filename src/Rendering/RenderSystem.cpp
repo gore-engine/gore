@@ -82,6 +82,8 @@ void RenderSystem::Initialize()
 
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(*m_Device.Get());
 
+    CreateRpsRuntimeDeivce();
+
     m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), 3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
 
@@ -321,6 +323,8 @@ void RenderSystem::Shutdown()
         vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
     }
     
+    DestroyRpsRuntimeDevice();
+
     m_RenderDeletionQueue.Flush();
 
     m_RenderContext->Clear();
