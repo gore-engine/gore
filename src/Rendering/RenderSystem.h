@@ -74,12 +74,19 @@ private:
     vk::raii::DescriptorPool m_ImguiDescriptorPool;
 
 private:
-    std::unique_ptr<RenderContext> m_RenderContext;
+    static void RecordDebugMarker(void* pUserContext, const RpsRuntimeOpRecordDebugMarkerArgs* pArgs);
+    static void SetDebugName(void* pUserContext, const RpsRuntimeOpSetDebugNameArgs* pArgs);
+
+    void CreateRpsRuntimeDeivce();
+    void DestroyRpsRuntimeDevice();
 
     // Rps
     std::unique_ptr<RpsDevice> m_RpsDevice;
     std::unique_ptr<RpsRenderGraph> m_RpsRenderGraph;
     
+private:
+    std::unique_ptr<RenderContext> m_RenderContext;
+
     // Instance
     Instance m_Instance;
 
