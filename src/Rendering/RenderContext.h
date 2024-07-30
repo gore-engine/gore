@@ -42,7 +42,8 @@ public:
     void LoadMesh();
 
     // Debug Utils
-    void BeginDebugLabel(CommandBuffer1& cmd, const char* label, float r, float g, float b);
+    void BeginDebugLabel(CommandBuffer1& cmd, const char* label, float r = 1.0f, float g = 0.0f, float b = 0.0f);
+    void InsertDebugLabel(CommandBuffer1& cmd, const char* label, float r = 1.0f, float g = 0.0f, float b = 0.0f);
     void EndDebugLabel(CommandBuffer1& cmd);
 
     // RenderPass

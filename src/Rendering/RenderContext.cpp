@@ -1007,4 +1007,11 @@ void RenderContext::EndDebugLabel(CommandBuffer1& cmd)
     cmd.cmdBuffer.endDebugUtilsLabelEXT();
 #endif
 }
+
+void RenderContext::InsertDebugLabel(CommandBuffer1& cmd, const char* label, float r, float g, float b)
+{
+#if ENGINE_DEBUG
+    cmd.cmdBuffer.insertDebugUtilsLabelEXT({label, {r, g, b, 1.0f}});
+#endif
+}
 } // namespace gore::gfx

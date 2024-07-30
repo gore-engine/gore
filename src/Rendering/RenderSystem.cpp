@@ -408,10 +408,34 @@ void RenderSystem::ShutdownImgui()
 
 void RenderSystem::RecordDebugMarker(void* pUserContext, const RpsRuntimeOpRecordDebugMarkerArgs* pArgs)
 {
+    auto cmdBuffer = rpsVKCommandBufferFromHandle(pArgs->hCommandBuffer);
+    auto renderSystem = static_cast<RenderSystem*>(pUserContext);
+
+    CommandBuffer1 cmd = { nullptr, cmdBuffer };
+    switch (pArgs->mode)
+    {
+        case RPS_RUNTIME_DEBUG_MARKER_BEGIN:
+        renderSystem->m_RenderContext->BeginDebugLabel(cmd, pArgs->text, 1.0f, 0.0f, 0.0f);
+        break;
+        case RPS_RUNTIME_DEBUG_MARKER_END:
+        renderSystem->m_RenderContext->EndDebugLabel(cmd);
+        break;
+        case RPS_RUNTIME_DEBUG_MARKER_LABEL:
+        renderSystem->m_RenderContext->InsertDebugLabel(cmd, pArgs->text, 1.0f, 0.0f, 0.0f);
+        break;
+    }
 }
 
 void RenderSystem::SetDebugName(void* pUserContext, const RpsRuntimeOpSetDebugNameArgs* pArgs)
 {
+    auto renderSystem = static_cast<RenderSystem*>(pUserContext);
+
+    uint64_t handle = reinterpret_cast<uint64_t>(static_cast<void*>(pArgs->hResource.ptr));
+    VkObjectType objectType = (rps::ResourceDesc::IsBuffer(pArgs->resourceType)) ? VK_OBJECT_TYPE_BUFFER : VK_OBJECT_TYPE_IMAGE;
+
+    Device& device = renderSystem->m_Device;
+
+    device.SetName(handle, vk::ObjectType(objectType), pArgs->name);
 }
 
 void RenderSystem::CreateRpsRuntimeDeivce()
