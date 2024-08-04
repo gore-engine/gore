@@ -20,6 +20,7 @@ endif ()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/ShaderCompile.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/Resources.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/RpslCompile.cmake)
 
 # Configurations
 
@@ -59,6 +60,9 @@ compile_shader("Shaders/sample/quad.hlsl" "vulkan" "pixel" "ps")
 
 compile_shader("Shaders/sample/UnLit.hlsl" "vulkan" "vertex" "vs")
 compile_shader("Shaders/sample/UnLit.hlsl" "vulkan" "pixel" "ps")
+
+compile_rpsl_file("hello_triangle")
+
 # Platform Specific Configurations
 
 if (${TARGET_PLATFORM} STREQUAL "Windows")
@@ -166,6 +170,7 @@ endif()
 add_library(${PROJECT_NAME} ${COMMON_SOURCES} ${PLATFORM_SOURCES})
 
 add_shader_dependencies(${PROJECT_NAME})
+add_rpsl_dependencies(${PROJECT_NAME})
 copy_texture_resources(${PROJECT_NAME})
 copy_gltf_resources(${PROJECT_NAME})
 
