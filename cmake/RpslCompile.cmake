@@ -12,7 +12,7 @@ function(compile_rpsl_file RpslFile)
 
     string( APPEND RpsCompileOpts "$<IF:$<CONFIG:DEBUG>,-O0,-O3>")
 
-    set(Input_File_Dir ${PARENT_DIR}/resources/rpsl)
+    set(Input_File_Dir ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/RPSL)
     set(Output_File_Dir ${CMAKE_CURRENT_BINARY_DIR}/rpsl)
 
     set(InputFile ${Input_File_Dir}/${RpslFile}.rpsl)
@@ -41,9 +41,9 @@ function(add_rpsl_dependencies PROJECT_TARGET)
     add_dependencies(${PROJECT_TARGET} Rpsl)
 
     set(Rpsl_Intermediate_Output_Dir ${CMAKE_CURRENT_BINARY_DIR}/rpsl)
-    set(Rpsl_Generated_Output_Dir $<TARGET_FILE_DIR:${PROJECT_TARGET}>/Resources/Rpsl)
+    set(Rpsl_Generated_Output_Dir ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/RPSL/Generated)
 
-    add_custom_command(TARGET ${PROJECT_TARGET} POST_BUILD
+    add_custom_command(TARGET Rpsl
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${Rpsl_Generated_Output_Dir}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${Rpsl_Generated_Output_Dir}
     )
@@ -51,8 +51,9 @@ function(add_rpsl_dependencies PROJECT_TARGET)
     foreach (RpsBinary ${RpsBinaryOutput})
         # get relative path of RpsBinaryOutput to Rpsl_Generated_Output_Dir
         file(RELATIVE_PATH RpsBinaryRelativePath ${Rpsl_Intermediate_Output_Dir} ${RpsBinary})
-        add_custom_command(TARGET ${PROJECT_TARGET} POST_BUILD
+        add_custom_command(TARGET Rpsl
             COMMAND ${CMAKE_COMMAND} -E copy_if_different "${RpsBinary}" "${Rpsl_Generated_Output_Dir}/${RpsBinaryRelativePath}"
+            COMMENT "Copying ${RpsBinary} to ${Rpsl_Generated_Output_Dir}/${RpsBinaryRelativePath}"
         )
     endforeach()
     
