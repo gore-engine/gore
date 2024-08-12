@@ -5,6 +5,7 @@ project(gore)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 # TODO: check debug or something else
 option(ENABLE_TEST "Enable gore engine test" ON)
+option(USE_RPS "Use AMD Render Pipeline Shaders" ON)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -38,6 +39,11 @@ set(COMMON_SOURCE_FOLDERS
         "Utilities"
         "Test"
 )
+
+if (${USE_RPS})
+    list(APPEND COMMON_SOURCE_FOLDERS "Rendering/RPSL/Generated")
+endif ()
+
 set(COMMON_INCLUDE_FOLDERS "${CMAKE_CURRENT_SOURCE_DIR}")
 
 if (${BUILD_SHARED_LIBS})
@@ -98,7 +104,7 @@ endif ()
 
 set(COMMON_SOURCES "Prefix.h" "Export.h")
 foreach (folder ${COMMON_SOURCE_FOLDERS})
-    file(GLOB_RECURSE SOURCES "${folder}/*.cpp" "${folder}/*.inl" "${folder}/*.h")
+    file(GLOB_RECURSE SOURCES "${folder}/*.cpp" "${folder}/*.inl" "${folder}/*.h" "${folder}/*.c")
     list(APPEND COMMON_SOURCES ${SOURCES})
 endforeach ()
 

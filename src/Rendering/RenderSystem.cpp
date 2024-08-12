@@ -440,30 +440,22 @@ void RenderSystem::SetDebugName(void* pUserContext, const RpsRuntimeOpSetDebugNa
 
 void RenderSystem::CreateRpsRuntimeDeivce()
 {
-    RpsVKRuntimeDeviceCreateInfo vkRuntimeDeviceCreateInfo = {};
-    vkRuntimeDeviceCreateInfo.hVkDevice = *m_Device.Get();
-    vkRuntimeDeviceCreateInfo.hVkPhysicalDevice = *m_Device.GetPhysicalDevice().Get();
-    vkRuntimeDeviceCreateInfo.flags = RPS_VK_RUNTIME_FLAG_NONE;
+    using namespace gfx;
 
-    RpsRuntimeDeviceCreateInfo createInfo = {};
+    RpsSytemCreateInfo createInfo = {};
+    createInfo.device = *m_Device.Get();
+    createInfo.physicalDevice = *m_Device.GetPhysicalDevice().Get();
     createInfo.pUserContext = this;
-    createInfo.callbacks.pfnRecordDebugMarker = &RecordDebugMarker;
-    createInfo.callbacks.pfnSetDebugName = &SetDebugName;
+    createInfo.pfnRecordDebugMarker = &RecordDebugMarker;
+    createInfo.pfnSetDebugName = &SetDebugName;
 
-    vkRuntimeDeviceCreateInfo.pRuntimeCreateInfo = &createInfo;
-
-    RpsDevice rpsDevice = RPS_NULL_HANDLE;
-    RpsResult result = rpsVKRuntimeDeviceCreate(&vkRuntimeDeviceCreateInfo, &rpsDevice);
-    
-    assert(result == RPS_OK);
-
-    m_RpsDevice = std::make_unique<RpsDevice>(rpsDevice);
+    m_RpsSystem = InitializeRpsSystem(createInfo);
 }
 
 void RenderSystem::DestroyRpsRuntimeDevice()
 {
-    rpsDeviceDestroy(*m_RpsDevice);
-    m_RpsDevice.reset();
+    using namespace gfx;
+    DestroyRpsSystem(m_RpsSystem);
 }
 
 void RenderSystem::UploadPerframeGlobalConstantBuffer(uint32_t imageIndex)

@@ -21,6 +21,8 @@
 #define RPS_VK_RUNTIME 1
 #include "rps/rps.h"
 
+#include "RenderPipelineShader/RpsSytem.h"
+
 namespace gore
 {
 
@@ -80,10 +82,7 @@ private:
     void CreateRpsRuntimeDeivce();
     void DestroyRpsRuntimeDevice();
 
-    // Rps
-    std::unique_ptr<RpsDevice> m_RpsDevice;
-    std::unique_ptr<RpsRenderGraph> m_RpsRenderGraph;
-    
+    std::unique_ptr<RpsSytem> m_RpsSystem;    
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
 
