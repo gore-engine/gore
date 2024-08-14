@@ -79,10 +79,21 @@ private:
     static void RecordDebugMarker(void* pUserContext, const RpsRuntimeOpRecordDebugMarkerArgs* pArgs);
     static void SetDebugName(void* pUserContext, const RpsRuntimeOpSetDebugNameArgs* pArgs);
 
+    bool IsRpsReady() const { return m_RpsSystem != nullptr && m_RpsSystem->IsValid(); }
+
     void CreateRpsRuntimeDeivce();
     void DestroyRpsRuntimeDevice();
 
+    void RunRpsSystem();
+
+    void UpdateRenderGraph();
+    void ExecuteRenderGraph();
+
+    void DrawTriangle(const RpsCmdCallbackContext* pContext);
+
     std::unique_ptr<RpsSytem> m_RpsSystem;    
+
+    uint32_t m_FrameIndex;
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
 

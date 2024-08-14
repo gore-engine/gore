@@ -34,6 +34,12 @@ struct RpsSytem final
 
     // RenderPipelineShader RenderGraph
     std::unique_ptr<RpsRenderGraph> rpsRDG;
+
+    // IsValid 
+    bool IsValid() const
+    {
+        return rpsDevice != nullptr && rpsRDG != nullptr;
+    }
 };
 
 std::unique_ptr<RpsSytem> InitializeRpsSystem(const RpsSytemCreateInfo& createInfo);

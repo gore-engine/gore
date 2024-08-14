@@ -59,7 +59,8 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_ImguiWindowData(),
     m_ImguiDescriptorPool(nullptr),
     // Utils
-    m_RenderDeletionQueue()
+    m_RenderDeletionQueue(),
+    m_FrameIndex(0)
 {
     g_RenderSystem = this;
 }
@@ -450,12 +451,72 @@ void RenderSystem::CreateRpsRuntimeDeivce()
     createInfo.pfnSetDebugName = &SetDebugName;
 
     m_RpsSystem = InitializeRpsSystem(createInfo);
+
+    RpsRenderGraph& renderGraph = *m_RpsSystem->rpsRDG;
+    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Triangle", &DrawTriangle, this));
 }
 
 void RenderSystem::DestroyRpsRuntimeDevice()
 {
     using namespace gfx;
     DestroyRpsSystem(m_RpsSystem);
+}
+
+void RenderSystem::RunRpsSystem()
+{
+    if (IsRpsReady() == false)
+        return;
+
+    UpdateRenderGraph();
+
+    ExecuteRenderGraph();
+}
+
+void RenderSystem::UpdateRenderGraph()
+{
+    if (IsRpsReady() == false)
+        return;
+
+    uint32_t backBufferCount = m_Swapchain.GetImageCount();
+
+    std::vector<RpsRuntimeResource> backBufferResources(backBufferCount);
+    for (uint32_t i = 0; i < backBufferCount; i++)
+    {
+        backBufferResources[i].ptr = m_Swapchain.GetImages()[i];
+    }
+
+    RpsResourceDesc backBufferDesc = {};
+
+    RpsConstant argsData[2]                   = {&backBufferDesc};
+    const RpsRuntimeResource* argResources[2] = {backBufferResources.data()};
+    uint32_t argsCount                        = 1;
+
+    uint32_t completedFrameIndex = 0;
+
+    RpsRenderGraphUpdateInfo updateInfo = {};
+    updateInfo.frameIndex               = m_FrameIndex;
+    updateInfo.gpuCompletedFrameIndex   = completedFrameIndex;
+    updateInfo.numArgs                  = argsCount;
+    updateInfo.ppArgs                   = argsData;
+    updateInfo.ppArgResources           = argResources;
+
+    assert(_countof(argsData) == _countof(argResources));
+
+    AssertIfRpsFailed(rpsRenderGraphUpdate(*m_RpsSystem->rpsRDG, &updateInfo));
+}
+
+void RenderSystem::ExecuteRenderGraph()
+{
+    if (IsRpsReady() == false)
+        return;
+    
+    RpsRenderGraphBatchLayout batchLayout = {};
+    AssertIfRpsFailed(rpsRenderGraphGetBatchLayout(*m_RpsSystem->rpsRDG, &batchLayout));
+}
+
+void RenderSystem::DrawTriangle(const RpsCmdCallbackContext* pContext)
+{
+    vk::CommandBuffer cmd = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
 }
 
 void RenderSystem::UploadPerframeGlobalConstantBuffer(uint32_t imageIndex)
