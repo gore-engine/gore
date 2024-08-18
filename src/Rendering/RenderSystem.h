@@ -89,7 +89,7 @@ private:
     void UpdateRenderGraph();
     void ExecuteRenderGraph();
 
-    void DrawTriangle(const RpsCmdCallbackContext* pContext);
+    static void DrawTriangle(const RpsCmdCallbackContext* pContext);
 
     std::unique_ptr<RpsSytem> m_RpsSystem;    
 
