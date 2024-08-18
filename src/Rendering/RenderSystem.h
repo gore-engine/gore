@@ -121,6 +121,7 @@ private:
 
     // Command Pool & Command Buffer
     std::unique_ptr<CommandRing> m_GraphicsCommandRing;
+    std::unique_ptr<CommandRing> m_GpuCommandRings[RPS_QUEUE_COUNT];
 
     BindLayout m_GlobalBindLayout;
     BindGroupHandle m_GlobalBindGroup;

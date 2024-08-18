@@ -51,6 +51,7 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_PresentQueueFamilyIndex(0),
     // Command Pool & Command Buffer
     m_GraphicsCommandRing(),
+    m_GpuCommandRings(),
     // Depth Buffer
     m_DepthImage(nullptr),
     m_DepthImageAllocation(VK_NULL_HANDLE),
@@ -104,9 +105,16 @@ void RenderSystem::Initialize()
 
     m_GraphicsCommandRing = m_RenderContext->CreateCommandRing(cmdRingDesc);
 
+    m_GpuCommandRings[RPS_QUEUE_GRAPHICS] = m_RenderContext->CreateCommandRing(cmdRingDesc);
+    m_GpuCommandRings[RPS_QUEUE_COMPUTE] = m_RenderContext->CreateCommandRing(cmdRingDesc);
+    m_GpuCommandRings[RPS_QUEUE_COPY] = m_RenderContext->CreateCommandRing(cmdRingDesc);
+
     m_RenderDeletionQueue.PushFunction([this]()
     {
         m_RenderContext->DestroyCommandRing(m_GraphicsCommandRing);
+        m_RenderContext->DestroyCommandRing(m_GpuCommandRings[RPS_QUEUE_GRAPHICS]);
+        m_RenderContext->DestroyCommandRing(m_GpuCommandRings[RPS_QUEUE_COMPUTE]);
+        m_RenderContext->DestroyCommandRing(m_GpuCommandRings[RPS_QUEUE_COPY]);    
     });
     
     CreateDepthBuffer();
