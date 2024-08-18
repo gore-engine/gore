@@ -112,8 +112,10 @@ private:
     GraphicsPipelineHandle m_QuadPipelineHandle;
 
     // Queue
-    vk::raii::Queue m_GraphicsQueue;
-    uint32_t m_GraphicsQueueFamilyIndex;
+    // Graphics, Compute, Transfer
+    vk::Queue m_GpuQueues[RPS_QUEUE_COUNT];
+    uint32_t m_GpuQueueFamilyIndices[RPS_QUEUE_COUNT];
+    
     vk::raii::Queue m_PresentQueue;
     uint32_t m_PresentQueueFamilyIndex;
 

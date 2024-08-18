@@ -16,6 +16,14 @@
 
 namespace gore::gfx
 {
+enum RpsQueueType
+{
+    RPS_QUEUE_GRAPHICS,
+    RPS_QUEUE_COMPUTE,
+    RPS_QUEUE_COPY,
+    RPS_QUEUE_COUNT
+};
+
 struct RpsSytemCreateInfo final
 {
 #if RPS_VK_RUNTIME

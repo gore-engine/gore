@@ -45,8 +45,8 @@ RenderSystem::RenderSystem(gore::App* app) :
     // Surface & Swapchain
     m_Swapchain(),
     // Queue
-    m_GraphicsQueue(nullptr),
-    m_GraphicsQueueFamilyIndex(0),
+    m_GpuQueues(),
+    m_GpuQueueFamilyIndices(),
     m_PresentQueue(nullptr),
     m_PresentQueueFamilyIndex(0),
     // Command Pool & Command Buffer
@@ -94,7 +94,7 @@ void RenderSystem::Initialize()
     m_RenderContext->PrepareRendering();
 
     CommandRingCreateDesc cmdRingDesc = {};
-    cmdRingDesc.queueFamilyIndex = m_GraphicsQueueFamilyIndex;
+    cmdRingDesc.queueFamilyIndex = m_GpuQueueFamilyIndices[RPS_QUEUE_GRAPHICS];
     cmdRingDesc.cmdPoolCount = 3;
     cmdRingDesc.cmdBufferCountPerPool = 1;
     cmdRingDesc.addSyncObjects = true;
@@ -165,14 +165,14 @@ void RenderSystem::Update()
     std::vector<vk::ImageMemoryBarrier> imageMemoryBarriers;
     imageMemoryBarriers.emplace_back(vk::AccessFlagBits::eMemoryRead, vk::AccessFlagBits::eColorAttachmentWrite,
                                      vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal,
-                                     m_GraphicsQueueFamilyIndex, m_GraphicsQueueFamilyIndex, swapchainImages[currentSwapchainImageIndex],
+                                     m_GpuQueueFamilyIndices[RPS_QUEUE_GRAPHICS], m_GpuQueueFamilyIndices[RPS_QUEUE_GRAPHICS], swapchainImages[currentSwapchainImageIndex],
                                      vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eColorAttachmentOutput, {}, {}, {}, imageMemoryBarriers);
 
     std::vector<vk::ImageMemoryBarrier> depthImageMemoryBarriers;
     depthImageMemoryBarriers.emplace_back(vk::AccessFlagBits::eMemoryRead, vk::AccessFlagBits::eDepthStencilAttachmentWrite,
                                           vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal,
-                                          m_GraphicsQueueFamilyIndex, m_GraphicsQueueFamilyIndex,
+                                          m_GpuQueueFamilyIndices[RPS_QUEUE_GRAPHICS], m_GpuQueueFamilyIndices[RPS_QUEUE_GRAPHICS],
                                           m_DepthImage,
                                           vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1));
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eEarlyFragmentTests, {}, {}, {}, depthImageMemoryBarriers);
@@ -275,14 +275,14 @@ void RenderSystem::Update()
     std::vector<vk::ImageMemoryBarrier> imageMemoryBarriers2;
     imageMemoryBarriers2.emplace_back(vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eMemoryRead,
                                       vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR,
-                                      m_GraphicsQueueFamilyIndex, m_GraphicsQueueFamilyIndex, swapchainImages[currentSwapchainImageIndex],
+                                      m_GpuQueueFamilyIndices[RPS_QUEUE_GRAPHICS], m_GpuQueueFamilyIndices[RPS_QUEUE_GRAPHICS], swapchainImages[currentSwapchainImageIndex],
                                       vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eAllCommands, {}, {}, {}, imageMemoryBarriers2);
 
     std::vector<vk::ImageMemoryBarrier> depthImageMemoryBarriers2;
     depthImageMemoryBarriers2.emplace_back(vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::AccessFlagBits::eMemoryRead,
                                            vk::ImageLayout::eDepthStencilAttachmentOptimal, vk::ImageLayout::eDepthStencilAttachmentOptimal,
-                                           m_GraphicsQueueFamilyIndex, m_GraphicsQueueFamilyIndex,
+                                           m_GpuQueueFamilyIndices[RPS_QUEUE_GRAPHICS], m_GpuQueueFamilyIndices[RPS_QUEUE_GRAPHICS],
                                            m_DepthImage,
                                            vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1));
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eLateFragmentTests, vk::PipelineStageFlagBits::eAllCommands, {}, {}, {}, depthImageMemoryBarriers2);
@@ -294,7 +294,7 @@ void RenderSystem::Update()
     std::vector<vk::CommandBuffer> submitCommandBuffers = { commandBuffer };
     std::vector<vk::Semaphore> renderFinishedSemaphores = { commandElement.semaphore->semaphore };
     vk::SubmitInfo submitInfo(waitSemaphores, waitStages, submitCommandBuffers, renderFinishedSemaphores);
-    m_GraphicsQueue.submit({submitInfo}, inFlightFence);
+    m_GpuQueues[RPS_QUEUE_GRAPHICS].submit({submitInfo}, inFlightFence);
 
     bool recreated = m_Swapchain.Present(renderFinishedSemaphores, m_PresentQueue);
 
@@ -388,7 +388,7 @@ void RenderSystem::InitImgui()
 	init_info.Instance = *m_Device.GetInstance()->Get();
 	init_info.PhysicalDevice = *m_Device.GetPhysicalDevice().Get();
 	init_info.Device = *m_Device.Get();
-	init_info.Queue = *m_GraphicsQueue;
+	init_info.Queue = m_GpuQueues[RPS_QUEUE_GRAPHICS];
 	init_info.DescriptorPool = *m_ImguiDescriptorPool;
 	init_info.MinImageCount = 3;
 	init_info.ImageCount = 3;
@@ -841,36 +841,87 @@ void RenderSystem::CreateTextureObjects()
 
 void RenderSystem::GetQueues()
 {
-    m_GraphicsQueueFamilyIndex = 0;
-    m_PresentQueueFamilyIndex  = 0;
+    struct QueueFamilyIndexSelection
+    {
+        uint32_t first    = UINT32_MAX;
+        uint32_t prefered = UINT32_MAX;
+
+        uint32_t Get() const
+        {
+            return (prefered != UINT32_MAX) ? prefered : first;
+        }
+    };
+
+    void* nativeWindowHandle = m_App->GetWindow()->GetNativeHandle();
 
     std::vector<vk::QueueFamilyProperties> queueFamilyProperties = m_Device.GetQueueFamilyProperties();
 
+    QueueFamilyIndexSelection presentQueueSel;
+    QueueFamilyIndexSelection graphicsQueueSel;
+    QueueFamilyIndexSelection computeQueueSel;
+    QueueFamilyIndexSelection copyQueueSel;
+
     for (uint32_t i = 0; i < queueFamilyProperties.size(); ++i)
     {
-        const vk::QueueFamilyProperties& queueFamilyProperty = queueFamilyProperties[i];
+        bool supportsPresent = m_Device.GetPhysicalDevice().QueueFamilyIsPresentable(i, nativeWindowHandle);
 
-        if (queueFamilyProperty.queueFlags & vk::QueueFlagBits::eGraphics)
+        bool hasGfx     = static_cast<bool>(queueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eGraphics);
+        bool hasCompute = static_cast<bool>(queueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eCompute);
+        bool hasCopy    = static_cast<bool>(queueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eTransfer);
+
+        if (supportsPresent)
         {
-            m_GraphicsQueueFamilyIndex = i;
-            break;
+            if (presentQueueSel.first == UINT32_MAX)
+                presentQueueSel.first = i;
+
+            if (hasGfx)
+                presentQueueSel.prefered = i;
+        }
+
+        if (hasGfx)
+        {
+            if (graphicsQueueSel.first == UINT32_MAX)
+                graphicsQueueSel.first = i;
+
+            if (supportsPresent)
+                graphicsQueueSel.prefered = i;
+        }
+
+        if (hasCompute)
+        {
+            if (computeQueueSel.first == UINT32_MAX)
+                computeQueueSel.first = i;
+
+            if (!hasGfx)
+                computeQueueSel.prefered = i;
+        }
+
+        if (hasCopy)
+        {
+            if (copyQueueSel.first == UINT32_MAX)
+                copyQueueSel.first = i;
+
+            if (!hasCompute)
+                copyQueueSel.prefered = i;
         }
     }
 
-    void* nativeWindowHandle = m_App->GetWindow()->GetNativeHandle();
-    for (uint32_t i = queueFamilyProperties.size(); i > 0; --i)
-    {
-        if (m_Device.GetPhysicalDevice().QueueFamilyIsPresentable(i - 1, nativeWindowHandle))
-        {
-            m_PresentQueueFamilyIndex = i - 1;
-            break;
-        }
-    }
+    m_GpuQueueFamilyIndices[RPS_QUEUE_GRAPHICS] = graphicsQueueSel.Get();
+    m_GpuQueueFamilyIndices[RPS_QUEUE_COMPUTE]  = computeQueueSel.Get();
+    m_GpuQueueFamilyIndices[RPS_QUEUE_COPY]     = copyQueueSel.Get();
 
-    m_GraphicsQueue = m_Device.Get().getQueue(m_GraphicsQueueFamilyIndex, 0);
+    m_PresentQueueFamilyIndex = presentQueueSel.Get();
+
+    m_GpuQueues[RPS_QUEUE_GRAPHICS] = (*m_Device.Get()).getQueue(m_GpuQueueFamilyIndices[RPS_QUEUE_GRAPHICS], 0);
+    m_Device.SetName(*reinterpret_cast<uint64_t*>(&m_GpuQueues[RPS_QUEUE_GRAPHICS]), vk::ObjectType::eQueue, "Graphics Queue");
+
+    m_GpuQueues[RPS_QUEUE_COMPUTE] = (*m_Device.Get()).getQueue(m_GpuQueueFamilyIndices[RPS_QUEUE_COMPUTE], 0);
+    m_Device.SetName(*reinterpret_cast<uint64_t*>(&m_GpuQueues[RPS_QUEUE_COMPUTE]), vk::ObjectType::eQueue, "Compute Queue");
+    
+    m_GpuQueues[RPS_QUEUE_COPY] = (*m_Device.Get()).getQueue(m_GpuQueueFamilyIndices[RPS_QUEUE_COPY], 0);
+    m_Device.SetName(*reinterpret_cast<uint64_t*>(&m_GpuQueues[RPS_QUEUE_COPY]), vk::ObjectType::eQueue, "Copy Queue");
+
     m_PresentQueue  = m_Device.Get().getQueue(m_PresentQueueFamilyIndex, 0);
-
-    m_Device.SetName(m_GraphicsQueue, "Graphics Queue");
     m_Device.SetName(m_PresentQueue, "Present Queue");
 }
 
