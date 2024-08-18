@@ -87,7 +87,7 @@ private:
     void RunRpsSystem();
 
     void UpdateRenderGraph();
-    void ExecuteRenderGraph();
+    RpsResult ExecuteRenderGraph();
 
     static void DrawTriangle(const RpsCmdCallbackContext* pContext);
 

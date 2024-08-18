@@ -513,13 +513,22 @@ void RenderSystem::UpdateRenderGraph()
     AssertIfRpsFailed(rpsRenderGraphUpdate(*m_RpsSystem->rpsRDG, &updateInfo));
 }
 
-void RenderSystem::ExecuteRenderGraph()
+RpsResult RenderSystem::ExecuteRenderGraph()
 {
     if (IsRpsReady() == false)
-        return;
+    {
+        LOG_STREAM(FATAL) << "RPS system is not ready." << std::endl;
+        return RpsResult::RPS_ERROR_UNSPECIFIED; 
+    }
     
     RpsRenderGraphBatchLayout batchLayout = {};
-    AssertIfRpsFailed(rpsRenderGraphGetBatchLayout(*m_RpsSystem->rpsRDG, &batchLayout));
+    RpsResult result = rpsRenderGraphGetBatchLayout(*m_RpsSystem->rpsRDG, &batchLayout);
+    if (RPS_FAILED(result))
+    {
+        return result;
+    }
+
+    return RpsResult::RPS_OK;
 }
 
 void RenderSystem::DrawTriangle(const RpsCmdCallbackContext* pContext)
