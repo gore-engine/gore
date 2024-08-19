@@ -41,7 +41,7 @@ struct CommandBufferCreateDesc
 #ifdef ENGINE_DEBUG
     const char* debugName = nullptr;
 #endif
-    bool secondary       = false;
+    bool secondary = false;
 };
 
 // RHI Command Buffer Wrapper
@@ -68,26 +68,26 @@ struct CommandRingCreateDesc
 
 struct CommandRing
 {
-    CommandPool* cmdPools[MAX_COMMAND_POOL_PER_RING];
-    CommandBuffer* cmdBuffers[MAX_COMMAND_POOL_PER_RING][MAX_COMMAND_BUFFERS_PER_POOL];
-    Fence* fences[MAX_COMMAND_POOL_PER_RING][MAX_COMMAND_BUFFERS_PER_POOL];
-    Semaphore* semaphores[MAX_COMMAND_POOL_PER_RING][MAX_COMMAND_BUFFERS_PER_POOL];
-    uint32_t currentPoolIndex      = 0;
-    uint32_t currentCmdIndex       = 0;
-    uint32_t currentFenceIndex     = 0;
-    uint32_t currentSemaphoreIndex = 0;
-    uint32_t poolCount             = 0;
-    uint32_t cmdBufferCountPerPool = 0;
-    bool hasSyncObjects            = false;
+    CommandPool* cmdPools[MAX_COMMAND_POOL_PER_RING]                                   = {};
+    CommandBuffer* cmdBuffers[MAX_COMMAND_POOL_PER_RING][MAX_COMMAND_BUFFERS_PER_POOL] = {};
+    Fence* fences[MAX_COMMAND_POOL_PER_RING][MAX_COMMAND_BUFFERS_PER_POOL]             = {};
+    Semaphore* semaphores[MAX_COMMAND_POOL_PER_RING][MAX_COMMAND_BUFFERS_PER_POOL]     = {};
+    uint32_t currentPoolIndex                                                          = 0;
+    uint32_t currentCmdIndex                                                           = 0;
+    uint32_t currentFenceIndex                                                         = 0;
+    uint32_t currentSemaphoreIndex                                                     = 0;
+    uint32_t poolCount                                                                 = 0;
+    uint32_t cmdBufferCountPerPool                                                     = 0;
+    bool hasSyncObjects                                                                = false;
 };
 
 struct CommandRingElement
 {
-    CommandPool* cmdPool       = nullptr;
+    CommandPool* cmdPool      = nullptr;
     CommandBuffer** cmdBuffer = nullptr;
-    Fence* fence               = nullptr;
-    Semaphore* semaphore       = nullptr;
-    uint32_t cmdBufferCount    = 0;
+    Fence* fence              = nullptr;
+    Semaphore* semaphore      = nullptr;
+    uint32_t cmdBufferCount   = 0;
 };
 
 CommandRingElement RequestNextCommandElement(CommandRing* ring, bool cyclePool = false, uint32_t cmdBufferCount = 1);
