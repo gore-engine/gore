@@ -44,7 +44,8 @@ struct CommandBufferCreateDesc
     bool secondary       = false;
 };
 
-struct CommandBuffer1
+// RHI Command Buffer Wrapper
+struct CommandBuffer
 {
     CommandPool* cmdPool;
 
@@ -68,7 +69,7 @@ struct CommandRingCreateDesc
 struct CommandRing
 {
     CommandPool* cmdPools[MAX_COMMAND_POOL_PER_RING];
-    CommandBuffer1* cmdBuffers[MAX_COMMAND_POOL_PER_RING][MAX_COMMAND_BUFFERS_PER_POOL];
+    CommandBuffer* cmdBuffers[MAX_COMMAND_POOL_PER_RING][MAX_COMMAND_BUFFERS_PER_POOL];
     Fence* fences[MAX_COMMAND_POOL_PER_RING][MAX_COMMAND_BUFFERS_PER_POOL];
     Semaphore* semaphores[MAX_COMMAND_POOL_PER_RING][MAX_COMMAND_BUFFERS_PER_POOL];
     uint32_t currentPoolIndex      = 0;
@@ -83,7 +84,7 @@ struct CommandRing
 struct CommandRingElement
 {
     CommandPool* cmdPool       = nullptr;
-    CommandBuffer1** cmdBuffer = nullptr;
+    CommandBuffer** cmdBuffer = nullptr;
     Fence* fence               = nullptr;
     Semaphore* semaphore       = nullptr;
     uint32_t cmdBufferCount    = 0;

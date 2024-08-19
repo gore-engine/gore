@@ -420,7 +420,7 @@ void RenderSystem::RecordDebugMarker(void* pUserContext, const RpsRuntimeOpRecor
     auto cmdBuffer = rpsVKCommandBufferFromHandle(pArgs->hCommandBuffer);
     auto renderSystem = static_cast<RenderSystem*>(pUserContext);
 
-    CommandBuffer1 cmd = { nullptr, cmdBuffer };
+    CommandBuffer cmd = { nullptr, cmdBuffer };
     switch (pArgs->mode)
     {
         case RPS_RUNTIME_DEBUG_MARKER_BEGIN:

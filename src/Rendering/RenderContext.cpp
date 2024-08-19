@@ -898,9 +898,9 @@ CommandPool* RenderContext::CreateCommandPool(const CommandPoolCreateDesc& desc)
     return commandPool;
 }
 
-CommandBuffer1* RenderContext::CreateCommandBuffer(const CommandBufferCreateDesc& desc)
+CommandBuffer* RenderContext::CreateCommandBuffer(const CommandBufferCreateDesc& desc)
 {
-    CommandBuffer1* commandBuffer = new CommandBuffer1();
+    CommandBuffer* commandBuffer = new CommandBuffer();
 
     vk::CommandBufferAllocateInfo allocInfo(
         desc.cmdPool->cmdPool,
@@ -987,7 +987,7 @@ void RenderContext::ResetCommandPool(CommandPool* commandPool)
     VULKAN_DEVICE.resetCommandPool(commandPool->cmdPool);
 }
 
-void RenderContext::BeginDebugLabel(CommandBuffer1& cmd, const char* label, float r, float g, float b)
+void RenderContext::BeginDebugLabel(CommandBuffer& cmd, const char* label, float r, float g, float b)
 {
 #if ENGINE_DEBUG
     vk::DebugUtilsLabelEXT labelInfo;
@@ -1001,14 +1001,14 @@ void RenderContext::BeginDebugLabel(CommandBuffer1& cmd, const char* label, floa
 #endif
 }
 
-void RenderContext::EndDebugLabel(CommandBuffer1& cmd)
+void RenderContext::EndDebugLabel(CommandBuffer& cmd)
 {
 #if ENGINE_DEBUG
     cmd.cmdBuffer.endDebugUtilsLabelEXT();
 #endif
 }
 
-void RenderContext::InsertDebugLabel(CommandBuffer1& cmd, const char* label, float r, float g, float b)
+void RenderContext::InsertDebugLabel(CommandBuffer& cmd, const char* label, float r, float g, float b)
 {
 #if ENGINE_DEBUG
     cmd.cmdBuffer.insertDebugUtilsLabelEXT({label, {r, g, b, 1.0f}});
