@@ -96,7 +96,7 @@ void RenderSystem::Initialize()
 
     CommandRingCreateDesc cmdRingDesc = {};
     cmdRingDesc.queueFamilyIndex = m_GpuQueueFamilyIndices[RPS_QUEUE_GRAPHICS];
-    cmdRingDesc.cmdPoolCount = 3;
+    cmdRingDesc.cmdPoolCount = m_Swapchain.GetImageCount();
     cmdRingDesc.cmdBufferCountPerPool = 1;
     cmdRingDesc.addSyncObjects = true;
 #if ENGINE_DEBUG
@@ -106,7 +106,13 @@ void RenderSystem::Initialize()
     m_GraphicsCommandRing = m_RenderContext->CreateCommandRing(cmdRingDesc);
 
     m_GpuCommandRings[RPS_QUEUE_GRAPHICS] = m_RenderContext->CreateCommandRing(cmdRingDesc);
+#if ENGINE_DEBUG
+    cmdRingDesc.debugName = "Compute Command Ring";
+#endif
     m_GpuCommandRings[RPS_QUEUE_COMPUTE] = m_RenderContext->CreateCommandRing(cmdRingDesc);
+#if ENGINE_DEBUG
+    cmdRingDesc.debugName = "Transfer Command Ring";
+#endif
     m_GpuCommandRings[RPS_QUEUE_COPY] = m_RenderContext->CreateCommandRing(cmdRingDesc);
 
     m_RenderDeletionQueue.PushFunction([this]()
