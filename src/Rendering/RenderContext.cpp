@@ -958,10 +958,10 @@ Semaphore* RenderContext::CreateSemaphore()
     return semaphore;
 }
 
-Fence* RenderContext::CreateFence()
+Fence* RenderContext::CreateFence(bool signaled)
 {
     Fence* fence = new Fence();
-    fence->fence = VULKAN_DEVICE.createFence({vk::FenceCreateFlagBits::eSignaled});
+    fence->fence = VULKAN_DEVICE.createFence({signaled ? vk::FenceCreateFlagBits::eSignaled : vk::FenceCreateFlags()});
     return fence;
 }
 
@@ -1013,5 +1013,17 @@ void RenderContext::InsertDebugLabel(CommandBuffer& cmd, const char* label, floa
 #if ENGINE_DEBUG
     cmd.cmdBuffer.insertDebugUtilsLabelEXT({label, {r, g, b, 1.0f}});
 #endif
+}
+
+void RenderContext::DestroySemaphore(Semaphore& semaphore)
+{
+    VULKAN_DEVICE.destroySemaphore(semaphore.semaphore);
+    semaphore.semaphore = nullptr;
+}
+
+void RenderContext::DestroyFence(Fence& fence)
+{
+    VULKAN_DEVICE.destroyFence(fence.fence);
+    fence.fence = nullptr;
 }
 } // namespace gore::gfx

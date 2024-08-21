@@ -114,13 +114,17 @@ public:
     BindLayout GetOrCreateBindLayout(const BindLayoutCreateInfo& createInfo);
     PipelineLayout GetOrCreatePipelineLayout(const std::vector<BindLayout>& createInfo, const DynamicBuffer* dynamicBuffer = nullptr);
 
+    Semaphore* CreateSemaphore();
+    void DestroySemaphore(Semaphore& semaphore);
+
+    Fence* CreateFence(bool signaled = true);
+    void DestroyFence(Fence& fence);
+
     void Clear();
 
 private:
     CommandPool* CreateCommandPool(const CommandPoolCreateDesc& desc);
     CommandBuffer* CreateCommandBuffer(const CommandBufferCreateDesc& desc);
-    Semaphore* CreateSemaphore();
-    Fence* CreateFence();
 
     template <typename VkHPPObject>
     void SetObjectDebugName(const VkHPPObject& object, const std::string& name)

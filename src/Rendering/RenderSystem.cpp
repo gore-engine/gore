@@ -61,7 +61,7 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_ImguiDescriptorPool(nullptr),
     // Utils
     m_RenderDeletionQueue(),
-    m_FrameIndex(0)
+    m_FrameCounter(0)
 {
     g_RenderSystem = this;
 }
@@ -86,13 +86,31 @@ void RenderSystem::Initialize()
 
     CreateRpsRuntimeDeivce();
 
-    m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), 3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+    uint32_t swapchainCount = 3;
+
+    m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), swapchainCount, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
 
     InitVulkanGraphicsCaps(m_GraphicsCaps, *m_Instance.Get(), *m_Device.GetPhysicalDevice().Get());
 
     m_RenderContext = std::make_unique<RenderContext>(&m_Device);
     m_RenderContext->PrepareRendering();
+
+    m_frameFences.resize(swapchainCount);
+    for (uint32_t i = 0; i < swapchainCount; i++)
+    {
+        m_frameFences[i].imageAcquiredSemaphore = *m_RenderContext->CreateSemaphore();
+        m_frameFences[i].renderCompleteFence = *m_RenderContext->CreateFence(true);
+    }
+
+    m_RenderDeletionQueue.PushFunction([this]()
+    {
+        for (auto& frameFence : m_frameFences)
+        {
+            m_RenderContext->DestroySemaphore(frameFence.imageAcquiredSemaphore);
+            m_RenderContext->DestroyFence(frameFence.renderCompleteFence);
+        }
+    });
 
     CommandRingCreateDesc cmdRingDesc = {};
     cmdRingDesc.queueFamilyIndex = m_GpuQueueFamilyIndices[RPS_QUEUE_GRAPHICS];
@@ -499,7 +517,15 @@ void RenderSystem::UpdateRenderGraph()
         backBufferResources[i].ptr = m_Swapchain.GetImages()[i];
     }
 
-    RpsResourceDesc backBufferDesc = {};
+    RpsResourceDesc backBufferDesc   = {};
+    backBufferDesc.type              = RPS_RESOURCE_TYPE_IMAGE_2D;
+    backBufferDesc.temporalLayers    = uint32_t(m_Swapchain.GetImageCount());
+    backBufferDesc.image.arrayLayers = 1;
+    backBufferDesc.image.mipLevels   = 1;
+    backBufferDesc.image.format      = rpsFormatFromVK((VkFormat)m_Swapchain.GetFormat().format);
+    backBufferDesc.image.width       = m_Swapchain.GetExtent().width;
+    backBufferDesc.image.height      = m_Swapchain.GetExtent().height;
+    backBufferDesc.image.sampleCount = 1;
 
     RpsConstant argsData[2]                   = {&backBufferDesc};
     const RpsRuntimeResource* argResources[2] = {backBufferResources.data()};
@@ -508,7 +534,7 @@ void RenderSystem::UpdateRenderGraph()
     uint32_t completedFrameIndex = 0;
 
     RpsRenderGraphUpdateInfo updateInfo = {};
-    updateInfo.frameIndex               = m_FrameIndex;
+    updateInfo.frameIndex               = m_FrameCounter;
     updateInfo.gpuCompletedFrameIndex   = completedFrameIndex;
     updateInfo.numArgs                  = argsCount;
     updateInfo.ppArgs                   = argsData;
@@ -534,7 +560,38 @@ RpsResult RenderSystem::ExecuteRenderGraph()
         return result;
     }
 
+    uint32_t numSemaphoresSignals = batchLayout.numFenceSignals;
+    uint32_t numCommandBuffers = batchLayout.numCmdBatches;
+
+    for (uint32_t batchId = 0; batchId < numCommandBuffers; batchId++)
+    {
+        auto& batch = batchLayout.pCmdBatches[batchId];
+    }
+
     return RpsResult::RPS_OK;
+}
+
+CommandRingElement RenderSystem::RequestRpsNextCommandElement(RpsQueueType queueType, bool cyclePool, const vk::CommandBufferInheritanceInfo* pInheritanceInfo)
+{
+    auto getPrimaryOrSecondaryCommandRing = [this](RpsQueueType queueType, const vk::CommandBufferInheritanceInfo* pInheritanceInfo) -> CommandRing*
+    {
+        return (pInheritanceInfo == nullptr) ? m_GpuCommandRings[queueType].get() : m_SecondaryCommandRing[queueType].get();
+    };
+
+    auto getRpsCommandRingElement = [&](RpsQueueType queueType, bool cyclePool, const vk::CommandBufferInheritanceInfo* pInheritanceInfo) -> CommandRingElement
+    {
+        return RequestNextCommandElement(getPrimaryOrSecondaryCommandRing(queueType, pInheritanceInfo), cyclePool, 1);
+    };
+
+    return getRpsCommandRingElement(queueType, cyclePool, pInheritanceInfo);
+}
+
+uint64_t RenderSystem::CalcGuaranteedCompletedFrameindexForRps() const
+{
+    // For VK we wait for swapchain before submitting, so max queued frame count is swapChainImages + 1.
+    const uint32_t maxQueuedFrames = uint32_t(m_Swapchain.GetImageCount() + 1);
+
+    return (m_FrameCounter > maxQueuedFrames) ? m_FrameCounter - maxQueuedFrames : RPS_GPU_COMPLETED_FRAME_INDEX_NONE;
 }
 
 void RenderSystem::DrawTriangle(const RpsCmdCallbackContext* pContext)

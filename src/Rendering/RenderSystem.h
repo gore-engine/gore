@@ -89,11 +89,11 @@ private:
     void UpdateRenderGraph();
     RpsResult ExecuteRenderGraph();
 
+    CommandRingElement RequestRpsNextCommandElement(RpsQueueType queueType, bool cyclePool = false, const vk::CommandBufferInheritanceInfo* pInheritanceInfo = nullptr);
+
+    uint64_t CalcGuaranteedCompletedFrameindexForRps() const;
+
     static void DrawTriangle(const RpsCmdCallbackContext* pContext);
-
-    std::unique_ptr<RpsSytem> m_RpsSystem;    
-
-    uint32_t m_FrameIndex;
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
 
@@ -110,7 +110,24 @@ private:
     GraphicsPipelineHandle m_UnLitPipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
     GraphicsPipelineHandle m_QuadPipelineHandle;
+    
+    struct FrameFences
+    {
+        Fence     renderCompleteFence;
+        Semaphore renderCompleteSemaphore;
+        Semaphore imageAcquiredSemaphore;
+    };
+    std::vector<FrameFences>        m_frameFences;
+    
+    std::unique_ptr<RpsSytem> m_RpsSystem;
+    std::vector<Semaphore> m_queueSemaphores;
+    Semaphore m_pendingPresentSemaphore;
+    uint32_t m_rpsQueueIndexToVkQueueFamilyMap[RPS_QUEUE_COUNT];
+    std::vector<std::vector<RpsCommandPool>> m_cmdPools[RPS_QUEUE_COUNT];
+    std::mutex m_cmdListMutex;
+    std::vector<CommandBuffer> m_cmdBufsToSubmit;
 
+    uint32_t m_FrameCounter;
     // Queue
     // Graphics, Compute, Transfer
     vk::Queue m_GpuQueues[RPS_QUEUE_COUNT];
@@ -122,6 +139,7 @@ private:
     // Command Pool & Command Buffer
     std::unique_ptr<CommandRing> m_GraphicsCommandRing;
     std::unique_ptr<CommandRing> m_GpuCommandRings[RPS_QUEUE_COUNT];
+    std::unique_ptr<CommandRing> m_SecondaryCommandRing[RPS_QUEUE_COUNT];
 
     BindLayout m_GlobalBindLayout;
     BindGroupHandle m_GlobalBindGroup;

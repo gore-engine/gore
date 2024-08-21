@@ -24,6 +24,13 @@ enum RpsQueueType
     RPS_QUEUE_COUNT
 };
 
+struct RpsCommandPool
+{
+    bool inUse                                = false;
+    vk::CommandPool cmdPool                   = VK_NULL_HANDLE;
+    std::vector<vk::CommandBuffer> cmdBuffers = {};
+};
+
 struct RpsSytemCreateInfo final
 {
 #if RPS_VK_RUNTIME
