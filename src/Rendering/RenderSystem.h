@@ -91,6 +91,23 @@ private:
 
     CommandRingElement RequestRpsNextCommandElement(RpsQueueType queueType, bool cyclePool = false, const vk::CommandBufferInheritanceInfo* pInheritanceInfo = nullptr);
 
+    struct ActiveCommandList
+    {
+        uint32_t backBufferIndex;
+        uint32_t queueIndex;
+        uint32_t poolIndex;
+        vk::CommandBuffer cmdBuf;
+        vk::CommandPool cmdPool;
+
+        operator vk::CommandBuffer() const
+        {
+            return cmdBuf;
+        }
+    };
+
+    ActiveCommandList BeginCmdList(RpsQueueType queueIndex, const vk::CommandBufferInheritanceInfo* pInheritanceInfo = nullptr);
+    void EndCmdList(ActiveCommandList& cmdList);
+
     uint64_t CalcGuaranteedCompletedFrameindexForRps() const;
 
     static void DrawTriangle(const RpsCmdCallbackContext* pContext);
@@ -128,6 +145,8 @@ private:
     std::vector<CommandBuffer> m_cmdBufsToSubmit;
 
     uint32_t m_FrameCounter;
+    uint32_t m_backBufferIndex;
+    
     // Queue
     // Graphics, Compute, Transfer
     vk::Queue m_GpuQueues[RPS_QUEUE_COUNT];

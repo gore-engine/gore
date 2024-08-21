@@ -61,7 +61,8 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_ImguiDescriptorPool(nullptr),
     // Utils
     m_RenderDeletionQueue(),
-    m_FrameCounter(0)
+    m_FrameCounter(0),
+    m_backBufferIndex(0)
 {
     g_RenderSystem = this;
 }
@@ -81,6 +82,9 @@ void RenderSystem::Initialize()
 
     std::vector<PhysicalDevice> physicalDevices = m_Instance.GetPhysicalDevices();
     m_Device = Device(GetBestDevice(physicalDevices));
+
+    m_FrameCounter = 0;
+    m_backBufferIndex = 0;
 
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(*m_Device.Get());
 
@@ -528,17 +532,24 @@ void RenderSystem::UpdateRenderGraph()
     backBufferDesc.image.sampleCount = 1;
 
     RpsConstant argsData[2]                   = {&backBufferDesc};
+
+    const uint64_t gpuCompletedFrameIndex = CalcGuaranteedCompletedFrameindexForRps();
+
     const RpsRuntimeResource* argResources[2] = {backBufferResources.data()};
     uint32_t argsCount                        = 1;
 
-    uint32_t completedFrameIndex = 0;
-
     RpsRenderGraphUpdateInfo updateInfo = {};
     updateInfo.frameIndex               = m_FrameCounter;
-    updateInfo.gpuCompletedFrameIndex   = completedFrameIndex;
+    updateInfo.gpuCompletedFrameIndex   = gpuCompletedFrameIndex;
     updateInfo.numArgs                  = argsCount;
     updateInfo.ppArgs                   = argsData;
     updateInfo.ppArgResources           = argResources;
+    
+    updateInfo.diagnosticFlags = RPS_DIAGNOSTIC_ENABLE_RUNTIME_DEBUG_NAMES;
+    if (m_FrameCounter < m_Swapchain.GetImageCount())
+    {
+        updateInfo.diagnosticFlags = RPS_DIAGNOSTIC_ENABLE_ALL;
+    }
 
     assert(_countof(argsData) == _countof(argResources));
 
@@ -584,6 +595,75 @@ CommandRingElement RenderSystem::RequestRpsNextCommandElement(RpsQueueType queue
     };
 
     return getRpsCommandRingElement(queueType, cyclePool, pInheritanceInfo);
+}
+
+RenderSystem::ActiveCommandList RenderSystem::BeginCmdList(RpsQueueType queueIndex, const vk::CommandBufferInheritanceInfo* pInheritanceInfo)
+{
+    ActiveCommandList result = {};
+    result.backBufferIndex   = m_backBufferIndex;
+    result.queueIndex        = queueIndex;
+    result.cmdPool           = VK_NULL_HANDLE;
+
+    std::lock_guard<std::mutex> lock(m_cmdListMutex);
+
+    if (m_cmdPools[queueIndex].size() <= m_Swapchain.GetImageCount())
+    {
+        m_cmdPools[queueIndex].resize(m_Swapchain.GetImageCount());
+    }
+
+    uint32_t freeIdx = 0;
+    for (; freeIdx < m_cmdPools[queueIndex][m_backBufferIndex].size(); freeIdx++)
+    {
+        if (!m_cmdPools[queueIndex][m_backBufferIndex][freeIdx].inUse)
+            break;
+    }
+
+    if (freeIdx == m_cmdPools[queueIndex][m_backBufferIndex].size())
+    {
+        vk::CommandPoolCreateInfo cmdPoolInfo = {};
+        cmdPoolInfo.queueFamilyIndex          = m_rpsQueueIndexToVkQueueFamilyMap[queueIndex];
+
+        RpsCommandPool newPool = {};
+        newPool.cmdPool        = (*m_Device.Get()).createCommandPool(cmdPoolInfo);
+
+        m_cmdPools[queueIndex][m_backBufferIndex].emplace_back(newPool);
+    }
+
+    RpsCommandPool* pPool = &m_cmdPools[queueIndex][m_backBufferIndex][freeIdx];
+    pPool->inUse          = true;
+    result.poolIndex      = freeIdx;
+    result.cmdPool        = pPool->cmdPool;
+
+    vk::CommandBufferAllocateInfo allocInfo = {};
+    allocInfo.commandBufferCount            = 1;
+    allocInfo.commandPool                   = result.cmdPool;
+    allocInfo.level                         = (pInheritanceInfo == nullptr) ? vk::CommandBufferLevel::ePrimary : vk::CommandBufferLevel::eSecondary;
+
+    result.cmdBuf = (*m_Device.Get()).allocateCommandBuffers(allocInfo)[0];
+
+    pPool->cmdBuffers.push_back(result.cmdBuf);
+
+    vk::CommandBufferBeginInfo cmdBeginInfo = {};
+    cmdBeginInfo.pInheritanceInfo           = pInheritanceInfo;
+    cmdBeginInfo.flags                      = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+    if (pInheritanceInfo)
+        cmdBeginInfo.flags |= vk::CommandBufferUsageFlagBits::eRenderPassContinue;
+
+    result.cmdBuf.begin(cmdBeginInfo);
+    return result;
+}
+
+void RenderSystem::EndCmdList(ActiveCommandList& cmdList)
+{
+    assert(cmdList.cmdBuf != VK_NULL_HANDLE);
+    assert(cmdList.backBufferIndex == m_backBufferIndex);
+
+    std::lock_guard<std::mutex> lock(m_cmdListMutex);
+
+    cmdList.cmdBuf.end();
+
+    m_cmdPools[cmdList.queueIndex][m_backBufferIndex][cmdList.poolIndex].inUse = false;
+    cmdList.cmdPool                                                            = VK_NULL_HANDLE;
 }
 
 uint64_t RenderSystem::CalcGuaranteedCompletedFrameindexForRps() const
