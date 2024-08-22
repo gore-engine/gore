@@ -14,6 +14,8 @@
 #define AssertIfFailedEx(expr, errorBlob) \
     ((errorBlob) ? ::OutputDebugStringA((const char*)errorBlob->GetBufferPointer()) : (void)0, AssertIfFailed(expr))
 
+#define g_DebugMarkers 1
+
 namespace gore::gfx
 {
 enum RpsQueueType

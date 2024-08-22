@@ -62,7 +62,8 @@ RenderSystem::RenderSystem(gore::App* app) :
     // Utils
     m_RenderDeletionQueue(),
     m_FrameCounter(0),
-    m_backBufferIndex(0)
+    m_backBufferIndex(0),
+    m_swapChainImageSemaphoreIndex(UINT32_MAX)
 {
     g_RenderSystem = this;
 }
@@ -103,16 +104,16 @@ void RenderSystem::Initialize()
     m_frameFences.resize(swapchainCount);
     for (uint32_t i = 0; i < swapchainCount; i++)
     {
-        m_frameFences[i].imageAcquiredSemaphore = *m_RenderContext->CreateSemaphore();
-        m_frameFences[i].renderCompleteFence = *m_RenderContext->CreateFence(true);
+        m_frameFences[i].imageAcquiredSemaphore = (*m_Device.Get()).createSemaphore({});
+        m_frameFences[i].renderCompleteFence = (*m_Device.Get()).createFence({ vk::FenceCreateFlagBits::eSignaled });
     }
 
     m_RenderDeletionQueue.PushFunction([this]()
     {
         for (auto& frameFence : m_frameFences)
         {
-            m_RenderContext->DestroySemaphore(frameFence.imageAcquiredSemaphore);
-            m_RenderContext->DestroyFence(frameFence.renderCompleteFence);
+            (*m_Device.Get()).destroySemaphore(frameFence.imageAcquiredSemaphore);
+            (*m_Device.Get()).destroyFence(frameFence.renderCompleteFence);            
         }
     });
 
@@ -505,7 +506,26 @@ void RenderSystem::RunRpsSystem()
 
     UpdateRenderGraph();
 
-    ExecuteRenderGraph();
+    WaitForSwapChainBuffer();
+
+    ResetCommandPools();
+
+    ExecuteRenderGraph(m_FrameCounter, *m_RpsSystem->rpsRDG);
+
+    vk::PresentInfoKHR presentInfo = {};
+    presentInfo.swapchainCount   = 1;
+    presentInfo.pSwapchains      = &(*m_Swapchain.Get());
+    presentInfo.pImageIndices    = &m_backBufferIndex;
+
+    if (m_pendingPresentSemaphore != VK_NULL_HANDLE)
+    {
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores    = &m_pendingPresentSemaphore;
+        m_pendingPresentSemaphore = VK_NULL_HANDLE;
+    }
+
+    VK_CHECK_RESULT(m_PresentQueue.presentKHR(presentInfo));
+    m_FrameCounter++;
 }
 
 void RenderSystem::UpdateRenderGraph()
@@ -556,7 +576,11 @@ void RenderSystem::UpdateRenderGraph()
     AssertIfRpsFailed(rpsRenderGraphUpdate(*m_RpsSystem->rpsRDG, &updateInfo));
 }
 
-RpsResult RenderSystem::ExecuteRenderGraph()
+RpsResult RenderSystem::ExecuteRenderGraph(
+    uint32_t frameIndex,
+    RpsRenderGraph hRenderGraph,
+    bool bWaitSwapChain,
+    bool frameEnd)
 {
     if (IsRpsReady() == false)
     {
@@ -570,16 +594,50 @@ RpsResult RenderSystem::ExecuteRenderGraph()
     {
         return result;
     }
+    ReserveSemaphores(batchLayout.numFenceSignals);
 
-    uint32_t numSemaphoresSignals = batchLayout.numFenceSignals;
-    uint32_t numCommandBuffers = batchLayout.numCmdBatches;
-
-    for (uint32_t batchId = 0; batchId < numCommandBuffers; batchId++)
+    for (uint32_t iBatch = 0; iBatch < batchLayout.numCmdBatches; iBatch++)
     {
-        auto& batch = batchLayout.pCmdBatches[batchId];
+        auto& batch = batchLayout.pCmdBatches[iBatch];
+
+        ActiveCommandList cmdList = BeginCmdList(RpsQueueType(batch.queueIndex));
+
+        RpsRenderGraphRecordCommandInfo recordInfo = {};
+
+        recordInfo.hCmdBuffer    = rpsVKCommandBufferToHandle(cmdList.cmdBuf);
+        recordInfo.pUserContext  = this;
+        recordInfo.frameIndex    = frameIndex;
+        recordInfo.cmdBeginIndex = batch.cmdBegin;
+        recordInfo.numCmds       = batch.numCmds;
+
+        if (g_DebugMarkers)
+        {
+            recordInfo.flags = RPS_RECORD_COMMAND_FLAG_ENABLE_COMMAND_DEBUG_MARKERS;
+        }
+
+        result = rpsRenderGraphRecordCommands(hRenderGraph, &recordInfo);
+        if (RPS_FAILED(result))
+            return result;
+
+        EndCmdList(cmdList);
+
+        SubmitCmdLists(&cmdList,
+                       1,
+                       frameEnd && ((iBatch + 1) == batchLayout.numCmdBatches),
+                       batch.numWaitFences,
+                       batchLayout.pWaitFenceIndices + batch.waitFencesBegin,
+                       batch.signalFenceIndex,
+                       bWaitSwapChain && (iBatch == 0)); // TODO - RPS to mark first access to swapchain image
+
+        RecycleCmdList(cmdList);
     }
 
-    return RpsResult::RPS_OK;
+    if (batchLayout.numCmdBatches == 0)
+    {
+        SubmitCmdLists(nullptr, 0, true, 0, nullptr, UINT32_MAX, bWaitSwapChain);
+    }
+
+    return RPS_OK;
 }
 
 CommandRingElement RenderSystem::RequestRpsNextCommandElement(RpsQueueType queueType, bool cyclePool, const vk::CommandBufferInheritanceInfo* pInheritanceInfo)
@@ -595,6 +653,19 @@ CommandRingElement RenderSystem::RequestRpsNextCommandElement(RpsQueueType queue
     };
 
     return getRpsCommandRingElement(queueType, cyclePool, pInheritanceInfo);
+}
+
+void RenderSystem::WaitForSwapChainBuffer()
+{
+    m_swapChainImageSemaphoreIndex = m_backBufferIndex;
+
+    VK_CHECK_RESULT((*m_Device.Get()).acquireNextImageKHR(m_Swapchain.Get(), UINT64_MAX, m_frameFences[m_backBufferIndex].imageAcquiredSemaphore, VK_NULL_HANDLE, &m_backBufferIndex));
+
+    if ((m_FrameCounter % m_Swapchain.GetImageCount()) != m_backBufferIndex)
+        m_FrameCounter = m_backBufferIndex;
+
+    VK_CHECK_RESULT((*m_Device.Get()).waitForFences(1, &m_frameFences[m_backBufferIndex].renderCompleteFence, VK_TRUE, UINT64_MAX));
+    VK_CHECK_RESULT((*m_Device.Get()).resetFences(1, &m_frameFences[m_backBufferIndex].renderCompleteFence));
 }
 
 RenderSystem::ActiveCommandList RenderSystem::BeginCmdList(RpsQueueType queueIndex, const vk::CommandBufferInheritanceInfo* pInheritanceInfo)
@@ -653,6 +724,82 @@ RenderSystem::ActiveCommandList RenderSystem::BeginCmdList(RpsQueueType queueInd
     return result;
 }
 
+void RenderSystem::SubmitCmdLists(ActiveCommandList* pCmdLists, uint32_t numCmdLists, bool frameEnd, uint32_t waitSemaphoreCount, const uint32_t* pWaitSemaphoreIndices, uint32_t signalSemaphoreIndex, bool bWaitSwapChain)
+{
+    vk::CommandBuffer* pCmdBufs = nullptr;
+
+    if (numCmdLists > 0)
+    {
+        pCmdBufs = &pCmdLists[0].cmdBuf;
+        if (numCmdLists > 1)
+        {
+            m_cmdBufsToSubmit.resize(numCmdLists);
+            for (uint32_t i = 0; i < m_cmdBufsToSubmit.size(); i++)
+            {
+                m_cmdBufsToSubmit[i] = pCmdLists[i].cmdBuf;
+            }
+            pCmdBufs = m_cmdBufsToSubmit.data();
+        }
+    }
+
+    vk::PipelineStageFlags submitWaitStage = vk::PipelineStageFlagBits::eBottomOfPipe;
+
+    uint32_t numWaitSemaphores                       = 0;
+    vk::Semaphore waitSemaphores[RPS_MAX_QUEUES + 1] = {};
+
+    // Wait for swapchain if there's a pending signal, and if user asked to wait or at frame end.
+    if ((m_swapChainImageSemaphoreIndex != UINT32_MAX) && (bWaitSwapChain || frameEnd))
+    {
+        waitSemaphores[numWaitSemaphores] = m_frameFences[m_swapChainImageSemaphoreIndex].imageAcquiredSemaphore;
+        ++numWaitSemaphores;
+        m_swapChainImageSemaphoreIndex = UINT32_MAX;
+    }
+
+    assert(waitSemaphoreCount <= RPS_MAX_QUEUES);
+
+    for (uint32_t i = 0; (i < waitSemaphoreCount) && (i < RPS_MAX_QUEUES); i++)
+    {
+        assert(pWaitSemaphoreIndices[i] < m_queueSemaphores.size());
+        waitSemaphores[numWaitSemaphores] = m_queueSemaphores[pWaitSemaphoreIndices[i]];
+        ++numWaitSemaphores;
+    }
+
+    vk::Fence submitFence = VK_NULL_HANDLE;
+
+    uint32_t numSignalSemaphores      = 0;
+    vk::Semaphore signalSemaphores[2] = {};
+
+    if (frameEnd)
+    {
+        if (pCmdLists && (m_PresentQueue != m_GpuQueues[pCmdLists->queueIndex]))
+        {
+            m_pendingPresentSemaphore             = m_frameFences[m_backBufferIndex].renderCompleteSemaphore;
+            signalSemaphores[numSignalSemaphores] = m_pendingPresentSemaphore;
+            ++numSignalSemaphores;
+        }
+
+        submitFence = m_frameFences[m_backBufferIndex].renderCompleteFence;
+    }
+
+    if (signalSemaphoreIndex != UINT32_MAX)
+    {
+        signalSemaphores[numSignalSemaphores] = m_queueSemaphores[signalSemaphoreIndex];
+        ++numSignalSemaphores;
+    }
+
+    vk::SubmitInfo submitInfo       = {};
+    submitInfo.commandBufferCount   = numCmdLists;
+    submitInfo.pCommandBuffers      = pCmdBufs;
+    submitInfo.pWaitSemaphores      = waitSemaphores;
+    submitInfo.waitSemaphoreCount   = numWaitSemaphores;
+    submitInfo.pSignalSemaphores    = signalSemaphores;
+    submitInfo.signalSemaphoreCount = numSignalSemaphores;
+    submitInfo.pWaitDstStageMask    = &submitWaitStage;
+
+    vk::Queue queue = pCmdLists ? m_GpuQueues[pCmdLists->queueIndex] : m_PresentQueue;
+    VK_CHECK_RESULT(queue.submit(1, &submitInfo, submitFence));
+}
+
 void RenderSystem::EndCmdList(ActiveCommandList& cmdList)
 {
     assert(cmdList.cmdBuf != VK_NULL_HANDLE);
@@ -664,6 +811,44 @@ void RenderSystem::EndCmdList(ActiveCommandList& cmdList)
 
     m_cmdPools[cmdList.queueIndex][m_backBufferIndex][cmdList.poolIndex].inUse = false;
     cmdList.cmdPool                                                            = VK_NULL_HANDLE;
+}
+
+void RenderSystem::RecycleCmdList(ActiveCommandList& cmdList)
+{
+    cmdList.cmdBuf = VK_NULL_HANDLE;
+}
+
+void RenderSystem::ResetCommandPools()
+{
+    for (uint32_t iQ = 0; iQ < RPS_QUEUE_COUNT; iQ++)
+    {
+        if (m_backBufferIndex < m_cmdPools[iQ].size())
+        {
+            for (auto& pool : m_cmdPools[iQ][m_backBufferIndex])
+            {
+                if (!pool.cmdBuffers.empty())
+                {
+                    (*m_Device.Get()).freeCommandBuffers(pool.cmdPool, uint32_t(pool.cmdBuffers.size()), pool.cmdBuffers.data());
+                    pool.cmdBuffers.clear();
+                }
+                (*m_Device.Get()).resetCommandPool(pool.cmdPool, {});
+            }
+        }
+    }
+}
+
+void RenderSystem::ReserveSemaphores(uint32_t numSyncs)
+{
+    const uint32_t oldSize = uint32_t(m_queueSemaphores.size());
+    if (numSyncs > oldSize)
+    {
+        m_queueSemaphores.resize(numSyncs, VK_NULL_HANDLE);
+    }
+
+    for (size_t i = oldSize; i < numSyncs; i++)
+    {
+        m_queueSemaphores[i] = (*m_Device.Get()).createSemaphore({});
+    }
 }
 
 uint64_t RenderSystem::CalcGuaranteedCompletedFrameindexForRps() const

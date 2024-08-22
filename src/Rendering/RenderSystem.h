@@ -87,8 +87,11 @@ private:
     void RunRpsSystem();
 
     void UpdateRenderGraph();
-    RpsResult ExecuteRenderGraph();
-
+    RpsResult ExecuteRenderGraph(
+        uint32_t frameIndex,
+        RpsRenderGraph hRenderGraph,
+        bool bWaitSwapChain = true,
+        bool frameEnd       = true);
     CommandRingElement RequestRpsNextCommandElement(RpsQueueType queueType, bool cyclePool = false, const vk::CommandBufferInheritanceInfo* pInheritanceInfo = nullptr);
 
     struct ActiveCommandList
@@ -105,8 +108,23 @@ private:
         }
     };
 
+    void WaitForSwapChainBuffer();
+
     ActiveCommandList BeginCmdList(RpsQueueType queueIndex, const vk::CommandBufferInheritanceInfo* pInheritanceInfo = nullptr);
+    void SubmitCmdLists(
+        ActiveCommandList* pCmdLists,
+        uint32_t numCmdLists,
+        bool frameEnd,
+        uint32_t waitSemaphoreCount           = 0,
+        const uint32_t* pWaitSemaphoreIndices = nullptr,
+        uint32_t signalSemaphoreIndex         = UINT32_MAX,
+        bool bWaitSwapChain                   = false);
     void EndCmdList(ActiveCommandList& cmdList);
+    void RecycleCmdList(ActiveCommandList& cmdList);
+
+    void ResetCommandPools();
+
+    void ReserveSemaphores(uint32_t numSyncs);
 
     uint64_t CalcGuaranteedCompletedFrameindexForRps() const;
 
@@ -130,23 +148,24 @@ private:
     
     struct FrameFences
     {
-        Fence     renderCompleteFence;
-        Semaphore renderCompleteSemaphore;
-        Semaphore imageAcquiredSemaphore;
+        vk::Fence     renderCompleteFence;
+        vk::Semaphore renderCompleteSemaphore;
+        vk::Semaphore imageAcquiredSemaphore;
     };
     std::vector<FrameFences>        m_frameFences;
     
     std::unique_ptr<RpsSytem> m_RpsSystem;
-    std::vector<Semaphore> m_queueSemaphores;
-    Semaphore m_pendingPresentSemaphore;
+    std::vector<vk::Semaphore> m_queueSemaphores;
+    vk::Semaphore m_pendingPresentSemaphore;
     uint32_t m_rpsQueueIndexToVkQueueFamilyMap[RPS_QUEUE_COUNT];
     std::vector<std::vector<RpsCommandPool>> m_cmdPools[RPS_QUEUE_COUNT];
     std::mutex m_cmdListMutex;
-    std::vector<CommandBuffer> m_cmdBufsToSubmit;
+    std::vector<vk::CommandBuffer> m_cmdBufsToSubmit;
 
     uint32_t m_FrameCounter;
     uint32_t m_backBufferIndex;
-    
+    uint32_t m_swapChainImageSemaphoreIndex;
+
     // Queue
     // Graphics, Compute, Transfer
     vk::Queue m_GpuQueues[RPS_QUEUE_COUNT];
