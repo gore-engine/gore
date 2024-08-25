@@ -162,7 +162,7 @@ void Swapchain::CreateSwapchain()
     vk::SwapchainCreateInfoKHR createInfo({}, *m_Surface, m_ImageCount,
                                           m_Format.format, m_Format.colorSpace,
                                           m_Extent, layers,
-                                          vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc, // TODO: Check supported usage and maybe get this from user?
+                                          vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst, // TODO: Check supported usage and maybe get this from user?
                                           vk::SharingMode::eExclusive,
                                           {}, // queueFamilies
                                           surfaceCapabilities.currentTransform,
@@ -190,15 +190,6 @@ void Swapchain::CreateSwapchain()
     }
 
     LOG(DEBUG, "Created Vulkan swapchain with %d images, size %dx%d\n", m_ImageCount, m_Extent.width, m_Extent.height);
-
-    // acquire the first image
-    vk::Fence imageAcquiredFence = *m_ImageAcquiredFences[m_CurrentImageIndex];
-    m_Device->Get().resetFences({imageAcquiredFence});
-    auto acquireResult = m_Swapchain.acquireNextImage(UINT64_MAX, nullptr, imageAcquiredFence);
-    vk::Result res = acquireResult.first; // assume success
-    m_CurrentImageIndex = acquireResult.second;
-    res = m_Device->Get().waitForFences({imageAcquiredFence}, true, UINT64_MAX);
-    VK_CHECK_RESULT(res);
 }
 
 void Swapchain::Clear()

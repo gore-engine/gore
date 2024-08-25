@@ -161,6 +161,8 @@ void RenderSystem::Initialize()
 
 void RenderSystem::Update()
 {
+    return RunRpsSystem();
+
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -352,8 +354,8 @@ void RenderSystem::Update()
 
 void RenderSystem::Shutdown()
 {
-    m_Device.WaitIdle();
-    
+    WaitForGpuIdle();
+
     if (m_DepthImage != nullptr)
     {
         m_DepthImageView = nullptr;
@@ -376,7 +378,7 @@ void RenderSystem::OnResize(Window* window, int width, int height)
     if (surfaceExtent.width == static_cast<uint32_t>(width) && surfaceExtent.height == static_cast<uint32_t>(height))
         return;
     
-    m_Device.WaitIdle();
+    WaitForGpuIdle();
     if (m_DepthImage != nullptr)
     {
         m_DepthImageView = nullptr;
@@ -532,7 +534,7 @@ void RenderSystem::UpdateRenderGraph()
 {
     if (IsRpsReady() == false)
         return;
-
+    return;
     uint32_t backBufferCount = m_Swapchain.GetImageCount();
 
     std::vector<RpsRuntimeResource> backBufferResources(backBufferCount);
@@ -588,54 +590,56 @@ RpsResult RenderSystem::ExecuteRenderGraph(
         return RpsResult::RPS_ERROR_UNSPECIFIED; 
     }
     
-    RpsRenderGraphBatchLayout batchLayout = {};
-    RpsResult result = rpsRenderGraphGetBatchLayout(*m_RpsSystem->rpsRDG, &batchLayout);
-    if (RPS_FAILED(result))
-    {
-        return result;
-    }
-    ReserveSemaphores(batchLayout.numFenceSignals);
+    PrepareSwapChain();
 
-    for (uint32_t iBatch = 0; iBatch < batchLayout.numCmdBatches; iBatch++)
-    {
-        auto& batch = batchLayout.pCmdBatches[iBatch];
+    // RpsRenderGraphBatchLayout batchLayout = {};
+    // RpsResult result = rpsRenderGraphGetBatchLayout(*m_RpsSystem->rpsRDG, &batchLayout);
+    // if (RPS_FAILED(result))
+    // {
+    //     return result;
+    // }
+    // ReserveSemaphores(batchLayout.numFenceSignals);
 
-        ActiveCommandList cmdList = BeginCmdList(RpsQueueType(batch.queueIndex));
+    // for (uint32_t iBatch = 0; iBatch < batchLayout.numCmdBatches; iBatch++)
+    // {
+    //     auto& batch = batchLayout.pCmdBatches[iBatch];
 
-        RpsRenderGraphRecordCommandInfo recordInfo = {};
+    //     ActiveCommandList cmdList = BeginCmdList(RpsQueueType(batch.queueIndex));
 
-        recordInfo.hCmdBuffer    = rpsVKCommandBufferToHandle(cmdList.cmdBuf);
-        recordInfo.pUserContext  = this;
-        recordInfo.frameIndex    = frameIndex;
-        recordInfo.cmdBeginIndex = batch.cmdBegin;
-        recordInfo.numCmds       = batch.numCmds;
+    //     RpsRenderGraphRecordCommandInfo recordInfo = {};
 
-        if (g_DebugMarkers)
-        {
-            recordInfo.flags = RPS_RECORD_COMMAND_FLAG_ENABLE_COMMAND_DEBUG_MARKERS;
-        }
+    //     recordInfo.hCmdBuffer    = rpsVKCommandBufferToHandle(cmdList.cmdBuf);
+    //     recordInfo.pUserContext  = this;
+    //     recordInfo.frameIndex    = frameIndex;
+    //     recordInfo.cmdBeginIndex = batch.cmdBegin;
+    //     recordInfo.numCmds       = batch.numCmds;
 
-        result = rpsRenderGraphRecordCommands(hRenderGraph, &recordInfo);
-        if (RPS_FAILED(result))
-            return result;
+    //     if (g_DebugMarkers)
+    //     {
+    //         recordInfo.flags = RPS_RECORD_COMMAND_FLAG_ENABLE_COMMAND_DEBUG_MARKERS;
+    //     }
 
-        EndCmdList(cmdList);
+    //     result = rpsRenderGraphRecordCommands(hRenderGraph, &recordInfo);
+    //     if (RPS_FAILED(result))
+    //         return result;
 
-        SubmitCmdLists(&cmdList,
-                       1,
-                       frameEnd && ((iBatch + 1) == batchLayout.numCmdBatches),
-                       batch.numWaitFences,
-                       batchLayout.pWaitFenceIndices + batch.waitFencesBegin,
-                       batch.signalFenceIndex,
-                       bWaitSwapChain && (iBatch == 0)); // TODO - RPS to mark first access to swapchain image
+    //     EndCmdList(cmdList);
 
-        RecycleCmdList(cmdList);
-    }
+    //     SubmitCmdLists(&cmdList,
+    //                    1,
+    //                    frameEnd && ((iBatch + 1) == batchLayout.numCmdBatches),
+    //                    batch.numWaitFences,
+    //                    batchLayout.pWaitFenceIndices + batch.waitFencesBegin,
+    //                    batch.signalFenceIndex,
+    //                    bWaitSwapChain && (iBatch == 0)); // TODO - RPS to mark first access to swapchain image
 
-    if (batchLayout.numCmdBatches == 0)
-    {
-        SubmitCmdLists(nullptr, 0, true, 0, nullptr, UINT32_MAX, bWaitSwapChain);
-    }
+    //     RecycleCmdList(cmdList);
+    // }
+
+    // if (batchLayout.numCmdBatches == 0)
+    // {
+    //     SubmitCmdLists(nullptr, 0, true, 0, nullptr, UINT32_MAX, bWaitSwapChain);
+    // }
 
     return RPS_OK;
 }
@@ -668,6 +672,61 @@ void RenderSystem::WaitForSwapChainBuffer()
     VK_CHECK_RESULT((*m_Device.Get()).resetFences(1, &m_frameFences[m_backBufferIndex].renderCompleteFence));
 }
 
+void RenderSystem::WaitForGpuIdle()
+{
+    m_Device.WaitIdle();
+}
+
+void RenderSystem::PrepareSwapChain()
+{    
+    ActiveCommandList cmdList = BeginCmdList(RPS_QUEUE_GRAPHICS);
+
+    vk::Image backBuffer = m_Swapchain.GetImages()[m_backBufferIndex];
+
+    vk::ImageMemoryBarrier imageBarrier = {};
+    imageBarrier.srcAccessMask               = {};
+    imageBarrier.dstAccessMask               = vk::AccessFlagBits::eTransferWrite;
+    imageBarrier.oldLayout                   = vk::ImageLayout::eUndefined;
+    imageBarrier.newLayout                   = vk::ImageLayout::eTransferDstOptimal;
+    imageBarrier.image                       = backBuffer;
+    imageBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+    imageBarrier.subresourceRange.layerCount = 1;
+    imageBarrier.subresourceRange.levelCount = 1;
+
+    std::vector<vk::ImageMemoryBarrier> imageBarriers = {imageBarrier};
+
+    cmdList.cmdBuf.pipelineBarrier(
+                            vk::PipelineStageFlagBits::eBottomOfPipe,
+                            vk::PipelineStageFlagBits::eTransfer,                          
+                            {},
+                            {},
+                            {},
+                            imageBarriers);
+
+    vk::ClearColorValue clearColor(0.0f, 0.2f, 0.4f, 1.0f);
+    cmdList.cmdBuf.clearColorImage(backBuffer, vk::ImageLayout::eTransferDstOptimal, &clearColor, 1, &imageBarrier.subresourceRange);
+
+    imageBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+    imageBarrier.dstAccessMask = {};
+    imageBarrier.oldLayout     = vk::ImageLayout::eTransferDstOptimal;
+    imageBarrier.newLayout     = vk::ImageLayout::ePresentSrcKHR;
+
+    std::vector<vk::ImageMemoryBarrier> imageBarriers2 = {imageBarrier};
+    cmdList.cmdBuf.pipelineBarrier(
+                            vk::PipelineStageFlagBits::eTransfer,
+                            vk::PipelineStageFlagBits::eTopOfPipe,
+                            {},
+                            {},
+                            {},
+                            imageBarriers2);
+
+    EndCmdList(cmdList);
+
+    SubmitCmdLists(&cmdList, 1, true);
+
+    RecycleCmdList(cmdList);
+}
+
 RenderSystem::ActiveCommandList RenderSystem::BeginCmdList(RpsQueueType queueIndex, const vk::CommandBufferInheritanceInfo* pInheritanceInfo)
 {
     ActiveCommandList result = {};
@@ -692,7 +751,7 @@ RenderSystem::ActiveCommandList RenderSystem::BeginCmdList(RpsQueueType queueInd
     if (freeIdx == m_cmdPools[queueIndex][m_backBufferIndex].size())
     {
         vk::CommandPoolCreateInfo cmdPoolInfo = {};
-        cmdPoolInfo.queueFamilyIndex          = m_rpsQueueIndexToVkQueueFamilyMap[queueIndex];
+        cmdPoolInfo.queueFamilyIndex          = m_GpuQueueFamilyIndices[queueIndex];
 
         RpsCommandPool newPool = {};
         newPool.cmdPool        = (*m_Device.Get()).createCommandPool(cmdPoolInfo);
@@ -771,7 +830,7 @@ void RenderSystem::SubmitCmdLists(ActiveCommandList* pCmdLists, uint32_t numCmdL
 
     if (frameEnd)
     {
-        if (pCmdLists && (m_PresentQueue != m_GpuQueues[pCmdLists->queueIndex]))
+        if (pCmdLists && ((*m_PresentQueue) != m_GpuQueues[pCmdLists->queueIndex]))
         {
             m_pendingPresentSemaphore             = m_frameFences[m_backBufferIndex].renderCompleteSemaphore;
             signalSemaphores[numSignalSemaphores] = m_pendingPresentSemaphore;

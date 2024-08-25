@@ -109,6 +109,9 @@ private:
     };
 
     void WaitForSwapChainBuffer();
+    void WaitForGpuIdle();
+
+    void PrepareSwapChain();
 
     ActiveCommandList BeginCmdList(RpsQueueType queueIndex, const vk::CommandBufferInheritanceInfo* pInheritanceInfo = nullptr);
     void SubmitCmdLists(
@@ -157,7 +160,6 @@ private:
     std::unique_ptr<RpsSytem> m_RpsSystem;
     std::vector<vk::Semaphore> m_queueSemaphores;
     vk::Semaphore m_pendingPresentSemaphore;
-    uint32_t m_rpsQueueIndexToVkQueueFamilyMap[RPS_QUEUE_COUNT];
     std::vector<std::vector<RpsCommandPool>> m_cmdPools[RPS_QUEUE_COUNT];
     std::mutex m_cmdListMutex;
     std::vector<vk::CommandBuffer> m_cmdBufsToSubmit;
