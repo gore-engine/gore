@@ -153,7 +153,6 @@ private:
     {
         vk::Fence     renderCompleteFence;
         vk::Semaphore renderCompleteSemaphore;
-        vk::Semaphore imageAcquiredSemaphore;
     };
     std::vector<FrameFences>        m_frameFences;
     
@@ -163,10 +162,12 @@ private:
     std::vector<std::vector<RpsCommandPool>> m_cmdPools[RPS_QUEUE_COUNT];
     std::mutex m_cmdListMutex;
     std::vector<vk::CommandBuffer> m_cmdBufsToSubmit;
+    std::vector<vk::Semaphore> m_imageAcquiredSemaphores;
 
     uint32_t m_FrameCounter;
     uint32_t m_backBufferIndex;
     uint32_t m_swapChainImageSemaphoreIndex;
+    uint32_t m_pendingAcqImgSemaphoreIndex;
 
     // Queue
     // Graphics, Compute, Transfer

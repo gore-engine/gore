@@ -63,7 +63,8 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_RenderDeletionQueue(),
     m_FrameCounter(0),
     m_backBufferIndex(0),
-    m_swapChainImageSemaphoreIndex(UINT32_MAX)
+    m_swapChainImageSemaphoreIndex(0),
+    m_pendingAcqImgSemaphoreIndex(UINT32_MAX)
 {
     g_RenderSystem = this;
 }
@@ -104,16 +105,24 @@ void RenderSystem::Initialize()
     m_frameFences.resize(swapchainCount);
     for (uint32_t i = 0; i < swapchainCount; i++)
     {
-        m_frameFences[i].imageAcquiredSemaphore = (*m_Device.Get()).createSemaphore({});
         m_frameFences[i].renderCompleteFence = (*m_Device.Get()).createFence({ vk::FenceCreateFlagBits::eSignaled });
+    }
+    
+    m_imageAcquiredSemaphores.resize(swapchainCount + 1);
+    for (uint32_t i = 0; i < swapchainCount + 1; i++)
+    {
+        m_imageAcquiredSemaphores[i] = (*m_Device.Get()).createSemaphore({});
     }
 
     m_RenderDeletionQueue.PushFunction([this]()
     {
         for (auto& frameFence : m_frameFences)
         {
-            (*m_Device.Get()).destroySemaphore(frameFence.imageAcquiredSemaphore);
             (*m_Device.Get()).destroyFence(frameFence.renderCompleteFence);            
+        }
+        for (auto& imageAcquiredSemaphore : m_imageAcquiredSemaphores)
+        {
+            (*m_Device.Get()).destroySemaphore(imageAcquiredSemaphore);
         }
     });
 
@@ -661,9 +670,11 @@ CommandRingElement RenderSystem::RequestRpsNextCommandElement(RpsQueueType queue
 
 void RenderSystem::WaitForSwapChainBuffer()
 {
-    m_swapChainImageSemaphoreIndex = m_backBufferIndex;
+    m_swapChainImageSemaphoreIndex = (m_swapChainImageSemaphoreIndex + 1) % m_imageAcquiredSemaphores.size();
 
-    VK_CHECK_RESULT((*m_Device.Get()).acquireNextImageKHR(m_Swapchain.Get(), UINT64_MAX, m_frameFences[m_backBufferIndex].imageAcquiredSemaphore, VK_NULL_HANDLE, &m_backBufferIndex));
+    VK_CHECK_RESULT((*m_Device.Get()).acquireNextImageKHR(*m_Swapchain.Get(), UINT64_MAX, m_imageAcquiredSemaphores[m_swapChainImageSemaphoreIndex], VK_NULL_HANDLE, &m_backBufferIndex));
+    
+    m_pendingAcqImgSemaphoreIndex = m_swapChainImageSemaphoreIndex;
 
     if ((m_FrameCounter % m_Swapchain.GetImageCount()) != m_backBufferIndex)
         m_FrameCounter = m_backBufferIndex;
@@ -807,11 +818,11 @@ void RenderSystem::SubmitCmdLists(ActiveCommandList* pCmdLists, uint32_t numCmdL
     vk::Semaphore waitSemaphores[RPS_MAX_QUEUES + 1] = {};
 
     // Wait for swapchain if there's a pending signal, and if user asked to wait or at frame end.
-    if ((m_swapChainImageSemaphoreIndex != UINT32_MAX) && (bWaitSwapChain || frameEnd))
+    if ((m_pendingAcqImgSemaphoreIndex != UINT32_MAX) && (bWaitSwapChain || frameEnd))
     {
-        waitSemaphores[numWaitSemaphores] = m_frameFences[m_swapChainImageSemaphoreIndex].imageAcquiredSemaphore;
+        waitSemaphores[numWaitSemaphores] = m_imageAcquiredSemaphores[m_pendingAcqImgSemaphoreIndex];
         ++numWaitSemaphores;
-        m_swapChainImageSemaphoreIndex = UINT32_MAX;
+        m_pendingAcqImgSemaphoreIndex = UINT32_MAX;
     }
 
     assert(waitSemaphoreCount <= RPS_MAX_QUEUES);
