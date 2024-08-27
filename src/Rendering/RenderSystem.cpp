@@ -344,21 +344,21 @@ void RenderSystem::Update()
     vk::SubmitInfo submitInfo(waitSemaphores, waitStages, submitCommandBuffers, renderFinishedSemaphores);
     m_GpuQueues[RPS_QUEUE_GRAPHICS].submit({submitInfo}, inFlightFence);
 
-    bool recreated = m_Swapchain.Present(renderFinishedSemaphores, m_PresentQueue);
+    // bool recreated = m_Swapchain.Present(renderFinishedSemaphores, m_PresentQueue);
 
-    if (recreated)
-    {
-        if (m_DepthImage != nullptr)
-        {
-            m_DepthImageView = nullptr;
-            vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
-        }
-        int width, height;
-        window->GetSize(&width, &height);
-        CreateDepthBuffer();
+    // if (recreated)
+    // {
+    //     if (m_DepthImage != nullptr)
+    //     {
+    //         m_DepthImageView = nullptr;
+    //         vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
+    //     }
+    //     int width, height;
+    //     window->GetSize(&width, &height);
+    //     CreateDepthBuffer();
 
-        m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
-    }
+    //     m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
+    // }
 }
 
 void RenderSystem::Shutdown()
@@ -372,6 +372,17 @@ void RenderSystem::Shutdown()
         vmaDestroyImage(m_Device.GetVmaAllocator(), m_DepthImage, m_DepthImageAllocation);
     }
     
+    for (uint32_t queueId = RPS_QUEUE_GRAPHICS; queueId < RPS_QUEUE_COUNT; queueId++)
+    {
+        for (auto& cmdPools : m_cmdPools[queueId])
+        {
+            for (auto& cmdPool : cmdPools)
+            {
+                (*m_Device.Get()).destroyCommandPool(cmdPool.cmdPool);
+            }
+        }
+    }
+
     DestroyRpsRuntimeDevice();
 
     m_RenderDeletionQueue.Flush();
@@ -841,7 +852,7 @@ void RenderSystem::SubmitCmdLists(ActiveCommandList* pCmdLists, uint32_t numCmdL
 
     if (frameEnd)
     {
-        if (pCmdLists && ((*m_PresentQueue) != m_GpuQueues[pCmdLists->queueIndex]))
+        if (pCmdLists && (m_PresentQueue != m_GpuQueues[pCmdLists->queueIndex]))
         {
             m_pendingPresentSemaphore             = m_frameFences[m_backBufferIndex].renderCompleteSemaphore;
             signalSemaphores[numSignalSemaphores] = m_pendingPresentSemaphore;
@@ -1336,8 +1347,8 @@ void RenderSystem::GetQueues()
     m_GpuQueues[RPS_QUEUE_COPY] = (*m_Device.Get()).getQueue(m_GpuQueueFamilyIndices[RPS_QUEUE_COPY], 0);
     m_Device.SetName(*reinterpret_cast<uint64_t*>(&m_GpuQueues[RPS_QUEUE_COPY]), vk::ObjectType::eQueue, "Copy Queue");
 
-    m_PresentQueue  = m_Device.Get().getQueue(m_PresentQueueFamilyIndex, 0);
-    m_Device.SetName(m_PresentQueue, "Present Queue");
+    m_PresentQueue  = (*m_Device.Get()).getQueue(m_PresentQueueFamilyIndex, 0);
+    m_Device.SetName(*reinterpret_cast<uint64_t*>(&m_PresentQueue), vk::ObjectType::eQueue, "Present Queue");
 }
 
 const PhysicalDevice& RenderSystem::GetBestDevice(const std::vector<PhysicalDevice>& devices) const

@@ -174,7 +174,7 @@ private:
     vk::Queue m_GpuQueues[RPS_QUEUE_COUNT];
     uint32_t m_GpuQueueFamilyIndices[RPS_QUEUE_COUNT];
     
-    vk::raii::Queue m_PresentQueue;
+    vk::Queue m_PresentQueue;
     uint32_t m_PresentQueueFamilyIndex;
 
     // Command Pool & Command Buffer
