@@ -21,8 +21,6 @@ struct Pipeline
 struct GraphicsPipeline final : Pipeline
 {
     using Pipeline::Pipeline;
-
-    VkRenderPass renderPass;
 };
 
 struct ComputePipeline final : Pipeline

@@ -13,18 +13,19 @@
 
 namespace gore::gfx
 {
-RenderContext::RenderContext(const Device* device) :
-    m_DevicePtr(device),
+RenderContext::RenderContext(const RenderContextCreateInfo& createInfo) :
+    m_DevicePtr(createInfo.device),
     m_ShaderModulePool(),
     m_GraphicsPipelinePool(),
     m_BufferPool(),
     m_TexturePool(),
-    m_CommandPool(VK_NULL_HANDLE)
+    m_CommandPool(VK_NULL_HANDLE),
+    m_PSOFlags(createInfo.flags)
 {
-    uint32_t queueFamilyIndex = device->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics);
+    uint32_t queueFamilyIndex = m_DevicePtr->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics);
 
-    m_CommandPool = device->Get().createCommandPool({{}, queueFamilyIndex});
-    device->SetName(m_CommandPool, "RenderContext CommandPool");
+    m_CommandPool = m_DevicePtr->Get().createCommandPool({{}, queueFamilyIndex});
+    m_DevicePtr->SetName(m_CommandPool, "RenderContext CommandPool");
 }
 
 RenderContext::~RenderContext()
@@ -327,9 +328,14 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
     VkFormat depthFormat               = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.depthFormat));
     VkFormat stencilFormat             = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.stencilFormat));
 
+    bool useDynamicRendering = desc.UseDynamicRendering() && (m_PSOFlags & PSO_CREATE_FLAG_PREFER_DYNAMIC_RENDERING) != 0;
+    bool useRenderPass       = m_PSOFlags & PSO_CREATE_FLAG_PREFER_RENDER_PASS;
+    bool useSingleSubpass    = m_PSOFlags & PSO_CREATE_FLAG_PREFER_SINGLE_SUBPASS;
+    bool useNoDependencies   = m_PSOFlags & PSO_CREATE_FLAG_PREFER_NO_DEPENDENCIES;
+
     VkPipelineRenderingCreateInfoKHR rfInfo = {};
 
-    if (desc.UseDynamicRendering())
+    if (useDynamicRendering)
     {
         rfInfo.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
         rfInfo.pNext                   = nullptr;
@@ -342,7 +348,6 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
     }
 
     GraphicsPipeline graphicsPipeline(std::move(VULKAN_DEVICE.createGraphicsPipeline(nullptr, createInfo).value));
-    graphicsPipeline.renderPass = desc.renderPass;
     graphicsPipeline.layout     = pipelineLayout;
 
     SetObjectDebugName(graphicsPipeline.pipeline, desc.debugName);
@@ -776,24 +781,23 @@ PipelineLayout RenderContext::GetOrCreatePipelineLayout(const std::vector<BindLa
     uint32_t layoutCount = static_cast<uint32_t>(dynamicBuffer != nullptr ? 4 : createInfo.size());
 
     std::vector<vk::DescriptorSetLayout> layouts;
-    if (layoutCount > 0)
+    layouts.reserve(layoutCount);
+
+    for (const auto& layout : createInfo)
     {
-        layouts.reserve(layoutCount);
-        for (const auto& layout : createInfo)
-        {
-            layouts.push_back(layout.layout);
-        }
-
-        for (int i = 0; i < layoutCount - createInfo.size() - 1; i++)
-        {
-            layouts.push_back(m_EmptySetLayout);
-        }
-
-        if (dynamicBuffer != nullptr)
-        {
-            layouts.push_back(dynamicBuffer->layout);
-        }
+        layouts.push_back(layout.layout);
     }
+
+    int fakeSetLayout = layoutCount - createInfo.size() - 1;
+    for (int i = 0; i < fakeSetLayout; i++)
+    {
+        layouts.push_back(m_EmptySetLayout);
+    }
+
+    if (dynamicBuffer != nullptr)
+    {
+        layouts.push_back(dynamicBuffer->layout);
+    }    
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo(
         {},

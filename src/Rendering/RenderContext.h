@@ -29,13 +29,31 @@
 
 namespace gore::gfx
 {
+enum PSOCreateRuntimeFlagBits
+{
+    PSO_CREATE_FLAG_NONE                     = 0,
+    PSO_CREATE_FLAG_PREFER_RENDER_PASS       = 1 << 0,
+    PSO_CREATE_FLAG_PREFER_SINGLE_SUBPASS    = 1 << 1,
+    PSO_CREATE_FLAG_PREFER_DYNAMIC_RENDERING = 1 << 2,
+    PSO_CREATE_FLAG_PREFER_NO_DEPENDENCIES   = 1 << 3,
+    PSO_CREATE_FLAG_PREFER_PIPELINE_CACHE    = 1 << 4,
+    PSO_CREATE_FLAG_PREFER_PIPELINE_LIBRARY  = 1 << 5,
+    PSO_CREATE_FLAG_PREFER_RPS = PSO_CREATE_FLAG_PREFER_RENDER_PASS | PSO_CREATE_FLAG_PREFER_SINGLE_SUBPASS | PSO_CREATE_FLAG_PREFER_NO_DEPENDENCIES
+};
+ 
+struct RenderContextCreateInfo final
+{
+    const Device* device = nullptr;
+    uint32_t flags       = PSO_CREATE_FLAG_NONE;
+};
+
 ENGINE_CLASS(RenderContext) final
 {
     // TODO: actually we can copy this class??
     NON_COPYABLE(RenderContext);
 
 public:
-    RenderContext(const Device* device);
+    RenderContext(const RenderContextCreateInfo& createInfo);
     ~RenderContext();
 
     void LoadMeshToMeshRenderer(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex = 0, ShaderChannel channel = ShaderChannel::Default);
@@ -153,6 +171,8 @@ private:
     void ClearDescriptorPools();
 
 private:
+    uint32_t m_PSOFlags;
+
     using ShaderModulePool     = Pool<ShaderModuleDesc, ShaderModule>;
     using BufferPool           = Pool<BufferDesc, Buffer>;
     using TexturePool          = Pool<TextureDesc, Texture>;

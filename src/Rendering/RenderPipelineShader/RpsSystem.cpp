@@ -12,7 +12,7 @@ std::unique_ptr<RpsSytem> InitializeRpsSystem(const RpsSytemCreateInfo& createIn
     RpsVKRuntimeDeviceCreateInfo vkRuntimeDeviceCreateInfo = {};
     vkRuntimeDeviceCreateInfo.hVkDevice                    = createInfo.device;
     vkRuntimeDeviceCreateInfo.hVkPhysicalDevice            = createInfo.physicalDevice;
-    vkRuntimeDeviceCreateInfo.flags                        = RPS_VK_RUNTIME_FLAG_NONE;
+    vkRuntimeDeviceCreateInfo.flags                        = RPS_VK_RUNTIME_FLAG_PREFER_RENDER_PASS;
 
     RpsRuntimeDeviceCreateInfo rpsCreateInfo     = {};
     rpsCreateInfo.pUserContext                   = createInfo.pUserContext;

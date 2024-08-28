@@ -99,7 +99,11 @@ void RenderSystem::Initialize()
 
     InitVulkanGraphicsCaps(m_GraphicsCaps, *m_Instance.Get(), *m_Device.GetPhysicalDevice().Get());
 
-    m_RenderContext = std::make_unique<RenderContext>(&m_Device);
+    RenderContextCreateInfo renderContextCreateInfo = {};
+    renderContextCreateInfo.device = &m_Device;
+    renderContextCreateInfo.flags = PSO_CREATE_FLAG_PREFER_RPS;
+
+    m_RenderContext = std::make_unique<RenderContext>(renderContextCreateInfo);
     m_RenderContext->PrepareRendering();
 
     m_frameFences.resize(swapchainCount);
@@ -532,11 +536,7 @@ void RenderSystem::RunRpsSystem()
 
     ResetCommandPools();
 
-    PrepareSwapChain();
-
-    ExecuteRenderGraph(m_FrameCounter, *m_RpsSystem->rpsRDG, true, false);
-
-    PresentSwapChain();
+    ExecuteRenderGraph(m_FrameCounter, *m_RpsSystem->rpsRDG);
 
     vk::PresentInfoKHR presentInfo = {};
     presentInfo.swapchainCount   = 1;
@@ -1159,6 +1159,16 @@ static std::vector<char> LoadShaderBytecode(const std::string& name, const Shade
 
 void RenderSystem::CreatePipeline()
 {
+    vk::AttachmentDescription colorAttachmentDesc0({}, m_Swapchain.GetFormat().format, vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
+
+    vk::AttachmentReference colorAttachmentRef0(0, vk::ImageLayout::eColorAttachmentOptimal);
+
+    vk::SubpassDescription subpassDesc({}, vk::PipelineBindPoint::eGraphics, {}, colorAttachmentRef0);   
+
+    vk::RenderPassCreateInfo renderPassInfo({}, colorAttachmentDesc0, subpassDesc);
+
+    vk::raii::RenderPass renderPass = m_Device.Get().createRenderPass(renderPassInfo);
+
     std::vector<char> cubeVertBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Vertex, "vs");
     std::vector<char> cubeFragBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Fragment, "ps");
 
@@ -1182,7 +1192,9 @@ void RenderSystem::CreatePipeline()
             .depthFormat = GraphicsFormat::D32_FLOAT,
             .stencilFormat = GraphicsFormat::Undefined,
             .bindLayouts = { m_GlobalBindLayout },
-            .dynamicBuffer = m_DynamicBufferHandle
+            .dynamicBuffer = m_DynamicBufferHandle,
+            .renderPass = *renderPass,
+            .subpassIndex = 0
         }
     );
 
@@ -1251,6 +1263,7 @@ void RenderSystem::CreatePipeline()
             .depthFormat = GraphicsFormat::D32_FLOAT,
             .stencilFormat = GraphicsFormat::Undefined,
             .bindLayouts {},
+            .renderPass = *renderPass,
             .subpassIndex = 0
         }
     );
