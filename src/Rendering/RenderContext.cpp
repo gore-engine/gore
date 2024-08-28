@@ -301,9 +301,11 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
         {},
         dynamicStates};
 
-    auto& dynamicBuffer = GetDynamicBuffer(desc.dynamicBuffer);
+    const DynamicBuffer* dynamicBuffer = nullptr;
+    if (desc.dynamicBuffer.empty() == false)
+        dynamicBuffer = &GetDynamicBuffer(desc.dynamicBuffer);
 
-    vk::PipelineLayout pipelineLayout = GetOrCreatePipelineLayout(desc.bindLayouts, &dynamicBuffer).layout;
+    vk::PipelineLayout pipelineLayout = GetOrCreatePipelineLayout(desc.bindLayouts, dynamicBuffer).layout;
 
     vk::GraphicsPipelineCreateInfo createInfo;
     createInfo.stageCount          = 2;
@@ -774,20 +776,23 @@ PipelineLayout RenderContext::GetOrCreatePipelineLayout(const std::vector<BindLa
     uint32_t layoutCount = static_cast<uint32_t>(dynamicBuffer != nullptr ? 4 : createInfo.size());
 
     std::vector<vk::DescriptorSetLayout> layouts;
-    layouts.reserve(layoutCount);
-    for (const auto& layout : createInfo)
+    if (layoutCount > 0)
     {
-        layouts.push_back(layout.layout);
-    }
+        layouts.reserve(layoutCount);
+        for (const auto& layout : createInfo)
+        {
+            layouts.push_back(layout.layout);
+        }
 
-    for (int i = 0; i < layoutCount - createInfo.size() - 1; i++)
-    {
-        layouts.push_back(m_EmptySetLayout);
-    }
+        for (int i = 0; i < layoutCount - createInfo.size() - 1; i++)
+        {
+            layouts.push_back(m_EmptySetLayout);
+        }
 
-    if (dynamicBuffer != nullptr)
-    {
-        layouts.push_back(dynamicBuffer->layout);
+        if (dynamicBuffer != nullptr)
+        {
+            layouts.push_back(dynamicBuffer->layout);
+        }
     }
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo(

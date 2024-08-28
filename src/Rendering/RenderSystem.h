@@ -112,6 +112,7 @@ private:
     void WaitForGpuIdle();
 
     void PrepareSwapChain();
+    void PresentSwapChain();
 
     ActiveCommandList BeginCmdList(RpsQueueType queueIndex, const vk::CommandBufferInheritanceInfo* pInheritanceInfo = nullptr);
     void SubmitCmdLists(
@@ -131,7 +132,8 @@ private:
 
     uint64_t CalcGuaranteedCompletedFrameindexForRps() const;
 
-    static void DrawTriangle(const RpsCmdCallbackContext* pContext);
+    static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    void DrawTriangle(vk::CommandBuffer commandBuffer);
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
 

@@ -512,7 +512,7 @@ void RenderSystem::CreateRpsRuntimeDeivce()
     m_RpsSystem = InitializeRpsSystem(createInfo);
 
     RpsRenderGraph& renderGraph = *m_RpsSystem->rpsRDG;
-    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Triangle", &DrawTriangle, this));
+    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Triangle", &DrawTriangleWithRPSWrapper, this));
 }
 
 void RenderSystem::DestroyRpsRuntimeDevice()
@@ -532,7 +532,11 @@ void RenderSystem::RunRpsSystem()
 
     ResetCommandPools();
 
-    ExecuteRenderGraph(m_FrameCounter, *m_RpsSystem->rpsRDG);
+    PrepareSwapChain();
+
+    ExecuteRenderGraph(m_FrameCounter, *m_RpsSystem->rpsRDG, true, false);
+
+    PresentSwapChain();
 
     vk::PresentInfoKHR presentInfo = {};
     presentInfo.swapchainCount   = 1;
@@ -554,7 +558,7 @@ void RenderSystem::UpdateRenderGraph()
 {
     if (IsRpsReady() == false)
         return;
-    return;
+
     uint32_t backBufferCount = m_Swapchain.GetImageCount();
 
     std::vector<RpsRuntimeResource> backBufferResources(backBufferCount);
@@ -610,56 +614,54 @@ RpsResult RenderSystem::ExecuteRenderGraph(
         return RpsResult::RPS_ERROR_UNSPECIFIED; 
     }
     
-    PrepareSwapChain();
+    RpsRenderGraphBatchLayout batchLayout = {};
+    RpsResult result = rpsRenderGraphGetBatchLayout(*m_RpsSystem->rpsRDG, &batchLayout);
+    if (RPS_FAILED(result))
+    {
+        return result;
+    }
+    ReserveSemaphores(batchLayout.numFenceSignals);
 
-    // RpsRenderGraphBatchLayout batchLayout = {};
-    // RpsResult result = rpsRenderGraphGetBatchLayout(*m_RpsSystem->rpsRDG, &batchLayout);
-    // if (RPS_FAILED(result))
-    // {
-    //     return result;
-    // }
-    // ReserveSemaphores(batchLayout.numFenceSignals);
+    for (uint32_t iBatch = 0; iBatch < batchLayout.numCmdBatches; iBatch++)
+    {
+        auto& batch = batchLayout.pCmdBatches[iBatch];
 
-    // for (uint32_t iBatch = 0; iBatch < batchLayout.numCmdBatches; iBatch++)
-    // {
-    //     auto& batch = batchLayout.pCmdBatches[iBatch];
+        ActiveCommandList cmdList = BeginCmdList(RpsQueueType(batch.queueIndex));
 
-    //     ActiveCommandList cmdList = BeginCmdList(RpsQueueType(batch.queueIndex));
+        RpsRenderGraphRecordCommandInfo recordInfo = {};
 
-    //     RpsRenderGraphRecordCommandInfo recordInfo = {};
+        recordInfo.hCmdBuffer    = rpsVKCommandBufferToHandle(cmdList.cmdBuf);
+        recordInfo.pUserContext  = this;
+        recordInfo.frameIndex    = frameIndex;
+        recordInfo.cmdBeginIndex = batch.cmdBegin;
+        recordInfo.numCmds       = batch.numCmds;
 
-    //     recordInfo.hCmdBuffer    = rpsVKCommandBufferToHandle(cmdList.cmdBuf);
-    //     recordInfo.pUserContext  = this;
-    //     recordInfo.frameIndex    = frameIndex;
-    //     recordInfo.cmdBeginIndex = batch.cmdBegin;
-    //     recordInfo.numCmds       = batch.numCmds;
+        if (g_DebugMarkers)
+        {
+            recordInfo.flags = RPS_RECORD_COMMAND_FLAG_ENABLE_COMMAND_DEBUG_MARKERS;
+        }
 
-    //     if (g_DebugMarkers)
-    //     {
-    //         recordInfo.flags = RPS_RECORD_COMMAND_FLAG_ENABLE_COMMAND_DEBUG_MARKERS;
-    //     }
+        result = rpsRenderGraphRecordCommands(hRenderGraph, &recordInfo);
+        if (RPS_FAILED(result))
+            return result;
 
-    //     result = rpsRenderGraphRecordCommands(hRenderGraph, &recordInfo);
-    //     if (RPS_FAILED(result))
-    //         return result;
+        EndCmdList(cmdList);
 
-    //     EndCmdList(cmdList);
+        SubmitCmdLists(&cmdList,
+                       1,
+                       frameEnd && ((iBatch + 1) == batchLayout.numCmdBatches),
+                       batch.numWaitFences,
+                       batchLayout.pWaitFenceIndices + batch.waitFencesBegin,
+                       batch.signalFenceIndex,
+                       bWaitSwapChain && (iBatch == 0)); // TODO - RPS to mark first access to swapchain image
 
-    //     SubmitCmdLists(&cmdList,
-    //                    1,
-    //                    frameEnd && ((iBatch + 1) == batchLayout.numCmdBatches),
-    //                    batch.numWaitFences,
-    //                    batchLayout.pWaitFenceIndices + batch.waitFencesBegin,
-    //                    batch.signalFenceIndex,
-    //                    bWaitSwapChain && (iBatch == 0)); // TODO - RPS to mark first access to swapchain image
+        RecycleCmdList(cmdList);
+    }
 
-    //     RecycleCmdList(cmdList);
-    // }
-
-    // if (batchLayout.numCmdBatches == 0)
-    // {
-    //     SubmitCmdLists(nullptr, 0, true, 0, nullptr, UINT32_MAX, bWaitSwapChain);
-    // }
+    if (batchLayout.numCmdBatches == 0)
+    {
+        SubmitCmdLists(nullptr, 0, frameEnd, 0, nullptr, UINT32_MAX, bWaitSwapChain);
+    }
 
     return RPS_OK;
 }
@@ -707,9 +709,9 @@ void RenderSystem::PrepareSwapChain()
 
     vk::ImageMemoryBarrier imageBarrier = {};
     imageBarrier.srcAccessMask               = {};
-    imageBarrier.dstAccessMask               = vk::AccessFlagBits::eTransferWrite;
+    imageBarrier.dstAccessMask               = {};
     imageBarrier.oldLayout                   = vk::ImageLayout::eUndefined;
-    imageBarrier.newLayout                   = vk::ImageLayout::eTransferDstOptimal;
+    imageBarrier.newLayout                   = vk::ImageLayout::eColorAttachmentOptimal;
     imageBarrier.image                       = backBuffer;
     imageBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
     imageBarrier.subresourceRange.layerCount = 1;
@@ -719,28 +721,44 @@ void RenderSystem::PrepareSwapChain()
 
     cmdList.cmdBuf.pipelineBarrier(
                             vk::PipelineStageFlagBits::eBottomOfPipe,
-                            vk::PipelineStageFlagBits::eTransfer,                          
+                            vk::PipelineStageFlagBits::eTopOfPipe,                          
                             {},
                             {},
                             {},
                             imageBarriers);
 
-    vk::ClearColorValue clearColor(0.0f, 0.2f, 0.4f, 1.0f);
-    cmdList.cmdBuf.clearColorImage(backBuffer, vk::ImageLayout::eTransferDstOptimal, &clearColor, 1, &imageBarrier.subresourceRange);
+    EndCmdList(cmdList);
 
-    imageBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-    imageBarrier.dstAccessMask = {};
-    imageBarrier.oldLayout     = vk::ImageLayout::eTransferDstOptimal;
-    imageBarrier.newLayout     = vk::ImageLayout::ePresentSrcKHR;
+    SubmitCmdLists(&cmdList, 1, false);
 
-    std::vector<vk::ImageMemoryBarrier> imageBarriers2 = {imageBarrier};
+    RecycleCmdList(cmdList);
+}
+
+void RenderSystem::PresentSwapChain()
+{
+    ActiveCommandList cmdList = BeginCmdList(RPS_QUEUE_GRAPHICS);
+
+    vk::Image backBuffer = m_Swapchain.GetImages()[m_backBufferIndex];
+
+    vk::ImageMemoryBarrier imageBarrier = {};
+    imageBarrier.srcAccessMask               = vk::AccessFlagBits::eColorAttachmentWrite;
+    imageBarrier.dstAccessMask               = vk::AccessFlagBits::eMemoryRead;
+    imageBarrier.oldLayout                   = vk::ImageLayout::eColorAttachmentOptimal;
+    imageBarrier.newLayout                   = vk::ImageLayout::ePresentSrcKHR;
+    imageBarrier.image                       = backBuffer;
+    imageBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+    imageBarrier.subresourceRange.layerCount = 1;
+    imageBarrier.subresourceRange.levelCount = 1;
+
+    std::vector<vk::ImageMemoryBarrier> imageBarriers = {imageBarrier};
+
     cmdList.cmdBuf.pipelineBarrier(
-                            vk::PipelineStageFlagBits::eTransfer,
-                            vk::PipelineStageFlagBits::eTopOfPipe,
+                            vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                            vk::PipelineStageFlagBits::eAllCommands,                          
                             {},
                             {},
                             {},
-                            imageBarriers2);
+                            imageBarriers);
 
     EndCmdList(cmdList);
 
@@ -940,9 +958,18 @@ uint64_t RenderSystem::CalcGuaranteedCompletedFrameindexForRps() const
     return (m_FrameCounter > maxQueuedFrames) ? m_FrameCounter - maxQueuedFrames : RPS_GPU_COMPLETED_FRAME_INDEX_NONE;
 }
 
-void RenderSystem::DrawTriangle(const RpsCmdCallbackContext* pContext)
+void RenderSystem::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext)
 {
     vk::CommandBuffer cmd = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+    RenderSystem* renderSystem = reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+
+    renderSystem->DrawTriangle(cmd);
+}
+
+void RenderSystem::DrawTriangle(vk::CommandBuffer commandBuffer)
+{    
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
+    commandBuffer.draw(3, 1, 0, 0);
 }
 
 void RenderSystem::UploadPerframeGlobalConstantBuffer(uint32_t imageIndex)
@@ -1162,8 +1189,8 @@ void RenderSystem::CreatePipeline()
     // std::vector<char> unlitVertBytecode = LoadShaderBytecode("sample/UnLit", ShaderStage::Vertex, "vs");
     // std::vector<char> unlitFragBytecode = LoadShaderBytecode("sample/UnLit", ShaderStage::Fragment, "ps");
 
-    // std::vector<char> triangleVertBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Vertex, "vs");
-    // std::vector<char> triangleFragBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Fragment, "ps");
+    std::vector<char> triangleVertBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Vertex, "vs");
+    std::vector<char> triangleFragBytecode = LoadShaderBytecode("sample/triangle", ShaderStage::Fragment, "ps");
 
     // std::vector<char> quadVertBytecode = LoadShaderBytecode("sample/quad", ShaderStage::Vertex, "vs");
     // std::vector<char> quadFragBytecode = LoadShaderBytecode("sample/quad", ShaderStage::Fragment, "ps");
@@ -1204,29 +1231,29 @@ void RenderSystem::CreatePipeline()
     //     }
     // );
 
-    // m_TrianglePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
-    //     GraphicsPipelineDesc
-    //     {
-    //         .debugName = "Triangle Pipeline",
-    //         .VS
-    //         {
-    //             .byteCode = reinterpret_cast<uint8_t*>(triangleVertBytecode.data()),
-    //             .byteSize = static_cast<uint32_t>(triangleVertBytecode.size()), 
-    //             .entryFunc = "vs"
-    //         },
-    //         .PS
-    //         {
-    //             .byteCode = reinterpret_cast<uint8_t*>(triangleFragBytecode.data()), 
-    //             .byteSize = static_cast<uint32_t>(triangleFragBytecode.size()), 
-    //             .entryFunc = "ps"
-    //         },            
-    //         .colorFormats = {GraphicsFormat::BGRA8_SRGB},
-    //         .depthFormat = GraphicsFormat::D32_FLOAT,
-    //         .stencilFormat = GraphicsFormat::Undefined,
-    //         .bindLayouts {},
-    //         .subpassIndex = 0
-    //     }
-    // );
+    m_TrianglePipelineHandle = m_RenderContext->CreateGraphicsPipeline(
+        GraphicsPipelineDesc
+        {
+            .debugName = "Triangle Pipeline",
+            .VS
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(triangleVertBytecode.data()),
+                .byteSize = static_cast<uint32_t>(triangleVertBytecode.size()), 
+                .entryFunc = "vs"
+            },
+            .PS
+            {
+                .byteCode = reinterpret_cast<uint8_t*>(triangleFragBytecode.data()), 
+                .byteSize = static_cast<uint32_t>(triangleFragBytecode.size()), 
+                .entryFunc = "ps"
+            },            
+            .colorFormats = {GraphicsFormat::BGRA8_SRGB},
+            .depthFormat = GraphicsFormat::D32_FLOAT,
+            .stencilFormat = GraphicsFormat::Undefined,
+            .bindLayouts {},
+            .subpassIndex = 0
+        }
+    );
 
     // m_QuadPipelineHandle = m_RenderContext->CreateGraphicsPipeline(
     //     GraphicsPipelineDesc
