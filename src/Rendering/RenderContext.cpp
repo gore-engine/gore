@@ -13,18 +13,19 @@
 
 namespace gore::gfx
 {
-RenderContext::RenderContext(const Device* device) :
-    m_DevicePtr(device),
+RenderContext::RenderContext(const RenderContextCreateInfo& createInfo) :
+    m_DevicePtr(createInfo.device),
     m_ShaderModulePool(),
     m_GraphicsPipelinePool(),
     m_BufferPool(),
     m_TexturePool(),
-    m_CommandPool(VK_NULL_HANDLE)
+    m_CommandPool(VK_NULL_HANDLE),
+    m_PSOFlags(createInfo.flags)
 {
-    uint32_t queueFamilyIndex = device->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics);
+    uint32_t queueFamilyIndex = m_DevicePtr->GetQueueFamilyIndexByFlags(vk::QueueFlagBits::eGraphics);
 
-    m_CommandPool = device->Get().createCommandPool({{}, queueFamilyIndex});
-    device->SetName(m_CommandPool, "RenderContext CommandPool");
+    m_CommandPool = m_DevicePtr->Get().createCommandPool({{}, queueFamilyIndex});
+    m_DevicePtr->SetName(m_CommandPool, "RenderContext CommandPool");
 }
 
 RenderContext::~RenderContext()
@@ -301,9 +302,11 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
         {},
         dynamicStates};
 
-    auto& dynamicBuffer = GetDynamicBuffer(desc.dynamicBuffer);
+    const DynamicBuffer* dynamicBuffer = nullptr;
+    if (desc.dynamicBuffer.empty() == false)
+        dynamicBuffer = &GetDynamicBuffer(desc.dynamicBuffer);
 
-    vk::PipelineLayout pipelineLayout = GetOrCreatePipelineLayout(desc.bindLayouts, &dynamicBuffer).layout;
+    vk::PipelineLayout pipelineLayout = GetOrCreatePipelineLayout(desc.bindLayouts, dynamicBuffer).layout;
 
     vk::GraphicsPipelineCreateInfo createInfo;
     createInfo.stageCount          = 2;
@@ -325,9 +328,14 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
     VkFormat depthFormat               = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.depthFormat));
     VkFormat stencilFormat             = static_cast<VkFormat>(VulkanHelper::GetVkFormat(desc.stencilFormat));
 
+    bool useDynamicRendering = desc.UseDynamicRendering() && (m_PSOFlags & PSO_CREATE_FLAG_PREFER_DYNAMIC_RENDERING) != 0;
+    bool useRenderPass       = m_PSOFlags & PSO_CREATE_FLAG_PREFER_RENDER_PASS;
+    bool useSingleSubpass    = m_PSOFlags & PSO_CREATE_FLAG_PREFER_SINGLE_SUBPASS;
+    bool useNoDependencies   = m_PSOFlags & PSO_CREATE_FLAG_PREFER_NO_DEPENDENCIES;
+
     VkPipelineRenderingCreateInfoKHR rfInfo = {};
 
-    if (desc.UseDynamicRendering())
+    if (useDynamicRendering)
     {
         rfInfo.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
         rfInfo.pNext                   = nullptr;
@@ -340,7 +348,6 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
     }
 
     GraphicsPipeline graphicsPipeline(std::move(VULKAN_DEVICE.createGraphicsPipeline(nullptr, createInfo).value));
-    graphicsPipeline.renderPass = desc.renderPass;
     graphicsPipeline.layout     = pipelineLayout;
 
     SetObjectDebugName(graphicsPipeline.pipeline, desc.debugName);
@@ -775,12 +782,14 @@ PipelineLayout RenderContext::GetOrCreatePipelineLayout(const std::vector<BindLa
 
     std::vector<vk::DescriptorSetLayout> layouts;
     layouts.reserve(layoutCount);
+
     for (const auto& layout : createInfo)
     {
         layouts.push_back(layout.layout);
     }
 
-    for (int i = 0; i < layoutCount - createInfo.size() - 1; i++)
+    int fakeSetLayout = layoutCount - createInfo.size() - 1;
+    for (int i = 0; i < fakeSetLayout; i++)
     {
         layouts.push_back(m_EmptySetLayout);
     }
@@ -788,7 +797,7 @@ PipelineLayout RenderContext::GetOrCreatePipelineLayout(const std::vector<BindLa
     if (dynamicBuffer != nullptr)
     {
         layouts.push_back(dynamicBuffer->layout);
-    }
+    }    
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo(
         {},
@@ -898,9 +907,9 @@ CommandPool* RenderContext::CreateCommandPool(const CommandPoolCreateDesc& desc)
     return commandPool;
 }
 
-CommandBuffer1* RenderContext::CreateCommandBuffer(const CommandBufferCreateDesc& desc)
+CommandBuffer* RenderContext::CreateCommandBuffer(const CommandBufferCreateDesc& desc)
 {
-    CommandBuffer1* commandBuffer = new CommandBuffer1();
+    CommandBuffer* commandBuffer = new CommandBuffer();
 
     vk::CommandBufferAllocateInfo allocInfo(
         desc.cmdPool->cmdPool,
@@ -958,10 +967,10 @@ Semaphore* RenderContext::CreateSemaphore()
     return semaphore;
 }
 
-Fence* RenderContext::CreateFence()
+Fence* RenderContext::CreateFence(bool signaled)
 {
     Fence* fence = new Fence();
-    fence->fence = VULKAN_DEVICE.createFence({vk::FenceCreateFlagBits::eSignaled});
+    fence->fence = VULKAN_DEVICE.createFence({signaled ? vk::FenceCreateFlagBits::eSignaled : vk::FenceCreateFlags()});
     return fence;
 }
 
@@ -985,5 +994,45 @@ void RenderContext::DestroyCommandRing(std::unique_ptr<CommandRing>& commandRing
 void RenderContext::ResetCommandPool(CommandPool* commandPool)
 {
     VULKAN_DEVICE.resetCommandPool(commandPool->cmdPool);
+}
+
+void RenderContext::BeginDebugLabel(CommandBuffer& cmd, const char* label, float r, float g, float b)
+{
+#if ENGINE_DEBUG
+    vk::DebugUtilsLabelEXT labelInfo;
+    labelInfo.pLabelName = label;
+    labelInfo.color[0]   = r;
+    labelInfo.color[1]   = g;
+    labelInfo.color[2]   = b;
+    labelInfo.color[3]   = 1.0f;
+
+    cmd.cmdBuffer.beginDebugUtilsLabelEXT(labelInfo);
+#endif
+}
+
+void RenderContext::EndDebugLabel(CommandBuffer& cmd)
+{
+#if ENGINE_DEBUG
+    cmd.cmdBuffer.endDebugUtilsLabelEXT();
+#endif
+}
+
+void RenderContext::InsertDebugLabel(CommandBuffer& cmd, const char* label, float r, float g, float b)
+{
+#if ENGINE_DEBUG
+    cmd.cmdBuffer.insertDebugUtilsLabelEXT({label, {r, g, b, 1.0f}});
+#endif
+}
+
+void RenderContext::DestroySemaphore(Semaphore& semaphore)
+{
+    VULKAN_DEVICE.destroySemaphore(semaphore.semaphore);
+    semaphore.semaphore = nullptr;
+}
+
+void RenderContext::DestroyFence(Fence& fence)
+{
+    VULKAN_DEVICE.destroyFence(fence.fence);
+    fence.fence = nullptr;
 }
 } // namespace gore::gfx

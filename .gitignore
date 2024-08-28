@@ -144,6 +144,9 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
+# RPS Build Results
+src/Rendering/RPSL/Generated/
+
 # Visual Stuido Code
 .vscode/
 

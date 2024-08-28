@@ -5,6 +5,7 @@ project(gore)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 # TODO: check debug or something else
 option(ENABLE_TEST "Enable gore engine test" ON)
+option(USE_RPS "Use AMD Render Pipeline Shaders" ON)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,6 +21,7 @@ endif ()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/ShaderCompile.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/Resources.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/RpslCompile.cmake)
 
 # Configurations
 
@@ -37,6 +39,11 @@ set(COMMON_SOURCE_FOLDERS
         "Utilities"
         "Test"
 )
+
+if (${USE_RPS})
+    list(APPEND COMMON_SOURCE_FOLDERS "Rendering/RPSL/Generated")
+endif ()
+
 set(COMMON_INCLUDE_FOLDERS "${CMAKE_CURRENT_SOURCE_DIR}")
 
 if (${BUILD_SHARED_LIBS})
@@ -59,6 +66,9 @@ compile_shader("Shaders/sample/quad.hlsl" "vulkan" "pixel" "ps")
 
 compile_shader("Shaders/sample/UnLit.hlsl" "vulkan" "vertex" "vs")
 compile_shader("Shaders/sample/UnLit.hlsl" "vulkan" "pixel" "ps")
+
+compile_rpsl_file("hello_triangle")
+
 # Platform Specific Configurations
 
 if (${TARGET_PLATFORM} STREQUAL "Windows")
@@ -94,7 +104,7 @@ endif ()
 
 set(COMMON_SOURCES "Prefix.h" "Export.h")
 foreach (folder ${COMMON_SOURCE_FOLDERS})
-    file(GLOB_RECURSE SOURCES "${folder}/*.cpp" "${folder}/*.inl" "${folder}/*.h")
+    file(GLOB_RECURSE SOURCES "${folder}/*.cpp" "${folder}/*.inl" "${folder}/*.h" "${folder}/*.c")
     list(APPEND COMMON_SOURCES ${SOURCES})
 endforeach ()
 
@@ -142,6 +152,9 @@ list(APPEND COMMON_INCLUDE_FOLDERS ${TINYGLTF_INCLUDE_DIRS})
 add_subdirectory(External/rtm)
 list(APPEND COMMON_LIBRARIES RealtimeMath)
 
+# Gore AMD Render Pipeline Shaders
+add_subdirectory(External/AMDRenderPipelineShaders)
+list(APPEND COMMON_LIBRARIES AMDRps)
 
 # catch2
 if (${ENABLE_TEST})
@@ -163,6 +176,7 @@ endif()
 add_library(${PROJECT_NAME} ${COMMON_SOURCES} ${PLATFORM_SOURCES})
 
 add_shader_dependencies(${PROJECT_NAME})
+add_rpsl_dependencies(${PROJECT_NAME})
 copy_texture_resources(${PROJECT_NAME})
 copy_gltf_resources(${PROJECT_NAME})
 
