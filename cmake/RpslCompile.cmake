@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
 function(compile_rpsl_file RpslFile)
-    if (NOT WIN32)
-        message(FATAL_ERROR "RPSL compilation is only supported on Windows")
-        return()
-    endif()
-
     cmake_path(GET CMAKE_CURRENT_SOURCE_DIR PARENT_PATH PARENT_DIR)
 
     get_filename_component(FileNameWithoutExtension ${RpslFile} NAME_WE)    
@@ -18,7 +13,16 @@ function(compile_rpsl_file RpslFile)
     set(InputFile ${Input_File_Dir}/${RpslFile}.rpsl)
     set(OutputFile ${Output_File_Dir}/${FileNameWithoutExtension}.rpsl.g.c)
     
-    set(RpsHlslcExec "${CMAKE_CURRENT_SOURCE_DIR}/External/AMDRenderPipelineShaders/tools/rps_hlslc/win-x64/rps-hlslc.exe")    
+    if (WIN32)
+        set(RpsCompilerBinaryDir "${CMAKE_CURRENT_SOURCE_DIR}/External/AMDRenderPipelineShaders/tools/rps_hlslc/win-x64/")
+        set(ExecPostfix ".exe")
+    elseif (UNIX)
+        set(RpsCompilerBinaryDir "${CMAKE_CURRENT_SOURCE_DIR}/External/AMDRenderPipelineShaders/tools/rps_hlslc/linux-x64/bin/")
+    else ()
+        message(SEND_ERROR "Unsupported OS")
+    endif()
+
+    set(RpsHlslcExec "${RpsCompilerBinaryDir}/rps-hlslc${ExecPostfix}")    
 
     add_custom_command(
         OUTPUT ${OutputFile}
