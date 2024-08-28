@@ -92,7 +92,6 @@ private:
         RpsRenderGraph hRenderGraph,
         bool bWaitSwapChain = true,
         bool frameEnd       = true);
-    CommandRingElement RequestRpsNextCommandElement(RpsQueueType queueType, bool cyclePool = false, const vk::CommandBufferInheritanceInfo* pInheritanceInfo = nullptr);
 
     struct ActiveCommandList
     {
@@ -178,11 +177,6 @@ private:
     
     vk::Queue m_PresentQueue;
     uint32_t m_PresentQueueFamilyIndex;
-
-    // Command Pool & Command Buffer
-    std::unique_ptr<CommandRing> m_GraphicsCommandRing;
-    std::unique_ptr<CommandRing> m_GpuCommandRings[RPS_QUEUE_COUNT];
-    std::unique_ptr<CommandRing> m_SecondaryCommandRing[RPS_QUEUE_COUNT];
 
     BindLayout m_GlobalBindLayout;
     BindGroupHandle m_GlobalBindGroup;
