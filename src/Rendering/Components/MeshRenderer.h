@@ -9,8 +9,10 @@
 #include "Rendering/BindGroup.h"
 #include "Rendering/Utils/GeometryUtils.h"
 
-namespace gore::gfx
+namespace gore::renderer
 {
+using namespace gfx;
+
 ENGINE_CLASS(MeshRenderer) final:
     public Component
 {
@@ -60,4 +62,4 @@ private:
     // Material data
     BindGroupHandle m_BindGroup;
 };
-} // namespace gore::gfx
+} // namespace gore::renderer

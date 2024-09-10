@@ -1,6 +1,6 @@
 #include "MeshRenderer.h"
 
-namespace gore::gfx
+namespace gore::renderer
 {
 MeshRenderer::MeshRenderer(GameObject* GameObject) noexcept :
     Component(GameObject),
@@ -19,4 +19,4 @@ void MeshRenderer::Start()
 void MeshRenderer::Update()
 {
 }
-} // namespace gore::gfx
+} // namespace gore::renderer

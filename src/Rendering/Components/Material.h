@@ -8,6 +8,8 @@
 
 namespace gore::renderer
 {
+class Pass;
+
 using namespace gore::gfx;
 
 ENGINE_CLASS(Material) final
@@ -18,11 +20,11 @@ public:
     explicit Material() noexcept;
     ~Material() = default;
 
-    GETTER_SETTER(GraphicsPipelineHandle, GraphicsPipeline)
-    GETTER_SETTER(BindGroupHandle, BindGroup)
+    void AddPass(const Pass& pass);
+
+    [[nodiscard]] const std::vector<Pass>& GetPasses() const;
 
 private:
-    GraphicsPipelineHandle m_GraphicsPipeline;
-    BindGroupHandle m_BindGroup;
+    std::vector<Pass> m_Passes;
 };
 } // namespace gore::renderer
