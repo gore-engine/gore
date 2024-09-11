@@ -8,14 +8,15 @@
 #include <tiny_gltf.h>
 
 #include "Rendering/Utils/GeometryUtils.h"
+#include "Rendering/Components/MeshRenderer.h"
 
 #include <memory>
 
 namespace gore::gfx
 {
+using namespace gore::renderer;
+
 class RenderContext;
-class MeshRenderer;
-class Material;
 
 ENGINE_CLASS(GLTFLoader)
 {

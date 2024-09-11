@@ -4,6 +4,9 @@
 
 #include "Handle.h"
 
+#include "Graphics/Vulkan/VulkanIncludes.h"
+#include "Graphics/Vulkan/VulkanExtensions.h"
+
 namespace gore
 {
 

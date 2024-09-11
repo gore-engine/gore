@@ -29,6 +29,8 @@
 
 namespace gore::gfx
 {
+using namespace gore::renderer;
+
 enum PSOCreateRuntimeFlagBits
 {
     PSO_CREATE_FLAG_NONE                     = 0,

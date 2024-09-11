@@ -7,6 +7,7 @@
 
 #include "Rendering/Buffer.h"
 #include "Rendering/BindGroup.h"
+#include "Rendering/Components/Material.h"
 #include "Rendering/Utils/GeometryUtils.h"
 
 namespace gore::renderer
@@ -36,6 +37,7 @@ public:
     [[nodiscard]] bool HasVertexData() const;
     [[nodiscard]] bool HasIndexData() const;
 
+    GETTER_SETTER(Material, Material)
     GETTER_SETTER(IndexType, IndexType)
     GETTER_SETTER(BufferHandle, VertexBuffer)
     GETTER_SETTER(BufferHandle, IndexBuffer)
@@ -49,6 +51,8 @@ public:
 private:
     void DeleteCPUMeshData();
     void DeleteGPUData();
+
+    Material m_Material;
 
     // Mesh data
     IndexType m_IndexType;

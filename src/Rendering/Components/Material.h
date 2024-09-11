@@ -37,8 +37,6 @@ struct Pass
 ENGINE_CLASS(Material) final
 {
 public:
-    NON_COPYABLE(Material)
-
     explicit Material() noexcept;
     ~Material() = default;
 
