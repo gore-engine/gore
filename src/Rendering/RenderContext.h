@@ -51,9 +51,8 @@ struct RenderContextCreateInfo final
 
 ENGINE_CLASS(RenderContext) final
 {
-    // TODO: actually we can copy this class??
-    NON_COPYABLE(RenderContext);
-
+    SINGLETON(RenderContext)
+    
 public:
     RenderContext(const RenderContextCreateInfo& createInfo);
     ~RenderContext();

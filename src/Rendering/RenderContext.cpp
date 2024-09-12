@@ -13,6 +13,8 @@
 
 namespace gore::gfx
 {
+SINGLETON_IMPL(RenderContext)
+
 RenderContext::RenderContext(const RenderContextCreateInfo& createInfo) :
     m_DevicePtr(createInfo.device),
     m_ShaderModulePool(),
@@ -26,11 +28,15 @@ RenderContext::RenderContext(const RenderContextCreateInfo& createInfo) :
 
     m_CommandPool = m_DevicePtr->Get().createCommandPool({{}, queueFamilyIndex});
     m_DevicePtr->SetName(m_CommandPool, "RenderContext CommandPool");
+
+    g_Instance = this;
 }
 
 RenderContext::~RenderContext()
 {
     Clear();
+
+    g_Instance = nullptr;
 }
 
 void RenderContext::LoadMeshToMeshRenderer(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex, ShaderChannel channel)

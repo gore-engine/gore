@@ -12,6 +12,26 @@
     CLASS_NAME(CLASS_NAME&&)                 = default; \
     CLASS_NAME& operator=(CLASS_NAME&&)      = default;
 
+#define SINGLETON(CLASS_NAME) \
+    public: \
+        static CLASS_NAME* GetInstance() \
+        { \
+            return g_Instance; \
+        } \
+    private: \
+        CLASS_NAME() = default; \
+        NON_COPYABLE(CLASS_NAME) \
+        static CLASS_NAME* g_Instance;
+
+#define SINGLETON_IMPL(CLASS_NAME) \
+    CLASS_NAME* CLASS_NAME::g_Instance = nullptr;
+
+#define GET_INSTANCE(CLASS_NAME) \
+    CLASS_NAME::GetInstance()
+
+#define GETTER(TYPE, NAME) \
+    [[nodiscard]] TYPE Get##NAME() const { return m_##NAME; }
+
 #define GETTER_SETTER(TYPE, NAME) \
     [[nodiscard]] TYPE Get##NAME() const { return m_##NAME; } \
     void Set##NAME(TYPE NAME) { m_##NAME = NAME; }
