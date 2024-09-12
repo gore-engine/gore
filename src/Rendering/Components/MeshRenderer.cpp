@@ -12,6 +12,14 @@ MeshRenderer::MeshRenderer(GameObject* GameObject) noexcept :
 {
 }
 
+bool MeshRenderer::IsValid() const
+{
+    return m_VertexBuffer.empty() == false 
+        && m_IndexBuffer.empty() == false
+        && m_VertexCount > 0
+        && m_IndexCount > 0;
+}
+
 void MeshRenderer::Start()
 {
 }

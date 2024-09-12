@@ -16,6 +16,11 @@ namespace gore::renderer
 {
 using namespace gore::gfx;
 
+// TODO: This is a temporary solution to use fixed pass names, we could use a more generic approach
+struct DrawCreateInfo
+{
+    const char* passName = nullptr;
+};
 
 struct Draw
 {
@@ -76,5 +81,6 @@ struct DrawSorter
     }
 };
 
-void PrepareDrawDataAndSort(std::vector<MeshRenderer>& renderers, std::vector<Draw>& sortedDrawData);
+void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<MeshRenderer>& renderers, std::vector<Draw>& sortedDrawData);
+bool MatchDrawFilter(const Pass& pass, const DrawCreateInfo& info);
 } // namespace gore::renderer

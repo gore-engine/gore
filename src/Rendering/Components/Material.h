@@ -13,15 +13,16 @@ using namespace gore::gfx;
 // FIXME: This is a temporary solution to use fixed pass names
 struct PassID
 {
-    const char* k_ShadowPassName = "ShadowPass";
+    const char* k_ShadowPassName  = "ShadowPass";
     const char* k_ForwardPassName = "ForwardPass";
     const char* k_GBufferPassName = "GBufferPass";
 };
 
 struct Pass
 {
+    const char* name              = nullptr;
     GraphicsPipelineHandle shader = {};
-    BindGroupHandle bindGroup[3] = {};
+    BindGroupHandle bindGroup[3]  = {};
 
     inline bool operator==(const Pass& other) const
     {
@@ -56,7 +57,8 @@ public:
 
     [[nodiscard]] bool HasPass(const char* passName) const
     {
-        return std::any_of(m_Passes.begin(), m_Passes.end(), [passName](const Pass& pass) { return passName == passName; });
+        return std::any_of(m_Passes.begin(), m_Passes.end(), [passName](const Pass& pass)
+                           { return passName == passName; });
     }
 
 private:
