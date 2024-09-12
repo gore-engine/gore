@@ -47,6 +47,18 @@ public:
         return m_Passes;
     }
 
+    bool TryGetPassByName(const char* name, Pass& pass) const;
+
+    [[nodiscard]] bool HasPasses() const
+    {
+        return !m_Passes.empty();
+    }
+
+    [[nodiscard]] bool HasPass(const char* passName) const
+    {
+        return std::any_of(m_Passes.begin(), m_Passes.end(), [passName](const Pass& pass) { return passName == passName; });
+    }
+
 private:
     std::vector<Pass> m_Passes;
 };
