@@ -30,16 +30,21 @@ void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<MeshRenderer>& ren
             Draw draw;
             assert(pass.shader.empty() == false);
 
-            draw.shader              = pass.shader;
-            draw.bindGroup[0]        = pass.bindGroup[0];
-            draw.bindGroup[1]        = pass.bindGroup[1];
-            draw.bindGroup[2]        = pass.bindGroup[2];
+            draw.shader       = pass.shader;
+            draw.bindGroup[0] = pass.bindGroup[0];
+            draw.bindGroup[1] = pass.bindGroup[1];
+            draw.bindGroup[2] = pass.bindGroup[2];
+
             draw.dynamicBuffer       = handle;
             draw.dynamicBufferOffset = dynamicBuffer.offset;
-            draw.vertexBuffer        = renderer.GetVertexBuffer();
-            draw.indexBuffer         = renderer.GetIndexBuffer();
-            draw.indexCount          = renderer.GetIndexCount();
-            draw.vertexCount         = renderer.GetVertexCount();
+
+            draw.vertexBuffer = renderer.GetVertexBuffer();
+            draw.vertexCount  = renderer.GetVertexCount();
+            draw.vertexOffset = renderer.GetVertexOffset();
+
+            draw.indexBuffer = renderer.GetIndexBuffer();
+            draw.indexCount  = renderer.GetIndexCount();
+            draw.indexOffset = renderer.GetIndexOffset();
 
             sortedDrawData.push_back(draw);
         }
