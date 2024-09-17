@@ -2,6 +2,7 @@
 
 #include "Rendering/RenderContext.h"
 
+#include "Rendering/Components/Material.h"
 #include "Rendering/Components/MeshRenderer.h"
 
 namespace gore::renderer

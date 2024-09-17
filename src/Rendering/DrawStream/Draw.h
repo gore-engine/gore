@@ -16,6 +16,8 @@ namespace gore::renderer
 {
 using namespace gore::gfx;
 
+struct Pass;
+
 // TODO: This is a temporary solution to use fixed pass names, we could use a more generic approach
 struct DrawCreateInfo
 {

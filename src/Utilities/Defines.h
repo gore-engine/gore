@@ -19,7 +19,6 @@
             return g_Instance; \
         } \
     private: \
-        CLASS_NAME() = default; \
         NON_COPYABLE(CLASS_NAME) \
         static CLASS_NAME* g_Instance;
 

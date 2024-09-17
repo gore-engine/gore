@@ -11,6 +11,8 @@
 #include "Rendering/Components/Material.h"
 #include "Rendering/Utils/GeometryUtils.h"
 
+#include "RendererManager.h"
+
 namespace gore::renderer
 {
 using namespace gfx;
