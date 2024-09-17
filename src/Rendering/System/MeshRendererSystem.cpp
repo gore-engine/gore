@@ -1,20 +1,20 @@
-#include "RendererManager.h"
+#include "MeshRendererSystem.h"
 
 namespace gore::renderer
 {
-SINGLETON_IMPL(RendererManager)
+SINGLETON_IMPL(MeshRendererSystem)
 
-RendererManager::RendererManager() :
+MeshRendererSystem::MeshRendererSystem() :
     m_MeshRendererAllocator(std::make_unique<utils::ArrayAllocator>())
 {
 }
 
-RendererHandle RendererManager::GetRendererHandle()
+RendererHandle MeshRendererSystem::GetRendererHandle()
 {
     return RendererHandle(m_MeshRendererAllocator->Allocate());
 }
 
-void RendererManager::FreeRendererHandle(RendererHandle handle)
+void MeshRendererSystem::FreeRendererHandle(RendererHandle handle)
 {
     m_MeshRendererAllocator->Free(handle.GetIndex());
 }

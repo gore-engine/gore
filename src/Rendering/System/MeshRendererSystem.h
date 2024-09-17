@@ -37,12 +37,12 @@ private:
     uint32_t index;
 };
 
-class RendererManager
+class MeshRendererSystem
 {
-    SINGLETON(RendererManager)
+    SINGLETON(MeshRendererSystem)
 
 public:
-    RendererManager();
+    MeshRendererSystem();
 
     RendererHandle GetRendererHandle();
     void FreeRendererHandle(RendererHandle handle);

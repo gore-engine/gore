@@ -11,7 +11,7 @@
 #include "Rendering/Components/Material.h"
 #include "Rendering/Utils/GeometryUtils.h"
 
-#include "RendererManager.h"
+#include "Rendering/System/MeshRendererSystem.h"
 
 namespace gore::renderer
 {
