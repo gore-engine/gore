@@ -1,11 +1,15 @@
 #include "ArrayAllocator.h"
 
+#include <cassert>
+
 namespace gore::utils
 {
 ArrayAllocator::ArrayAllocator(uint32_t size) noexcept :
     m_NextIndex(0),
     m_Size(size)
 {
+    assert(size > 0);
+
     m_FreeList.reserve(size);
 
     for (uint32_t i = 0; i < size; ++i)
@@ -47,6 +51,9 @@ uint32_t ArrayAllocator::Allocate()
 
 void ArrayAllocator::Free(uint32_t index)
 {
+    assert(index < m_Size);
+    assert(m_FreeList[index] == k_InvalidIndex);
+
     m_FreeList[index] = m_NextIndex;
     m_NextIndex       = index;
 }
