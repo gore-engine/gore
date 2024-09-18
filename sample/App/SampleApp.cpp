@@ -17,9 +17,11 @@
 #include "Core/Log.h"
 #include "Math/Constants.h"
 
+#include "Scripts/Utils/GraphicsUtils.h"
+
 #include "Scripts/TestComponent.h"
 #include "Scripts/CameraController.h"
-#include "Scripts/PeriodicallySwitchParent.h"
+#include "Scripts/PeriodicallySwitchParent.h" 
 #include "Scripts/SelfRotate.h"
 #include "Scripts/SelfMoveBackAndForth.h"
 #include "Scripts/SelfScaleInBetweenRange.h"
@@ -36,9 +38,23 @@ SampleApp::~SampleApp()
 {
 }
 
+void SampleApp::PrepareGraphics()
+{
+    std::vector<char> vertexShaderBytecode = sample::utils::LoadShaderBytecode("VertexShader", ShaderStage::Vertex, "main");
+    std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("FragmentShader", ShaderStage::Fragment, "main");
+
+    
+}
+
 void SampleApp::Initialize()
 {
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+
+    // GraphicsPipelineHandle forwardPipeline = renderContext.CreateGraphicsPipeline(
+    //     GraphicsPipelineDesc{
+    //         .debugName = "ForwardPipeline",
+    //         .VS
+    //     });
 
     // gore::Logger::Default().SetLevel(gore::LogLevel::DEBUG);
 

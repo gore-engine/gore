@@ -32,7 +32,7 @@ endif()
 
 add_subdirectory(../src gore)
 
-set(COMMON_SOURCE_FOLDERS "App" "Scripts")
+set(COMMON_SOURCE_FOLDERS "App" "Scripts" "Scripts/Utils")
 set(COMMON_INCLUDE_FOLDERS "${CMAKE_CURRENT_SOURCE_DIR}")
 set(COMMON_DEFINITIONS "ENGINE_DLL")
 set(COMMON_LIBRARIES gore)
