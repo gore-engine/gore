@@ -31,8 +31,8 @@ const Vector4 Vector4::UnitY = Vector4(0.f, 1.f, 0.f, 0.f);
 const Vector4 Vector4::UnitZ = Vector4(0.f, 0.f, 1.f, 0.f);
 const Vector4 Vector4::UnitW = Vector4(0.f, 0.f, 0.f, 1.f);
 
-const Matrix4x4 Matrix4x4::Identity = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f);
-
+const Matrix4x4 Matrix4x4::Identity   = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f);
+const Matrix4x4 Matrix4x4::Zero       = Matrix4x4();
 const Quaternion Quaternion::Identity = {0.f, 0.f, 0.f, 1.f};
 
 } // namespace gore
