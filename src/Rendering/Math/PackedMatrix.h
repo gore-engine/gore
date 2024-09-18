@@ -27,5 +27,20 @@ public:
     }
 
     SIMDValueType m_M;
+
+    static inline PackedMatrix FromMatrix4x4ToPackedMatrix(Matrix4x4 matrix) noexcept
+    {
+        return PackedMatrix(matrix);
+    }
+
+    static inline Matrix4x4 FromPackedMatrixToMatrix4x4(PackedMatrix matrix) noexcept
+    {
+        Matrix4x4 result;
+        result.m_M.x_axis = matrix.m_M.x_axis;
+        result.m_M.y_axis = matrix.m_M.y_axis;
+        result.m_M.z_axis = matrix.m_M.z_axis;
+        result.m_M.w_axis = rtm::vector_set(0.0f, 0.0f, 0.0f, 1.0f);
+        return result;
+    }
 };
 } // namespace gore::renderer
