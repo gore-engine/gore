@@ -22,7 +22,7 @@ public:
     void Free(uint32_t index);
 
     [[nodiscard]] uint32_t GetSize() const;
-    [[nodiscard]] inline bool IsFull() const;
+    [[nodiscard]] bool IsFull() const;
 
 private:
     void IncreaseSize();
@@ -31,4 +31,9 @@ private:
     uint32_t m_NextIndex;
     uint32_t m_Size;
 };
+
+inline bool ArrayAllocator::IsFull() const
+{
+    return m_NextIndex == k_InvalidIndex;
+}
 } // namespace gore::utils
