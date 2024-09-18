@@ -5,7 +5,6 @@
 #include <memory>
 
 #include "Rendering/Handle.h"
-#include "Rendering/Components/MeshRenderer.h"
 #include "Utilities/Allocator/ArrayAllocator.h"
 
 namespace gore::renderer
@@ -33,6 +32,16 @@ public:
         return index != other.index;
     }
 
+    static RendererHandle Invalid()
+    {
+        return RendererHandle(UINT32_MAX);
+    }
+
+    [[nodiscard]] bool IsValid() const
+    {
+        return index != UINT32_MAX;
+    }
+    
 private:
     uint32_t index;
 };
