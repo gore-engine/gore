@@ -8,8 +8,15 @@ MeshRenderer::MeshRenderer(GameObject* GameObject) noexcept :
     m_VertexBuffer(),
     m_VertexCount(0),
     m_IndexBuffer(),
-    m_IndexCount(0)
+    m_IndexCount(0),
+    m_RendererHandle(RendererHandle::Invalid())
 {
+    m_RendererHandle = MeshRendererSystem::GetInstance()->GetRendererHandle();
+}
+
+MeshRenderer::~MeshRenderer()
+{
+    MeshRendererSystem::GetInstance()->FreeRendererHandle(m_RendererHandle);
 }
 
 bool MeshRenderer::IsValid() const

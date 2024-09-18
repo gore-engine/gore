@@ -24,7 +24,7 @@ public:
     NON_COPYABLE(MeshRenderer)
 
     explicit MeshRenderer(GameObject * GameObject) noexcept;
-    ~MeshRenderer() override = default;
+    ~MeshRenderer() override;
 
     void UploadMeshData();
 
@@ -62,6 +62,8 @@ public:
 private:
     void DeleteCPUMeshData();
     void DeleteGPUData();
+
+    RendererHandle m_RendererHandle;
 
     Material m_Material;
 
