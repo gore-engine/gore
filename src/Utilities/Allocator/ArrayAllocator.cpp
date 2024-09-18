@@ -63,4 +63,9 @@ uint32_t ArrayAllocator::GetSize() const
     return m_Size;
 }
 
+inline bool ArrayAllocator::IsFull() const
+{
+    return m_NextIndex == k_InvalidIndex;
+}
+
 } // namespace gore::utils
