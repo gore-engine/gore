@@ -23,8 +23,8 @@ public:
     GPUTransformChangeSystem() noexcept;
     ~GPUTransformChangeSystem() noexcept;
 
-    void AddTransform(Transform* transform) noexcept;
-    void RemoveTransform(Transform* transform) noexcept;
+    void AddTransform(Transform* transform);
+    void RemoveTransform(Transform* transform);
 
 private:
     void IncreaseSize();
