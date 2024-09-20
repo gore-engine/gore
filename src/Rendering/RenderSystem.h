@@ -51,6 +51,19 @@ struct DeletionQueue
     }
 };
 
+enum class InstanceDataStoragePolicy
+{
+    None,
+    PerDrawPushConstant,
+    PersistentDynamicUniformBuffer,
+    PersistentStructuredBuffer,
+};
+
+struct RenderSystemCreateInfo final
+{
+    InstanceDataStoragePolicy instanceDataStoragePolicy : 8 = InstanceDataStoragePolicy::None;
+};
+
 class RenderSystem final : System
 {
 public:
@@ -76,6 +89,8 @@ private:
     vk::raii::DescriptorPool m_ImguiDescriptorPool;
 
 private:
+    void PrepareGPUSceneData();
+
     static void RecordDebugMarker(void* pUserContext, const RpsRuntimeOpRecordDebugMarkerArgs* pArgs);
     static void SetDebugName(void* pUserContext, const RpsRuntimeOpSetDebugNameArgs* pArgs);
 
@@ -149,14 +164,14 @@ private:
     GraphicsPipelineHandle m_UnLitPipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
     GraphicsPipelineHandle m_QuadPipelineHandle;
-    
+
     struct FrameFences
     {
-        vk::Fence     renderCompleteFence;
+        vk::Fence renderCompleteFence;
         vk::Semaphore renderCompleteSemaphore;
     };
-    std::vector<FrameFences>        m_frameFences;
-    
+    std::vector<FrameFences> m_frameFences;
+
     std::unique_ptr<RpsSytem> m_RpsSystem;
     std::vector<vk::Semaphore> m_queueSemaphores;
     vk::Semaphore m_pendingPresentSemaphore;
@@ -174,7 +189,7 @@ private:
     // Graphics, Compute, Transfer
     vk::Queue m_GpuQueues[RPS_QUEUE_COUNT];
     uint32_t m_GpuQueueFamilyIndices[RPS_QUEUE_COUNT];
-    
+
     vk::Queue m_PresentQueue;
     uint32_t m_PresentQueueFamilyIndex;
 
