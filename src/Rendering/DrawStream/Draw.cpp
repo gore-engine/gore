@@ -2,6 +2,8 @@
 
 #include "Rendering/RenderContext.h"
 
+#include "Object/GameObject.h"
+
 #include "Rendering/Components/Material.h"
 #include "Rendering/Components/MeshRenderer.h"
 
@@ -12,20 +14,23 @@ bool MatchDrawFilter(const Pass& pass, const DrawCreateInfo& info)
     return pass.name == info.passName;
 }
 
-void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<MeshRenderer>& renderers, std::vector<Draw>& sortedDrawData)
+void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& gameObjects, std::vector<Draw>& sortedDrawData)
 {
     auto& renderContext = *RenderContext::GetInstance();
 
-    for (uint32_t i = 0; i < renderers.size(); i++)
+    for (uint32_t i = 0; i < gameObjects.size(); i++)
     {
-        auto& renderer = renderers[i];
-        if (renderer.IsValid() == false)
+        MeshRenderer* renderer = gameObjects[i]->GetComponent<MeshRenderer>();
+        if (renderer == nullptr)
             continue;
 
-        auto handle         = renderer.GetDynamicBuffer();
+        if (renderer->IsValid() == false)
+            continue;
+
+        auto handle         = renderer->GetDynamicBuffer();
         auto& dynamicBuffer = renderContext.GetDynamicBuffer(handle);
 
-        Material& material = renderer.GetMaterial();
+        Material& material = renderer->GetMaterial();
         for (const auto& pass : material.GetPasses())
         {
             Draw draw;
@@ -39,13 +44,13 @@ void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<MeshRenderer>& ren
             draw.dynamicBuffer       = handle;
             draw.dynamicBufferOffset = dynamicBuffer.offset;
 
-            draw.vertexBuffer = renderer.GetVertexBuffer();
-            draw.vertexCount  = renderer.GetVertexCount();
-            draw.vertexOffset = renderer.GetVertexOffset();
+            draw.vertexBuffer = renderer->GetVertexBuffer();
+            draw.vertexCount  = renderer->GetVertexCount();
+            draw.vertexOffset = renderer->GetVertexOffset();
 
-            draw.indexBuffer = renderer.GetIndexBuffer();
-            draw.indexCount  = renderer.GetIndexCount();
-            draw.indexOffset = renderer.GetIndexOffset();
+            draw.indexBuffer = renderer->GetIndexBuffer();
+            draw.indexCount  = renderer->GetIndexCount();
+            draw.indexOffset = renderer->GetIndexOffset();
 
             sortedDrawData.push_back(draw);
         }

@@ -7,21 +7,35 @@
 #include "Rendering/Buffer.h"
 #include "Rendering/DynamicBuffer.h"
 
-namespace gore::gfx
+#include "Rendering/Components/Material.h"
+
+#include "Utilities/Hash/StdHash.h"
+
+#include <vector>
+
+namespace gore
 {
-class MeshRenderer;
-}
+class GameObject;
+} // namespace gore
 
 namespace gore::renderer
 {
 using namespace gore::gfx;
 
 struct Pass;
+class MeshRenderer;
 
 // TODO: This is a temporary solution to use fixed pass names, we could use a more generic approach
 struct DrawCreateInfo
 {
     const char* passName = nullptr;
+    AlphaMode alphaMode  = AlphaMode::Opaque;
+};
+
+struct DrawCacheKey
+{
+    const char* passName = nullptr;
+    AlphaMode alphaMode  = AlphaMode::Opaque;
 };
 
 struct Draw
@@ -83,6 +97,21 @@ struct DrawSorter
     }
 };
 
-void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<MeshRenderer>& renderers, std::vector<Draw>& sortedDrawData);
+void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& gameObjects, std::vector<Draw>& sortedDrawData);
 bool MatchDrawFilter(const Pass& pass, const DrawCreateInfo& info);
 } // namespace gore::renderer
+
+namespace std
+{
+template <>
+struct hash<gore::renderer::DrawCacheKey>
+{
+    size_t operator()(const gore::renderer::DrawCacheKey& key) const
+    {
+        size_t result = 0;
+        gore::utils::hash_combine(result, key.passName);
+        gore::utils::hash_combine(result, static_cast<uint8_t>(key.alphaMode));
+        return result;
+    }
+};
+} // namespace std

@@ -10,6 +10,13 @@ namespace gore::renderer
 {
 using namespace gore::gfx;
 
+enum class AlphaMode
+{
+    Opaque,
+    Mask,
+    Blend
+};
+
 // FIXME: This is a temporary solution to use fixed pass names
 struct PassID
 {
@@ -61,7 +68,10 @@ public:
                            { return passName == passName; });
     }
 
+    GETTER_SETTER(AlphaMode, AlphaMode)
+
 private:
     std::vector<Pass> m_Passes;
+    AlphaMode m_AlphaMode;
 };
 } // namespace gore::renderer
