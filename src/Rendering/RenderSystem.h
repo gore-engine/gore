@@ -17,6 +17,10 @@
 
 #include <functional>
 #include <deque>
+#include <unordered_map>
+#include <vector>
+
+#include "Rendering/DrawStream/Draw.h"
 
 #define RPS_VK_RUNTIME 1
 #include "rps/rps.h"
@@ -75,6 +79,8 @@ public:
     void Initialize() override;
     void Update() override;
     void Shutdown() override;
+
+    void PrepareDrawData();
 
     RenderContext& GetRenderContext() const { return *m_RenderContext; }
 
@@ -216,6 +222,9 @@ private:
     DeletionQueue m_RenderDeletionQueue;
 
     GraphicsCaps m_GraphicsCaps;
+
+    // TODO: Change this to drawStream
+    std::unordered_map<DrawCacheKey, std::vector<Draw>> m_DrawData;
 
 private:
     void UploadPerframeGlobalConstantBuffer(uint32_t imageIndex);

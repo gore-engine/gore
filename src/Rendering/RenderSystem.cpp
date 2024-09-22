@@ -61,7 +61,9 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_FrameCounter(0),
     m_backBufferIndex(0),
     m_swapChainImageSemaphoreIndex(0),
-    m_pendingAcqImgSemaphoreIndex(UINT32_MAX)
+    m_pendingAcqImgSemaphoreIndex(UINT32_MAX),
+    // Draw Data
+    m_DrawData()
 {
     g_RenderSystem = this;
 }
@@ -140,8 +142,15 @@ void RenderSystem::Initialize()
     InitImgui();
 }
 
+void RenderSystem::PrepareDrawData()
+{
+
+}
+
 void RenderSystem::Update()
 {
+    PrepareDrawData();
+
     return RunRpsSystem();
 
     // ImGui_ImplVulkan_NewFrame();
