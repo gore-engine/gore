@@ -23,6 +23,7 @@
 #include "GraphicsPipelineDesc.h"
 #include "Pipeline.h"
 #include "RenderPass.h"
+#include "RenderPassDesc.h"
 #include "Pool.h"
 
 #include <vector>
@@ -66,8 +67,9 @@ public:
     void EndDebugLabel(CommandBuffer& cmd);
 
     // RenderPass
-    RenderPass* CreateRenderPass(const RenderPassDesc& desc);
-    RenderPass& GetCurrentRenderPass();
+    RenderPass CreateRenderPass(RenderPassDesc&& desc);
+    void DestroyRenderPass(RenderPass& renderPass);
+
     void DestroyRenderPass(RenderPass* renderPass);
     void BeginRenderPass(RenderPass* renderPass);
     void EndRenderPass();

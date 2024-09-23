@@ -354,7 +354,7 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
     }
 
     GraphicsPipeline graphicsPipeline(std::move(VULKAN_DEVICE.createGraphicsPipeline(nullptr, createInfo).value));
-    graphicsPipeline.layout     = pipelineLayout;
+    graphicsPipeline.layout = pipelineLayout;
 
     SetObjectDebugName(graphicsPipeline.pipeline, desc.debugName);
 
@@ -803,7 +803,7 @@ PipelineLayout RenderContext::GetOrCreatePipelineLayout(const std::vector<BindLa
     if (dynamicBuffer != nullptr)
     {
         layouts.push_back(dynamicBuffer->layout);
-    }    
+    }
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo(
         {},
@@ -1026,7 +1026,10 @@ void RenderContext::EndDebugLabel(CommandBuffer& cmd)
 void RenderContext::InsertDebugLabel(CommandBuffer& cmd, const char* label, float r, float g, float b)
 {
 #if ENGINE_DEBUG
-    cmd.cmdBuffer.insertDebugUtilsLabelEXT({label, {r, g, b, 1.0f}});
+    cmd.cmdBuffer.insertDebugUtilsLabelEXT({
+        label,
+        {r, g, b, 1.0f}
+    });
 #endif
 }
 
@@ -1040,5 +1043,86 @@ void RenderContext::DestroyFence(Fence& fence)
 {
     VULKAN_DEVICE.destroyFence(fence.fence);
     fence.fence = nullptr;
+}
+
+RenderPass RenderContext::CreateRenderPass(RenderPassDesc&& desc)
+{
+    bool hasDepthStencil = desc.depthFormat != GraphicsFormat::Undefined && desc.stencilFormat != GraphicsFormat::Undefined;
+
+    std::vector<VkFormat> colorFormats = VulkanHelper::GetVkFormats(desc.colorFormats);
+    vk::Format depthFormat             = VulkanHelper::GetVkFormat(desc.depthFormat);
+
+    std::vector<vk::AttachmentDescription> attachments;
+    attachments.reserve(colorFormats.size() + (hasDepthStencil ? 1 : 0));
+
+    for (int i = 0; i < colorFormats.size(); i++)
+    {
+        vk::AttachmentDescription attachment(
+            {},
+            (vk::Format)colorFormats[i],
+            vk::SampleCountFlagBits::e1,
+            vk::AttachmentLoadOp::eClear,
+            vk::AttachmentStoreOp::eStore,
+            vk::AttachmentLoadOp::eDontCare,
+            vk::AttachmentStoreOp::eDontCare,
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::ePresentSrcKHR);
+
+        attachments.push_back(attachment);
+    }
+
+    if (hasDepthStencil)
+    {
+        vk::AttachmentDescription attachment(
+            {},
+            depthFormat,
+            vk::SampleCountFlagBits::e1,
+            vk::AttachmentLoadOp::eClear,
+            vk::AttachmentStoreOp::eStore,
+            vk::AttachmentLoadOp::eDontCare,
+            vk::AttachmentStoreOp::eDontCare,
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+        attachments.push_back(attachment);
+    }
+
+    vk::AttachmentReference colorAttachmentRefs[8]; // max color attachments
+    for (int i = 0; i < colorFormats.size(); i++)
+    {
+        colorAttachmentRefs[i] = {static_cast<uint32_t>(i), vk::ImageLayout::eColorAttachmentOptimal};
+    }
+
+    vk::AttachmentReference depthAttachmentRef;
+    if (hasDepthStencil)
+    {
+        depthAttachmentRef = {static_cast<uint32_t>(colorFormats.size()), vk::ImageLayout::eDepthStencilAttachmentOptimal};
+    }
+
+    vk::SubpassDescription subpass(
+        {},
+        vk::PipelineBindPoint::eGraphics,
+        0,
+        nullptr,
+        static_cast<uint32_t>(colorFormats.size()),
+        colorAttachmentRefs,
+        nullptr,
+        hasDepthStencil ? &depthAttachmentRef : nullptr,
+        0,
+        nullptr);
+
+    vk::RenderPassCreateInfo renderPassInfo(
+        {},
+        static_cast<uint32_t>(attachments.size()),
+        attachments.data(),
+        1,
+        &subpass);
+
+    return {VULKAN_DEVICE.createRenderPass(renderPassInfo)};
+}
+
+void RenderContext::DestroyRenderPass(RenderPass& renderPass)
+{
+    VULKAN_DEVICE.destroyRenderPass(renderPass.renderPass);
 }
 } // namespace gore::gfx
