@@ -1121,15 +1121,12 @@ static std::vector<char> LoadShaderBytecode(const std::string& name, const Shade
 
 void RenderSystem::CreatePipeline()
 {
-    vk::AttachmentDescription colorAttachmentDesc0({}, m_Swapchain.GetFormat().format, vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
-
-    vk::AttachmentReference colorAttachmentRef0(0, vk::ImageLayout::eColorAttachmentOptimal);
-
-    vk::SubpassDescription subpassDesc({}, vk::PipelineBindPoint::eGraphics, {}, colorAttachmentRef0);   
-
-    vk::RenderPassCreateInfo renderPassInfo({}, colorAttachmentDesc0, subpassDesc);
-
-    vk::raii::RenderPass renderPass = m_Device.Get().createRenderPass(renderPassInfo);
+    RenderPass renderPass = m_RenderContext->CreateRenderPass(
+        RenderPassDesc
+        {
+            {GraphicsFormat::BGRA8_SRGB}
+        }
+    );
 
     std::vector<char> cubeVertBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Vertex, "vs");
     std::vector<char> cubeFragBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Fragment, "ps");
@@ -1155,7 +1152,7 @@ void RenderSystem::CreatePipeline()
             .stencilFormat = GraphicsFormat::Undefined,
             .bindLayouts = { m_GlobalBindLayout },
             .dynamicBuffer = m_DynamicBufferHandle,
-            .renderPass = *renderPass,
+            .renderPass = renderPass.renderPass,
             .subpassIndex = 0
         }
     );
@@ -1225,7 +1222,7 @@ void RenderSystem::CreatePipeline()
             .depthFormat = GraphicsFormat::D32_FLOAT,
             .stencilFormat = GraphicsFormat::Undefined,
             .bindLayouts {},
-            .renderPass = *renderPass,
+            .renderPass = renderPass.renderPass,
             .subpassIndex = 0
         }
     );
@@ -1253,6 +1250,8 @@ void RenderSystem::CreatePipeline()
     //         .subpassIndex = 0
     //     }
     // );
+
+    m_RenderContext->DestroyRenderPass(renderPass);
 }
 
 void RenderSystem::CreateTextureObjects()
