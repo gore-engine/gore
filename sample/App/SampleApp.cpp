@@ -43,7 +43,7 @@ void SampleApp::PrepareGraphics()
     std::vector<char> vertexShaderBytecode = sample::utils::LoadShaderBytecode("VertexShader", ShaderStage::Vertex, "main");
     std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("FragmentShader", ShaderStage::Fragment, "main");
 
-    
+        
 }
 
 void SampleApp::Initialize()
@@ -73,7 +73,7 @@ void SampleApp::Initialize()
         gore::GameObject* gameObject = scene->NewObject();
         gameObject->SetName("cube");
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
-        renderContext.LoadMeshToMeshRenderer("cube.gltf", *meshRenderer);    
+        meshRenderer->LoadMesh("cube.gltf");    
 
         gore::Transform* transform = gameObject->GetTransform();
         transform->SetLocalPosition(gore::Vector3::Right * 20.0f);
@@ -83,14 +83,16 @@ void SampleApp::Initialize()
         gore::GameObject* gameObject = scene->NewObject();
         gameObject->SetName("teapot");
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
-        renderContext.LoadMeshToMeshRenderer("teapot.gltf", *meshRenderer);
+        meshRenderer->LoadMesh("teapot.gltf");
     }    
     
     {
         gore::GameObject* gameObject = scene->NewObject();
         gameObject->SetName("rock");
+        
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
-        renderContext.LoadMeshToMeshRenderer("rock.gltf", *meshRenderer);
+        meshRenderer->LoadMesh("rock.gltf");
+
         gore::Transform* transform = gameObject->GetTransform();
         transform->SetLocalPosition(gore::Vector3::Left * 10.0f);
     }

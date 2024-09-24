@@ -1,5 +1,7 @@
 #include "MeshRenderer.h"
 
+#include "Rendering/RenderContext.h"
+
 namespace gore::renderer
 {
 MeshRenderer::MeshRenderer(GameObject* GameObject) noexcept :
@@ -11,12 +13,12 @@ MeshRenderer::MeshRenderer(GameObject* GameObject) noexcept :
     m_IndexCount(0),
     m_RendererHandle(RendererHandle::Invalid())
 {
-    m_RendererHandle = MeshRendererSystem::GetInstance()->GetRendererHandle();
+    // m_RendererHandle = MeshRendererSystem::GetInstance()->GetRendererHandle();
 }
 
 MeshRenderer::~MeshRenderer()
 {
-    MeshRendererSystem::GetInstance()->FreeRendererHandle(m_RendererHandle);
+    // MeshRendererSystem::GetInstance()->FreeRendererHandle(m_RendererHandle);
 }
 
 bool MeshRenderer::IsValid() const
@@ -33,5 +35,12 @@ void MeshRenderer::Start()
 
 void MeshRenderer::Update()
 {
+}
+
+void MeshRenderer::LoadMesh(const std::string& name, uint32_t meshIndex, ShaderChannel channel)
+{
+    auto& renderContext = *RenderContext::GetInstance();
+
+    renderContext.LoadMeshToMeshRenderer(name, *this, meshIndex, channel);
 }
 } // namespace gore::renderer

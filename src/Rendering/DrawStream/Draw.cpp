@@ -28,7 +28,6 @@ void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& game
             continue;
 
         auto handle         = renderer->GetDynamicBuffer();
-        auto& dynamicBuffer = renderContext.GetDynamicBuffer(handle);
 
         Material& material = renderer->GetMaterial();
         for (const auto& pass : material.GetPasses())
@@ -42,7 +41,7 @@ void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& game
             draw.bindGroup[2] = pass.bindGroup[2];
 
             draw.dynamicBuffer       = handle;
-            draw.dynamicBufferOffset = dynamicBuffer.offset;
+            draw.dynamicBufferOffset = renderer->GetDynamicBufferOffset();
 
             draw.vertexBuffer = renderer->GetVertexBuffer();
             draw.vertexCount  = renderer->GetVertexCount();

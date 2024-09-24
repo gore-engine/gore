@@ -26,6 +26,8 @@ public:
     explicit MeshRenderer(GameObject * GameObject) noexcept;
     ~MeshRenderer() override;
 
+    void LoadMesh(const std::string& name, uint32_t meshIndex = 0, ShaderChannel channel = ShaderChannel::Default);
+
     void UploadMeshData();
 
     void SetVertexData(const void* data, size_t size);
@@ -45,7 +47,8 @@ public:
     GETTER_REF(Material, Material)
     GETTER_SETTER(IndexType, IndexType)
     GETTER_SETTER(DynamicBufferHandle, DynamicBuffer)
-    
+    GETTER_SETTER(uint32_t, DynamicBufferOffset)
+
     GETTER_SETTER(BufferHandle, VertexBuffer)
     GETTER_SETTER(uint32_t, VertexCount)
     GETTER_SETTER(uint32_t, VertexOffset)
