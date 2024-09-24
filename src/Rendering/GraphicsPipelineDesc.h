@@ -131,7 +131,7 @@ struct RasterizationState final
 {
     bool depthClamp : 1            = false;
     bool rasterizerDiscard : 1     = false;
-    bool frontCounterClockwise : 1 = false;
+    bool frontCounterClockwise : 1 = true;
     bool depthBiasEnable : 1       = false;
     CullMode cullMode : 4          = CullMode::Back;
     PolygonMode polygonMode : 8    = PolygonMode::Fill;
