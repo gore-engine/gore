@@ -24,6 +24,8 @@
 #include "Rendering/GPUData/GlobalConstantBuffer.h"
 #include "RenderContextHelper.h"
 
+#include "Rendering/System/MeshRendererSystem.h"
+
 #include <vector>
 #include <string>
 #include <sstream>
@@ -63,7 +65,9 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_swapChainImageSemaphoreIndex(0),
     m_pendingAcqImgSemaphoreIndex(UINT32_MAX),
     // Draw Data
-    m_DrawData()
+    m_DrawData(),
+    // Systems
+    m_MeshRendererSystem(std::make_unique<MeshRendererSystem>())
 {
     g_RenderSystem = this;
 }

@@ -29,6 +29,14 @@
 
 namespace gore
 {
+namespace renderer
+{
+class MeshRendererSystem;
+} // namespace renderer
+} // namespace gore
+
+namespace gore
+{
 
 using namespace gfx;
 
@@ -65,7 +73,7 @@ enum class InstanceDataStoragePolicy
 
 struct RenderSystemCreateInfo final
 {
-    InstanceDataStoragePolicy instanceDataStoragePolicy : 8 = InstanceDataStoragePolicy::None;
+    InstanceDataStoragePolicy instanceDataStoragePolicy : 8 = InstanceDataStoragePolicy::PersistentDynamicUniformBuffer;
 };
 
 class RenderSystem final : System
@@ -225,7 +233,7 @@ private:
 
     // TODO: Change this to drawStream
     std::unordered_map<DrawCacheKey, std::vector<Draw>> m_DrawData;
-
+    std::unique_ptr<MeshRendererSystem> m_MeshRendererSystem;
 private:
     void UploadPerframeGlobalConstantBuffer(uint32_t imageIndex);
 
