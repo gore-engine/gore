@@ -148,7 +148,22 @@ void RenderSystem::Initialize()
 
 void RenderSystem::PrepareDrawData()
 {
+    DrawCreateInfo info = {};
+    info.passName = "ForwardPass";
+    info.alphaMode = AlphaMode::Opaque;
 
+    std::vector<GameObject*> gameObjects = Scene::GetActiveScene()->GetGameObjects();
+    std::vector<Draw> sortedDrawData;
+    PrepareDrawDataAndSort(info, gameObjects, sortedDrawData);
+
+    // TODO: check if the draw data is already in the map
+    m_DrawData.clear();
+
+    DrawCacheKey key = {};
+    key.passName = info.passName;
+    key.alphaMode = info.alphaMode;
+
+    m_DrawData[key] = sortedDrawData;
 }
 
 void RenderSystem::Update()
