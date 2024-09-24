@@ -28,14 +28,32 @@ class MeshRenderer;
 // TODO: This is a temporary solution to use fixed pass names, we could use a more generic approach
 struct DrawCreateInfo
 {
-    const char* passName = nullptr;
+    std::string passName = "";
     AlphaMode alphaMode  = AlphaMode::Opaque;
 };
 
 struct DrawCacheKey
 {
-    const char* passName = nullptr;
+    std::string passName = "";
     AlphaMode alphaMode  = AlphaMode::Opaque;
+
+    bool operator==(const DrawCacheKey& other) const
+    {
+        return passName == other.passName && alphaMode == other.alphaMode;
+    }
+
+    bool operator!=(const DrawCacheKey& other) const
+    {
+        return !(*this == other);
+    }
+
+    bool operator<(const DrawCacheKey& other) const
+    {
+        if (passName != other.passName)
+            return passName < other.passName;
+
+        return alphaMode < other.alphaMode;
+    }
 };
 
 struct Draw
