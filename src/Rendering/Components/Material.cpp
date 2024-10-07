@@ -4,15 +4,14 @@
 
 namespace gore::renderer
 {
-Material::Material() noexcept
+Material::Material() noexcept :
+    m_Passes(),
+    m_AlphaMode(AlphaMode::Opaque)
 {
-    
 }
 
 void Material::AddPass(const Pass& pass)
-{
-    
-
+{   
     m_Passes.push_back(pass);
 }
 
