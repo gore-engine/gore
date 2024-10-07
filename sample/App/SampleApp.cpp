@@ -39,15 +39,80 @@ SampleApp::~SampleApp()
 }
 
 void SampleApp::PrepareGraphics()
-{
-    std::vector<char> vertexShaderBytecode = sample::utils::LoadShaderBytecode("VertexShader", ShaderStage::Vertex, "main");
-    std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("FragmentShader", ShaderStage::Fragment, "main");
+{   
+    using namespace gore::gfx;
 
-        
+    RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+
+    // Create
+
+    // Create a pipeline for the forward rendering
+    std::vector<char> vertexShaderBytecode = sample::utils::LoadShaderBytecode("sample/UnLit", ShaderStage::Vertex, "main");
+    std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("sample/UnLit", ShaderStage::Fragment, "main");
+
+    pipelines.forwardPipeline = renderContext.CreateGraphicsPipeline(
+        GraphicsPipelineDesc{
+            .debugName = "UnLit Pipeline",
+            .VS{
+                .byteCode  = reinterpret_cast<uint8_t*>(vertexShaderBytecode.data()),
+                .byteSize  = static_cast<uint32_t>(vertexShaderBytecode.size()),
+                .entryFunc = "vs"},
+            .PS{
+                .byteCode  = reinterpret_cast<uint8_t*>(fragmentShaderBytecode.data()),
+                .byteSize  = static_cast<uint32_t>(fragmentShaderBytecode.size()),
+                .entryFunc = "ps"},
+            .colorFormats  = {GraphicsFormat::BGRA8_SRGB},
+            .depthFormat   = GraphicsFormat::D32_FLOAT,
+            .stencilFormat = GraphicsFormat::Undefined,
+            .vertexBufferBindings{
+                {.byteStride = sizeof(Vector3) + sizeof(Vector2) + sizeof(Vector3),
+                 .attributes =
+                     {
+                         {.byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT},
+                         {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
+                         {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
+    });
+}
+
+void SampleApp::CreateGlobalBindGroup()
+{
+    using namespace gore::gfx;
+
+    RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+    m_GlobalConstantBuffer       = renderContext.CreateBuffer({.debugName = "Global Constant Buffer",
+                                                               .byteSize  = sizeof(GlobalConstantBuffer),
+                                                               .usage     = BufferUsage::Uniform,
+                                                               .memUsage  = MemoryUsage::CPU_TO_GPU});
+
+    std::vector<Binding> bindings{
+        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex}
+    };
+
+    BindLayoutCreateInfo bindLayoutCreateInfo = {.name = "Global Descriptor Set Layout", .bindings = bindings};
+
+    m_GlobalBindLayout = renderContext.GetOrCreateBindLayout(bindLayoutCreateInfo);
+
+    m_GlobalBindGroup = renderContext.CreateBindGroup({
+        .debugName       = "Global BindGroup",
+        .updateFrequency = UpdateFrequency::PerFrame,
+        .textures        = {},
+        .buffers         = {{0, m_GlobalConstantBuffer, 0, sizeof(GlobalConstantBuffer), BindType::UniformBuffer}},
+        .samplers        = {},
+        .bindLayout      = &m_GlobalBindLayout,
+    });
 }
 
 void SampleApp::Initialize()
 {
+    PrepareGraphics();
+
+    Material forwardMat;
+    forwardMat.SetAlphaMode(AlphaMode::Opaque);
+    forwardMat.AddPass(Pass{
+        .name = "ForwardPass",
+        .shader = pipelines.forwardPipeline,
+    });
+
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
 
     // GraphicsPipelineHandle forwardPipeline = renderContext.CreateGraphicsPipeline(

@@ -4,6 +4,11 @@
 #include "Scene/Scene.h"
 
 #include "Rendering/Pipeline.h"
+#include "Rendering/BindLayout.h"
+#include "Rendering/BindGroup.h"
+
+#include "Scripts/Rendering/PerDrawData.h"
+#include "Scripts/Rendering/GlobalData.h"
 
 using namespace gore;
 
@@ -15,6 +20,7 @@ public:
 
 protected:
     void PrepareGraphics();
+    void CreateGlobalBindGroup();
 
     void Initialize() final;
     void Update() final;
@@ -31,6 +37,9 @@ private:
         GraphicsPipelineHandle gbuffferPipeline;
     } pipelines;
 
+    gore::gfx::BindLayout m_GlobalBindLayout;
+    gore::gfx::BindGroupHandle m_GlobalBindGroup;
+    gore::gfx::BufferHandle m_GlobalConstantBuffer;
 private:
     gore::Scene* scene;
 };
