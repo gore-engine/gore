@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Prefix.h"
+#include "Export.h"
 
 #include <memory>
 
@@ -9,7 +10,7 @@
 
 namespace gore::renderer
 {
-struct RendererHandle
+ENGINE_STRUCT(RendererHandle)
 {
 public:
     explicit RendererHandle(uint32_t index) :
@@ -46,10 +47,8 @@ private:
     uint32_t index;
 };
 
-class MeshRendererSystem
+ENGINE_CLASS(MeshRendererSystem)
 {
-    SINGLETON(MeshRendererSystem)
-
 public:
     MeshRendererSystem();
 

@@ -2,8 +2,6 @@
 
 namespace gore::renderer
 {
-SINGLETON_IMPL(MeshRendererSystem)
-
 MeshRendererSystem::MeshRendererSystem() :
     m_MeshRendererAllocator(std::make_unique<utils::ArrayAllocator>())
 {

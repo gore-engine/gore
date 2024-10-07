@@ -11,8 +11,6 @@
 #include "Rendering/Components/Material.h"
 #include "Rendering/Utils/GeometryUtils.h"
 
-#include "Rendering/System/MeshRendererSystem.h"
-
 namespace gore::renderer
 {
 using namespace gfx;
@@ -44,7 +42,9 @@ public:
     [[nodiscard]] bool HasVertexData() const;
     [[nodiscard]] bool HasIndexData() const;
 
-    GETTER_REF(Material, Material)
+    [[nodiscard]] Material& GetMaterial() { return m_Material; }
+    void SetMaterial(const Material& material) { m_Material = material; }
+
     GETTER_SETTER(IndexType, IndexType)
     GETTER_SETTER(DynamicBufferHandle, DynamicBuffer)
     GETTER_SETTER(uint32_t, DynamicBufferOffset)
@@ -65,8 +65,6 @@ public:
 private:
     void DeleteCPUMeshData();
     void DeleteGPUData();
-
-    RendererHandle m_RendererHandle;
 
     Material m_Material;
 

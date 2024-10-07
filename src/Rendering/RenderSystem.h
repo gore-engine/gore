@@ -233,7 +233,6 @@ private:
 
     // TODO: Change this to drawStream
     std::unordered_map<DrawCacheKey, std::vector<Draw>> m_DrawData;
-    std::unique_ptr<MeshRendererSystem> m_MeshRendererSystem;
 private:
     void UploadPerframeGlobalConstantBuffer(uint32_t imageIndex);
 

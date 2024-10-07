@@ -1,12 +1,14 @@
 #include "Prefix.h"
 
+#include "Export.h"
+
 #include <cstddef>
 #include <vector>
 
 namespace gore::utils
 {
 // ArrayAllocator is a simple allocator that allocates and frees indices in an array.
-class ArrayAllocator
+ENGINE_CLASS(ArrayAllocator)
 {
 public:
     static constexpr uint32_t k_InvalidIndex = 0xffffffff;
