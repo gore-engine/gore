@@ -27,6 +27,9 @@ protected:
     void Shutdown() final;
 
 private:
+    void CreateGlobalDescriptorSets();
+    void CreatePipelines();
+private:
     void UpdateFPSText(float deltaTime);
 
     struct SamplePipeline

@@ -21,7 +21,7 @@
 
 #include "Scripts/TestComponent.h"
 #include "Scripts/CameraController.h"
-#include "Scripts/PeriodicallySwitchParent.h" 
+#include "Scripts/PeriodicallySwitchParent.h"
 #include "Scripts/SelfRotate.h"
 #include "Scripts/SelfMoveBackAndForth.h"
 #include "Scripts/SelfScaleInBetweenRange.h"
@@ -38,16 +38,46 @@ SampleApp::~SampleApp()
 {
 }
 
-void SampleApp::PrepareGraphics()
-{   
+void SampleApp::CreateGlobalDescriptorSets()
+{
+    using namespace gore::gfx;
+
+    auto& renderContext = m_RenderSystem->GetRenderContext();
+
+    m_GlobalConstantBuffer = renderContext.CreateBuffer({.debugName = "Global Constant Buffer",
+                                                         .byteSize  = sizeof(GlobalConstantBuffer),
+                                                         .usage     = BufferUsage::Uniform,
+                                                         .memUsage  = MemoryUsage::CPU_TO_GPU});
+
+    std::vector<Binding> bindings{
+        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex}
+    };
+
+    BindLayoutCreateInfo bindLayoutCreateInfo =
+        {
+            .name     = "Global Descriptor Set Layout",
+            .bindings = bindings};
+
+    m_GlobalBindLayout = renderContext.GetOrCreateBindLayout(bindLayoutCreateInfo);
+
+    m_GlobalBindGroup = renderContext.CreateBindGroup({
+        .debugName       = "Global BindGroup",
+        .updateFrequency = UpdateFrequency::PerFrame,
+        .textures        = {},
+        .buffers         = {{0, m_GlobalConstantBuffer, 0, sizeof(GlobalConstantBuffer), BindType::UniformBuffer}},
+        .samplers        = {},
+        .bindLayout      = &m_GlobalBindLayout,
+    });
+}
+
+void SampleApp::CreatePipelines()
+{
     using namespace gore::gfx;
 
     RenderContext& renderContext = m_RenderSystem->GetRenderContext();
 
-    // Create
-
     // Create a pipeline for the forward rendering
-    std::vector<char> vertexShaderBytecode = sample::utils::LoadShaderBytecode("sample/UnLit", ShaderStage::Vertex, "main");
+    std::vector<char> vertexShaderBytecode   = sample::utils::LoadShaderBytecode("sample/UnLit", ShaderStage::Vertex, "main");
     std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("sample/UnLit", ShaderStage::Fragment, "main");
 
     pipelines.forwardPipeline = renderContext.CreateGraphicsPipeline(
@@ -72,6 +102,10 @@ void SampleApp::PrepareGraphics()
                          {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
                          {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
     });
+}
+
+void SampleApp::PrepareGraphics()
+{
 }
 
 void SampleApp::CreateGlobalBindGroup()
@@ -109,7 +143,7 @@ void SampleApp::Initialize()
     Material forwardMat;
     forwardMat.SetAlphaMode(AlphaMode::Opaque);
     forwardMat.AddPass(Pass{
-        .name = "ForwardPass",
+        .name   = "ForwardPass",
         .shader = pipelines.forwardPipeline,
     });
 
@@ -134,27 +168,27 @@ void SampleApp::Initialize()
     cameraTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
     cameraTransform->SetLocalPosition((gore::Vector3::Backward + gore::Vector3::Up) * 7.5f);
 
-   {
+    {
         gore::GameObject* gameObject = scene->NewObject();
         gameObject->SetName("cube");
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
-        meshRenderer->LoadMesh("cube.gltf");    
+        meshRenderer->LoadMesh("cube.gltf");
 
         gore::Transform* transform = gameObject->GetTransform();
         transform->SetLocalPosition(gore::Vector3::Right * 20.0f);
     }
-    
+
     {
         gore::GameObject* gameObject = scene->NewObject();
         gameObject->SetName("teapot");
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
         meshRenderer->LoadMesh("teapot.gltf");
-    }    
-    
+    }
+
     {
         gore::GameObject* gameObject = scene->NewObject();
         gameObject->SetName("rock");
-        
+
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
         meshRenderer->LoadMesh("rock.gltf");
 
