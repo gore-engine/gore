@@ -6,6 +6,7 @@
 #include "Rendering/Pipeline.h"
 #include "Rendering/BindLayout.h"
 #include "Rendering/BindGroup.h"
+#include "Rendering/DynamicBuffer.h"
 
 #include "Scripts/Rendering/PerDrawData.h"
 #include "Scripts/Rendering/GlobalData.h"
@@ -27,8 +28,10 @@ protected:
     void Shutdown() final;
 
 private:
+    void CreateUnifiedGlobalDynamicBuffer();
     void CreateGlobalDescriptorSets();
     void CreatePipelines();
+
 private:
     void UpdateFPSText(float deltaTime);
 
@@ -39,6 +42,8 @@ private:
         GraphicsPipelineHandle shadowPipeline;
         GraphicsPipelineHandle gbuffferPipeline;
     } pipelines;
+
+    gore::gfx::DynamicBufferHandle m_UnifiedDynamicBuffer;
 
     gore::gfx::BindLayout m_GlobalBindLayout;
     gore::gfx::BindGroupHandle m_GlobalBindGroup;
