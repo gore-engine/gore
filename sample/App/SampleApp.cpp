@@ -29,6 +29,8 @@
 #include "Scripts/SelfDestroyAfterSeconds.h"
 #include "Scripts/DeleteMultipleGameObjectsAfterSeconds.h"
 
+#include "Scripts/Math/BitUtils.h"
+
 SampleApp::SampleApp(int argc, char** argv) :
     App(argc, argv)
 {
@@ -36,6 +38,41 @@ SampleApp::SampleApp(int argc, char** argv) :
 
 SampleApp::~SampleApp()
 {
+}
+
+void SampleApp::CreateUnifiedGlobalDynamicBuffer()
+{
+    auto& renderContext = m_RenderSystem->GetRenderContext();
+
+    size_t alignmentSize = MathUtils::AlignUp(sizeof(PerDrawData), m_GraphicsCaps.minUniformBufferOffsetAlignment);
+
+    size_t renderCount = 4;
+    std::vector<uint8_t> dynamicUniformBufferData(alignmentSize * renderCount);
+    
+    for (size_t i = 0; i < renderCount; ++i)
+    {
+        PerDrawData* perDrawData = reinterpret_cast<PerDrawData*>(dynamicUniformBufferData.data() + (i * alignmentSize));
+        perDrawData->model = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
+    }
+
+    m_UnifiedDynamicBuffer = renderContext.CreateBuffer(
+        {
+            .debugName = "Dynamic Uniform Buffer",
+            .byteSize = static_cast<uint32_t>(dynamicUniformBufferData.size()),
+            .usage = BufferUsage::Uniform,
+            .memUsage = MemoryUsage::GPU,
+            .data = dynamicUniformBufferData.data()
+        }
+    );
+
+    m_UnifiedDynamicBufferHandle = renderContext.CreateDynamicBuffer(
+        {
+            .debugName = "Dynamic Uniform Buffer",
+            .buffer = m_UnifiedDynamicBuffer,
+            .offset = 0,
+            .range = sizeof(PerDrawData)    
+        }
+    );
 }
 
 void SampleApp::CreateGlobalDescriptorSets()
@@ -138,6 +175,8 @@ void SampleApp::CreateGlobalBindGroup()
 
 void SampleApp::Initialize()
 {
+    m_GraphicsCaps = m_RenderSystem->GetGraphicsCaps();
+
     PrepareGraphics();
 
     Material forwardMat;

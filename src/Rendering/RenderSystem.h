@@ -94,6 +94,9 @@ public:
 
     void OnResize(Window* window, int width, int height);
 
+public:
+    GraphicsCaps GetGraphicsCaps() const { return m_GraphicsCaps; }
+
 private:
     // Imgui
     void InitImgui();

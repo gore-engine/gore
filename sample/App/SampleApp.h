@@ -3,6 +3,7 @@
 #include "Core/App.h"
 #include "Scene/Scene.h"
 
+#include "Rendering/GraphicsCaps.h"
 #include "Rendering/Pipeline.h"
 #include "Rendering/BindLayout.h"
 #include "Rendering/BindGroup.h"
@@ -35,6 +36,8 @@ private:
 private:
     void UpdateFPSText(float deltaTime);
 
+    gore::gfx::GraphicsCaps m_GraphicsCaps;
+
     struct SamplePipeline
     {
         GraphicsPipelineHandle blankPipeline;
@@ -43,7 +46,8 @@ private:
         GraphicsPipelineHandle gbuffferPipeline;
     } pipelines;
 
-    gore::gfx::DynamicBufferHandle m_UnifiedDynamicBuffer;
+    gore::gfx::BufferHandle m_UnifiedDynamicBuffer;
+    gore::gfx::DynamicBufferHandle m_UnifiedDynamicBufferHandle;
 
     gore::gfx::BindLayout m_GlobalBindLayout;
     gore::gfx::BindGroupHandle m_GlobalBindGroup;
