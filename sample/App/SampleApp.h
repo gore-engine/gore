@@ -4,10 +4,7 @@
 #include "Scene/Scene.h"
 
 #include "Rendering/GraphicsCaps.h"
-#include "Rendering/Pipeline.h"
-#include "Rendering/BindLayout.h"
-#include "Rendering/BindGroup.h"
-#include "Rendering/DynamicBuffer.h"
+#include "Rendering/RenderContext.h"
 
 #include "Scripts/Rendering/PerDrawData.h"
 #include "Scripts/Rendering/GlobalData.h"
@@ -22,21 +19,27 @@ public:
 
 protected:
     void PrepareGraphics();
-    void CreateGlobalBindGroup();
 
     void Initialize() final;
     void Update() final;
     void Shutdown() final;
 
 private:
+    // Temporary RenderPassDesc for pipeline creation
+    void CreateRenderPassDesc();
     void CreateUnifiedGlobalDynamicBuffer();
-    void CreateGlobalDescriptorSets();
+    void CreateGlobalBindGroup();
     void CreatePipelines();
 
 private:
     void UpdateFPSText(float deltaTime);
 
     gore::gfx::GraphicsCaps m_GraphicsCaps;
+
+    struct SampleRenderPass
+    {
+        RenderPassDesc forwardPassDesc;
+    } renderPasses;
 
     struct SamplePipeline
     {

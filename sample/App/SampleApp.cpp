@@ -8,6 +8,8 @@
 #include "Rendering/RenderSystem.h"
 #include "Rendering/RenderContext.h"
 
+#include "Rendering/AutoRenderPass.h"
+
 #include "Core/Time.h"
 #include "Windowing/Window.h"
 #include "Scene/Scene.h"
@@ -40,6 +42,11 @@ SampleApp::~SampleApp()
 {
 }
 
+void SampleApp::CreateRenderPassDesc()
+{
+    renderPasses.forwardPassDesc = {{GraphicsFormat::BGRA8_SRGB}};
+}
+
 void SampleApp::CreateUnifiedGlobalDynamicBuffer()
 {
     auto& renderContext = m_RenderSystem->GetRenderContext();
@@ -48,63 +55,25 @@ void SampleApp::CreateUnifiedGlobalDynamicBuffer()
 
     size_t renderCount = 4;
     std::vector<uint8_t> dynamicUniformBufferData(alignmentSize * renderCount);
-    
+
     for (size_t i = 0; i < renderCount; ++i)
     {
         PerDrawData* perDrawData = reinterpret_cast<PerDrawData*>(dynamicUniformBufferData.data() + (i * alignmentSize));
-        perDrawData->model = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
+        perDrawData->model       = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
     }
 
     m_UnifiedDynamicBuffer = renderContext.CreateBuffer(
-        {
-            .debugName = "Dynamic Uniform Buffer",
-            .byteSize = static_cast<uint32_t>(dynamicUniformBufferData.size()),
-            .usage = BufferUsage::Uniform,
-            .memUsage = MemoryUsage::GPU,
-            .data = dynamicUniformBufferData.data()
-        }
-    );
+        {.debugName = "Dynamic Uniform Buffer",
+         .byteSize  = static_cast<uint32_t>(dynamicUniformBufferData.size()),
+         .usage     = BufferUsage::Uniform,
+         .memUsage  = MemoryUsage::GPU,
+         .data      = dynamicUniformBufferData.data()});
 
     m_UnifiedDynamicBufferHandle = renderContext.CreateDynamicBuffer(
-        {
-            .debugName = "Dynamic Uniform Buffer",
-            .buffer = m_UnifiedDynamicBuffer,
-            .offset = 0,
-            .range = sizeof(PerDrawData)    
-        }
-    );
-}
-
-void SampleApp::CreateGlobalDescriptorSets()
-{
-    using namespace gore::gfx;
-
-    auto& renderContext = m_RenderSystem->GetRenderContext();
-
-    m_GlobalConstantBuffer = renderContext.CreateBuffer({.debugName = "Global Constant Buffer",
-                                                         .byteSize  = sizeof(GlobalConstantBuffer),
-                                                         .usage     = BufferUsage::Uniform,
-                                                         .memUsage  = MemoryUsage::CPU_TO_GPU});
-
-    std::vector<Binding> bindings{
-        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex}
-    };
-
-    BindLayoutCreateInfo bindLayoutCreateInfo =
-        {
-            .name     = "Global Descriptor Set Layout",
-            .bindings = bindings};
-
-    m_GlobalBindLayout = renderContext.GetOrCreateBindLayout(bindLayoutCreateInfo);
-
-    m_GlobalBindGroup = renderContext.CreateBindGroup({
-        .debugName       = "Global BindGroup",
-        .updateFrequency = UpdateFrequency::PerFrame,
-        .textures        = {},
-        .buffers         = {{0, m_GlobalConstantBuffer, 0, sizeof(GlobalConstantBuffer), BindType::UniformBuffer}},
-        .samplers        = {},
-        .bindLayout      = &m_GlobalBindLayout,
-    });
+        {.debugName = "Dynamic Uniform Buffer",
+         .buffer    = m_UnifiedDynamicBuffer,
+         .offset    = 0,
+         .range     = sizeof(PerDrawData)});
 }
 
 void SampleApp::CreatePipelines()
@@ -112,6 +81,7 @@ void SampleApp::CreatePipelines()
     using namespace gore::gfx;
 
     RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+    AutoRenderPass forwardPass(&renderContext, renderPasses.forwardPassDesc);
 
     // Create a pipeline for the forward rendering
     std::vector<char> vertexShaderBytecode   = sample::utils::LoadShaderBytecode("sample/UnLit", ShaderStage::Vertex, "main");
@@ -138,11 +108,19 @@ void SampleApp::CreatePipelines()
                          {.byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT},
                          {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
                          {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
+            .bindLayouts   = {m_GlobalBindLayout},
+            .dynamicBuffer = m_UnifiedDynamicBufferHandle,
+            .renderPass    = forwardPass.GetRenderPass().renderPass,
+            .subpassIndex  = 0
     });
 }
 
 void SampleApp::PrepareGraphics()
 {
+    CreateRenderPassDesc();
+    CreateUnifiedGlobalDynamicBuffer();
+    CreateGlobalBindGroup();
+    CreatePipelines();
 }
 
 void SampleApp::CreateGlobalBindGroup()
