@@ -2,15 +2,15 @@
 
 #include "Prefix.h"
 
-#include "Rendering/Pipeline.h"
-#include "Rendering/BindGroup.h"
-#include "Rendering/Buffer.h"
-#include "Rendering/DynamicBuffer.h"
-
+#include "Rendering/RenderContext.h"
 #include "Rendering/Components/Material.h"
 
 #include "Utilities/Hash/StdHash.h"
 
+#include "Graphics/Vulkan/VulkanIncludes.h"
+#include "Graphics/Vulkan/VulkanExtensions.h"
+
+#include <unordered_map>
 #include <vector>
 
 namespace gore
@@ -117,6 +117,7 @@ struct DrawSorter
 
 void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& gameObjects, std::vector<Draw>& sortedDrawData);
 bool MatchDrawFilter(const Pass& pass, const DrawCreateInfo& info);
+void ScheduleDraws(RenderContext& renderContext, const std::unordered_map<DrawCacheKey, std::vector<Draw>>& drawData, const DrawCacheKey& key, vk::CommandBuffer commandBuffer);
 } // namespace gore::renderer
 
 namespace std

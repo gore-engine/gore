@@ -1,6 +1,5 @@
 #include "Draw.h"
 
-#include "Rendering/RenderContext.h"
 
 #include "Object/GameObject.h"
 
@@ -56,5 +55,64 @@ void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& game
     }
 
     std::sort(sortedDrawData.begin(), sortedDrawData.end(), DrawSorter());
+}
+
+void ScheduleDraws(RenderContext& renderContext, const std::unordered_map<DrawCacheKey, std::vector<Draw>>& drawData, const DrawCacheKey& key, vk::CommandBuffer commandBuffer)
+{
+    if (drawData.find(key) == drawData.end())
+        return;
+    
+    auto& drawList = drawData.at(key);
+
+    for(auto& draw : drawList)
+    {
+        auto& graphicsPipeline = renderContext.GetGraphicsPipeline(draw.shader);
+        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline.pipeline);
+
+        if (draw.vertexBuffer.empty() == false)
+        {
+            auto& vertexBuffer = renderContext.GetBuffer(draw.vertexBuffer);
+            commandBuffer.bindVertexBuffers(0, {vertexBuffer.vkBuffer}, {draw.vertexOffset});
+        }
+
+        if (draw.indexBuffer.empty() == false)
+        {
+            auto& indexBuffer = renderContext.GetBuffer(draw.indexBuffer);
+            commandBuffer.bindIndexBuffer(indexBuffer.vkBuffer, draw.indexOffset, vk::IndexType::eUint32);
+        }
+
+        if (draw.bindGroup[0].empty() == false)
+        {
+            auto& bindGroup = renderContext.GetBindGroup(draw.bindGroup[0]);
+            commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, graphicsPipeline.layout, 0, {bindGroup.set}, {});
+        }
+
+        if (draw.bindGroup[1].empty() == false)
+        {
+            auto& bindGroup = renderContext.GetBindGroup(draw.bindGroup[1]);
+            commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, graphicsPipeline.layout, 1, {bindGroup.set}, {});
+        }
+
+        if (draw.bindGroup[2].empty() == false)
+        {
+            auto& bindGroup = renderContext.GetBindGroup(draw.bindGroup[2]);
+            commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, graphicsPipeline.layout, 2, {bindGroup.set}, {});
+        }
+
+        if (draw.dynamicBuffer.empty() == false)
+        {
+            auto& dynamicBuffer = renderContext.GetDynamicBuffer(draw.dynamicBuffer);
+            commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, graphicsPipeline.layout, 3, {dynamicBuffer.set}, {draw.dynamicBufferOffset});
+        }
+
+        if (draw.indexBuffer.empty() == false)
+        {
+            commandBuffer.drawIndexed(draw.indexCount, draw.instanceCount, draw.indexOffset, draw.vertexOffset, draw.instanceOffset);
+        }
+        else
+        {
+            commandBuffer.draw(draw.vertexCount, draw.instanceCount, draw.vertexOffset, draw.instanceOffset);
+        }
+    }
 }
 } // namespace gore::renderer
