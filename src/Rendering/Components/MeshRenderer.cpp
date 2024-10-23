@@ -9,8 +9,12 @@ MeshRenderer::MeshRenderer(GameObject* GameObject) noexcept :
     m_IndexType(IndexType::None),
     m_VertexBuffer(),
     m_VertexCount(0),
+    m_VertexOffset(0),
     m_IndexBuffer(),
-    m_IndexCount(0)
+    m_IndexCount(0),
+    m_IndexOffset(0),
+    m_DynamicBuffer(),
+    m_DynamicBufferOffset(0)
 {
     // m_RendererHandle = MeshRendererSystem::GetInstance()->GetRendererHandle();
 }

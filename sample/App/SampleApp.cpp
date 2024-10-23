@@ -162,6 +162,7 @@ void SampleApp::Initialize()
     forwardMat.AddPass(Pass{
         .name   = "ForwardPass",
         .shader = pipelines.forwardPipeline,
+        .bindGroup = { m_GlobalBindGroup }
     });
 
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
@@ -191,6 +192,8 @@ void SampleApp::Initialize()
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
         meshRenderer->LoadMesh("cube.gltf");
         meshRenderer->SetMaterial(forwardMat);
+        meshRenderer->SetDynamicBuffer(m_UnifiedDynamicBufferHandle);
+        meshRenderer->SetDynamicBufferOffset(0);
 
         gore::Transform* transform = gameObject->GetTransform();
         transform->SetLocalPosition(gore::Vector3::Right * 20.0f);

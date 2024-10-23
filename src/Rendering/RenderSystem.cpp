@@ -949,8 +949,8 @@ void RenderSystem::DrawTriangle(vk::CommandBuffer commandBuffer)
 
     ScheduleDraws(*m_RenderContext, m_DrawData, key, commandBuffer);
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
-    commandBuffer.draw(3, 1, 0, 0);
+    // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
+    // commandBuffer.draw(3, 1, 0, 0);
 }
 
 void RenderSystem::UploadPerframeGlobalConstantBuffer(uint32_t imageIndex)
