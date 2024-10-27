@@ -93,6 +93,12 @@ public:
     const TextureDesc& GetTextureDesc(TextureHandle handle);
 
     template <typename T>
+    void CopyDataToBuffer(BufferHandle handle, const T& data)
+    {
+        CopyDataToBuffer(handle, &data, sizeof(T));
+    }
+
+    template <typename T>
     void CopyDataToTexture(TextureHandle handle, const std::vector<T>& data)
     {
         CopyDataToTexture(handle, data.data(), data.size() * sizeof(T));
