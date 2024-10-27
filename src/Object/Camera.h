@@ -3,6 +3,8 @@
 #include "Math/Constants.h"
 #include "Object/Component.h"
 
+#include <vector>
+
 namespace gore
 {
 
@@ -19,6 +21,10 @@ public:
     };
 
 public:
+    static Camera* Main;
+
+    static Camera* FindMainCamera();
+
     // common matrices
     [[nodiscard]] Matrix4x4 GetProjectionMatrix() const;
     [[nodiscard]] Matrix4x4 GetViewMatrix() const;
@@ -53,7 +59,7 @@ public:
 
     Camera() = delete;
     explicit Camera(GameObject* gameObject) noexcept;
-    ~Camera() override = default;
+    ~Camera() override;
 
     void Start() override;
     void Update() override;
@@ -67,6 +73,7 @@ public:
     static const ProjectionType DefaultProjectionType;
 
 private:
+    static std::vector<Camera*> s_All;
     enum class AspectRatioMode
     {
         FollowWindow,

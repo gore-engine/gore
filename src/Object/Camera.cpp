@@ -8,6 +8,9 @@
 namespace gore
 {
 
+Camera* Camera::Main = nullptr;
+std::vector<Camera*> Camera::s_All;
+
 void Camera::Start()
 {
 }
@@ -31,6 +34,27 @@ Camera::Camera(gore::GameObject* gameObject) noexcept :
     m_Near(DefaultNear),
     m_Far(DefaultFar)
 {
+    if (Main == nullptr)
+    {
+        Main = this;
+    }
+
+    s_All.push_back(this);
+}
+
+Camera::~Camera()
+{
+    s_All.erase(std::remove(s_All.begin(), s_All.end(), this), s_All.end());
+
+    if (Main == this)
+    {
+        Main = nullptr;
+    }
+
+    if (s_All.empty() == false)
+    {
+        Main = s_All.front();
+    }
 }
 
 Matrix4x4 Camera::GetProjectionMatrix() const
@@ -73,5 +97,18 @@ const float Camera::DefaultPerspectiveFOV                  = math::constants::PI
 const float Camera::DefaultOrthographicSize                = 1.0f;
 const float Camera::DefaultNear                            = 0.1f;
 const float Camera::DefaultFar                             = 1000.0f;
+
+Camera* Camera::FindMainCamera()
+{
+    if (Main == nullptr)
+    {
+        if (s_All.empty() == false)
+        {
+            Main = s_All.front();
+        }
+    }
+
+    return Main;
+}
 
 } // namespace gore
