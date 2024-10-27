@@ -6,9 +6,6 @@
 #include "Rendering/GraphicsCaps.h"
 #include "Rendering/RenderContext.h"
 
-#include "Scripts/Rendering/PerDrawData.h"
-#include "Scripts/Rendering/GlobalData.h"
-
 using namespace gore;
 
 class SampleApp final : public gore::App
@@ -25,6 +22,11 @@ protected:
     void Shutdown() final;
 
 private:
+    void Preupdate();
+    void UpdateImpl();
+    void PostUpdate();
+    void PreRender();
+
     // Temporary RenderPassDesc for pipeline creation
     void CreateRenderPassDesc();
     void CreateUnifiedGlobalDynamicBuffer();

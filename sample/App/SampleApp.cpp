@@ -33,6 +33,9 @@
 
 #include "Scripts/Math/BitUtils.h"
 
+#include "Scripts/Rendering/PerframeData.h"
+#include "Scripts/Rendering/PerDrawData.h"
+
 SampleApp::SampleApp(int argc, char** argv) :
     App(argc, argv)
 {
@@ -129,7 +132,7 @@ void SampleApp::CreateGlobalBindGroup()
 
     RenderContext& renderContext = m_RenderSystem->GetRenderContext();
     m_GlobalConstantBuffer       = renderContext.CreateBuffer({.debugName = "Global Constant Buffer",
-                                                               .byteSize  = sizeof(GlobalConstantBuffer),
+                                                               .byteSize  = sizeof(PerframeData),
                                                                .usage     = BufferUsage::Uniform,
                                                                .memUsage  = MemoryUsage::CPU_TO_GPU});
 
@@ -145,7 +148,7 @@ void SampleApp::CreateGlobalBindGroup()
         .debugName       = "Global BindGroup",
         .updateFrequency = UpdateFrequency::PerFrame,
         .textures        = {},
-        .buffers         = {{0, m_GlobalConstantBuffer, 0, sizeof(GlobalConstantBuffer), BindType::UniformBuffer}},
+        .buffers         = {{0, m_GlobalConstantBuffer, 0, sizeof(PerframeData), BindType::UniformBuffer}},
         .samplers        = {},
         .bindLayout      = &m_GlobalBindLayout,
     });
@@ -335,11 +338,50 @@ void SampleApp::Update()
 {
     float deltaTime = GetDeltaTime();
     UpdateFPSText(deltaTime);
+
+    Preupdate();
+    UpdateImpl();
+    PostUpdate();
+    PreRender();
 }
 
 void SampleApp::Shutdown()
 {
     delete scene;
+}
+
+void SampleApp::Preupdate()
+{
+}
+
+void SampleApp::UpdateImpl()
+{
+}
+
+void SampleApp::PostUpdate()
+{
+}
+
+static int frameCount = 0;
+
+void SampleApp::PreRender()
+{
+    if (frameCount != 0)
+        return;
+
+    Camera* mainCamera = Camera::Main;
+    if (mainCamera == nullptr)
+    {
+        return;
+    }
+    
+    PerframeData perframeData;
+    perframeData.vpMatrix = mainCamera->GetViewProjectionMatrix();
+    
+    gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+    renderContext.CopyDataToBuffer(m_GlobalConstantBuffer, perframeData);
+
+    frameCount = (frameCount + 1) % 3;
 }
 
 void SampleApp::UpdateFPSText(float deltaTime)
