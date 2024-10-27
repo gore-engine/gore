@@ -2,7 +2,7 @@
 
 #include "Math/Matrix4x4.h"
 
-struct GlobalConstantBuffer
+struct PerframeData
 {
     gore::Matrix4x4 vpMatrix;
 };
