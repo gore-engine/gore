@@ -50,6 +50,9 @@ void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& game
             draw.indexCount  = renderer->GetIndexCount();
             draw.indexOffset = renderer->GetIndexOffset();
 
+            // TODO: instance Batch
+            draw.instanceCount = 1;
+
             sortedDrawData.push_back(draw);
         }
     }
@@ -78,7 +81,7 @@ void ScheduleDraws(RenderContext& renderContext, const std::unordered_map<DrawCa
         if (draw.indexBuffer.empty() == false)
         {
             auto& indexBuffer = renderContext.GetBuffer(draw.indexBuffer);
-            commandBuffer.bindIndexBuffer(indexBuffer.vkBuffer, draw.indexOffset, vk::IndexType::eUint32);
+            commandBuffer.bindIndexBuffer(indexBuffer.vkBuffer, draw.indexOffset, vk::IndexType::eUint16);
         }
 
         if (draw.bindGroup[0].empty() == false)
