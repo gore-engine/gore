@@ -1,3 +1,4 @@
+#include "../ShaderLibrary/Core/Common.hlsl"
 #include "../ShaderLibrary/GlobalConstantBuffer.hlsl"
 
 #define MAIN_LIGHT_DIRECTION float3(0.0f, -1.0f, 0.0f)
@@ -9,12 +10,12 @@ struct Attributes
     float3 normal : NORMAL;
 };
 
-struct PushConstant
+struct PerDrawData
 {
     float4x4 m;
 };
 
-[[vk::push_constant]] PushConstant mvpPushConst;
+DESCRIPTOR_SET_BINDING(0, 3) ConstantBuffer<PerDrawData> perDrawData;
 
 struct Varyings
 {
@@ -27,7 +28,7 @@ Varyings vs(Attributes IN)
 {
     Varyings v;
     float4 objVertPos = float4(IN.positionOS, 1);
-    v.positionCS = mul(_VPMatrix, mul(mvpPushConst.m, objVertPos));
+    v.positionCS = mul(_VPMatrix, mul(perDrawData.m, objVertPos));
     v.positionCS.y *= -1.0f;
     v.uv = IN.uv;
     v.normal = IN.normal;

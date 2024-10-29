@@ -8,6 +8,8 @@
 #include "Rendering/RenderSystem.h"
 #include "Rendering/RenderContext.h"
 
+#include "Rendering/AutoRenderPass.h"
+
 #include "Core/Time.h"
 #include "Windowing/Window.h"
 #include "Scene/Scene.h"
@@ -16,6 +18,8 @@
 #include "Object/Camera.h"
 #include "Core/Log.h"
 #include "Math/Constants.h"
+
+#include "Scripts/Utils/GraphicsUtils.h"
 
 #include "Scripts/TestComponent.h"
 #include "Scripts/CameraController.h"
@@ -27,6 +31,11 @@
 #include "Scripts/SelfDestroyAfterSeconds.h"
 #include "Scripts/DeleteMultipleGameObjectsAfterSeconds.h"
 
+#include "Scripts/Math/BitUtils.h"
+
+#include "Scripts/Rendering/PerframeData.h"
+#include "Scripts/Rendering/PerDrawData.h"
+
 SampleApp::SampleApp(int argc, char** argv) :
     App(argc, argv)
 {
@@ -36,9 +45,136 @@ SampleApp::~SampleApp()
 {
 }
 
+void SampleApp::CreateRenderPassDesc()
+{
+    renderPasses.forwardPassDesc = {{GraphicsFormat::BGRA8_SRGB}};
+}
+
+void SampleApp::CreateUnifiedGlobalDynamicBuffer()
+{
+    auto& renderContext = m_RenderSystem->GetRenderContext();
+
+    size_t alignmentSize = MathUtils::AlignUp(sizeof(PerDrawData), m_GraphicsCaps.minUniformBufferOffsetAlignment);
+
+    size_t renderCount = 4;
+    std::vector<uint8_t> dynamicUniformBufferData(alignmentSize * renderCount);
+
+    for (size_t i = 0; i < renderCount; ++i)
+    {
+        PerDrawData* perDrawData = reinterpret_cast<PerDrawData*>(dynamicUniformBufferData.data() + (i * alignmentSize));
+        perDrawData->model       = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
+    }
+
+    m_UnifiedDynamicBuffer = renderContext.CreateBuffer(
+        {.debugName = "Dynamic Uniform Buffer",
+         .byteSize  = static_cast<uint32_t>(dynamicUniformBufferData.size()),
+         .usage     = BufferUsage::Uniform,
+         .memUsage  = MemoryUsage::GPU,
+         .data      = dynamicUniformBufferData.data()});
+
+    m_UnifiedDynamicBufferHandle = renderContext.CreateDynamicBuffer(
+        {.debugName = "Dynamic Uniform Buffer",
+         .buffer    = m_UnifiedDynamicBuffer,
+         .offset    = 0,
+         .range     = sizeof(PerDrawData)});
+}
+
+void SampleApp::CreatePipelines()
+{
+    using namespace gore::gfx;
+
+    RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+    AutoRenderPass forwardPass(&renderContext, renderPasses.forwardPassDesc);
+
+    // Create a pipeline for the forward rendering
+    std::vector<char> vertexShaderBytecode   = sample::utils::LoadShaderBytecode("sample/UnLit", ShaderStage::Vertex, "main");
+    std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("sample/UnLit", ShaderStage::Fragment, "main");
+
+    pipelines.forwardPipeline = renderContext.CreateGraphicsPipeline(
+        GraphicsPipelineDesc{
+            .debugName = "UnLit Pipeline",
+            .VS{
+                .byteCode  = reinterpret_cast<uint8_t*>(vertexShaderBytecode.data()),
+                .byteSize  = static_cast<uint32_t>(vertexShaderBytecode.size()),
+                .entryFunc = "vs"},
+            .PS{
+                .byteCode  = reinterpret_cast<uint8_t*>(fragmentShaderBytecode.data()),
+                .byteSize  = static_cast<uint32_t>(fragmentShaderBytecode.size()),
+                .entryFunc = "ps"},
+            .colorFormats  = {GraphicsFormat::BGRA8_SRGB},
+            .depthFormat   = GraphicsFormat::D32_FLOAT,
+            .stencilFormat = GraphicsFormat::Undefined,
+            .vertexBufferBindings{
+                {.byteStride = sizeof(Vector3) + sizeof(Vector2) + sizeof(Vector3),
+                 .attributes =
+                     {
+                         {.byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT},
+                         {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
+                         {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
+            .bindLayouts   = {m_GlobalBindLayout},
+            .dynamicBuffer = m_UnifiedDynamicBufferHandle,
+            .renderPass    = forwardPass.GetRenderPass().renderPass,
+            .subpassIndex  = 0
+    });
+}
+
+void SampleApp::PrepareGraphics()
+{
+    CreateRenderPassDesc();
+    CreateUnifiedGlobalDynamicBuffer();
+    CreateGlobalBindGroup();
+    CreatePipelines();
+}
+
+void SampleApp::CreateGlobalBindGroup()
+{
+    using namespace gore::gfx;
+
+    RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+    m_GlobalConstantBuffer       = renderContext.CreateBuffer({.debugName = "Global Constant Buffer",
+                                                               .byteSize  = sizeof(PerframeData),
+                                                               .usage     = BufferUsage::Uniform,
+                                                               .memUsage  = MemoryUsage::CPU_TO_GPU});
+
+    std::vector<Binding> bindings{
+        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex}
+    };
+
+    BindLayoutCreateInfo bindLayoutCreateInfo = {.name = "Global Descriptor Set Layout", .bindings = bindings};
+
+    m_GlobalBindLayout = renderContext.GetOrCreateBindLayout(bindLayoutCreateInfo);
+
+    m_GlobalBindGroup = renderContext.CreateBindGroup({
+        .debugName       = "Global BindGroup",
+        .updateFrequency = UpdateFrequency::PerFrame,
+        .textures        = {},
+        .buffers         = {{0, m_GlobalConstantBuffer, 0, sizeof(PerframeData), BindType::UniformBuffer}},
+        .samplers        = {},
+        .bindLayout      = &m_GlobalBindLayout,
+    });
+}
+
 void SampleApp::Initialize()
 {
+    m_GraphicsCaps = m_RenderSystem->GetGraphicsCaps();
+
+    PrepareGraphics();
+
+    Material forwardMat;
+    forwardMat.SetAlphaMode(AlphaMode::Opaque);
+    forwardMat.AddPass(Pass{
+        .name   = "ForwardPass",
+        .shader = pipelines.forwardPipeline,
+        .bindGroup = { m_GlobalBindGroup }
+    });
+
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+
+    // GraphicsPipelineHandle forwardPipeline = renderContext.CreateGraphicsPipeline(
+    //     GraphicsPipelineDesc{
+    //         .debugName = "ForwardPipeline",
+    //         .VS
+    //     });
 
     // gore::Logger::Default().SetLevel(gore::LogLevel::DEBUG);
 
@@ -53,28 +189,33 @@ void SampleApp::Initialize()
     cameraTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
     cameraTransform->SetLocalPosition((gore::Vector3::Backward + gore::Vector3::Up) * 7.5f);
 
-   {
+    {
         gore::GameObject* gameObject = scene->NewObject();
         gameObject->SetName("cube");
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
-        renderContext.LoadMeshToMeshRenderer("cube.gltf", *meshRenderer);    
+        meshRenderer->LoadMesh("cube.gltf");
+        meshRenderer->SetMaterial(forwardMat);
+        meshRenderer->SetDynamicBuffer(m_UnifiedDynamicBufferHandle);
+        meshRenderer->SetDynamicBufferOffset(0);
 
         gore::Transform* transform = gameObject->GetTransform();
         transform->SetLocalPosition(gore::Vector3::Right * 20.0f);
     }
-    
+
     {
         gore::GameObject* gameObject = scene->NewObject();
         gameObject->SetName("teapot");
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
-        renderContext.LoadMeshToMeshRenderer("teapot.gltf", *meshRenderer);
-    }    
-    
+        meshRenderer->LoadMesh("teapot.gltf");
+    }
+
     {
         gore::GameObject* gameObject = scene->NewObject();
         gameObject->SetName("rock");
+
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
-        renderContext.LoadMeshToMeshRenderer("rock.gltf", *meshRenderer);
+        meshRenderer->LoadMesh("rock.gltf");
+
         gore::Transform* transform = gameObject->GetTransform();
         transform->SetLocalPosition(gore::Vector3::Left * 10.0f);
     }
@@ -197,11 +338,50 @@ void SampleApp::Update()
 {
     float deltaTime = GetDeltaTime();
     UpdateFPSText(deltaTime);
+
+    Preupdate();
+    UpdateImpl();
+    PostUpdate();
+    PreRender();
 }
 
 void SampleApp::Shutdown()
 {
     delete scene;
+}
+
+void SampleApp::Preupdate()
+{
+}
+
+void SampleApp::UpdateImpl()
+{
+}
+
+void SampleApp::PostUpdate()
+{
+}
+
+static int frameCount = 0;
+
+void SampleApp::PreRender()
+{
+    if (frameCount != 0)
+        return;
+
+    Camera* mainCamera = Camera::Main;
+    if (mainCamera == nullptr)
+    {
+        return;
+    }
+    
+    PerframeData perframeData;
+    perframeData.vpMatrix = mainCamera->GetViewProjectionMatrix();
+    
+    gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+    renderContext.CopyDataToBuffer(m_GlobalConstantBuffer, perframeData);
+
+    frameCount = (frameCount + 1) % 3;
 }
 
 void SampleApp::UpdateFPSText(float deltaTime)

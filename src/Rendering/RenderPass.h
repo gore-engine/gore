@@ -1,10 +1,12 @@
-#include "RenderPassDesc.h"
+#pragma once
+
+#include "Graphics/Vulkan/VulkanIncludes.h"
+#include "Graphics/Vulkan/VulkanExtensions.h"
 
 namespace gore
 {
-
-class RenderPass
+struct RenderPass
 {
+    vk::RenderPass renderPass = VK_NULL_HANDLE;
 };
-
 } // namespace gore

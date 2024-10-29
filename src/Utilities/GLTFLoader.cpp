@@ -194,6 +194,8 @@ bool GLTFLoader::CreateMeshFromGLTF(MeshRenderer& mesh, const tinygltf::Model& m
     });
 
     mesh.SetVertexBuffer(vertexBuffer);
+    mesh.SetVertexCount(vertexCount);
+
     mesh.SetIndexBuffer(indexBuffer);
     mesh.SetIndexType(indexType);
 

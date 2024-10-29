@@ -23,12 +23,15 @@
 #include "GraphicsPipelineDesc.h"
 #include "Pipeline.h"
 #include "RenderPass.h"
+#include "RenderPassDesc.h"
 #include "Pool.h"
 
 #include <vector>
 
 namespace gore::gfx
 {
+using namespace gore::renderer;
+
 enum PSOCreateRuntimeFlagBits
 {
     PSO_CREATE_FLAG_NONE                     = 0,
@@ -49,9 +52,8 @@ struct RenderContextCreateInfo final
 
 ENGINE_CLASS(RenderContext) final
 {
-    // TODO: actually we can copy this class??
-    NON_COPYABLE(RenderContext);
-
+    SINGLETON(RenderContext)
+    
 public:
     RenderContext(const RenderContextCreateInfo& createInfo);
     ~RenderContext();
@@ -65,8 +67,9 @@ public:
     void EndDebugLabel(CommandBuffer& cmd);
 
     // RenderPass
-    RenderPass* CreateRenderPass(const RenderPassDesc& desc);
-    RenderPass& GetCurrentRenderPass();
+    RenderPass CreateRenderPass(RenderPassDesc&& desc);
+    void DestroyRenderPass(RenderPass& renderPass);
+
     void DestroyRenderPass(RenderPass* renderPass);
     void BeginRenderPass(RenderPass* renderPass);
     void EndRenderPass();
@@ -88,6 +91,12 @@ public:
     void DestroyTexture(TextureHandle handle);
     const Texture& GetTexture(TextureHandle handle);
     const TextureDesc& GetTextureDesc(TextureHandle handle);
+
+    template <typename T>
+    void CopyDataToBuffer(BufferHandle handle, const T& data)
+    {
+        CopyDataToBuffer(handle, &data, sizeof(T));
+    }
 
     template <typename T>
     void CopyDataToTexture(TextureHandle handle, const std::vector<T>& data)

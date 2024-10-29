@@ -1,9 +1,12 @@
 #pragma once
 
-#include "Export.h"
-
-namespace utils
+namespace MathUtils
 {
+inline size_t AlignUp(size_t value, size_t alignment)
+{
+    return (value + alignment - 1) & ~(alignment - 1);
+}
+
 inline bool IsPowerOfTwo(size_t value)
 {
     return (value & (value - 1)) == 0;

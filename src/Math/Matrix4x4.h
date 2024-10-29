@@ -151,6 +151,7 @@ public:
 public:
     // Common Values
     static const Matrix4x4 Identity;
+    static const Matrix4x4 Zero;
 };
 
 ENGINE_API_FUNC(Matrix4x4, operator*, const Matrix4x4& V1, const Matrix4x4& V2) noexcept;

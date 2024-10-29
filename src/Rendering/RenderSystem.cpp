@@ -61,7 +61,9 @@ RenderSystem::RenderSystem(gore::App* app) :
     m_FrameCounter(0),
     m_backBufferIndex(0),
     m_swapChainImageSemaphoreIndex(0),
-    m_pendingAcqImgSemaphoreIndex(UINT32_MAX)
+    m_pendingAcqImgSemaphoreIndex(UINT32_MAX),
+    // Draw Data
+    m_DrawData()
 {
     g_RenderSystem = this;
 }
@@ -140,8 +142,30 @@ void RenderSystem::Initialize()
     InitImgui();
 }
 
+void RenderSystem::PrepareDrawData()
+{
+    DrawCreateInfo info = {};
+    info.passName = "ForwardPass";
+    info.alphaMode = AlphaMode::Opaque;
+
+    std::vector<GameObject*> gameObjects = Scene::GetActiveScene()->GetGameObjects();
+    std::vector<Draw> sortedDrawData;
+    PrepareDrawDataAndSort(info, gameObjects, sortedDrawData);
+
+    // TODO: check if the draw data is already in the map
+    m_DrawData.clear();
+
+    DrawCacheKey key = {};
+    key.passName = info.passName;
+    key.alphaMode = info.alphaMode;
+
+    m_DrawData[key] = sortedDrawData;
+}
+
 void RenderSystem::Update()
 {
+    PrepareDrawData();
+
     return RunRpsSystem();
 
     // ImGui_ImplVulkan_NewFrame();
@@ -921,8 +945,12 @@ void RenderSystem::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pCont
 
 void RenderSystem::DrawTriangle(vk::CommandBuffer commandBuffer)
 {    
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
-    commandBuffer.draw(3, 1, 0, 0);
+    DrawCacheKey key = { "ForwardPass", AlphaMode::Opaque };
+
+    ScheduleDraws(*m_RenderContext, m_DrawData, key, commandBuffer);
+
+    // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
+    // commandBuffer.draw(3, 1, 0, 0);
 }
 
 void RenderSystem::UploadPerframeGlobalConstantBuffer(uint32_t imageIndex)
@@ -1112,15 +1140,12 @@ static std::vector<char> LoadShaderBytecode(const std::string& name, const Shade
 
 void RenderSystem::CreatePipeline()
 {
-    vk::AttachmentDescription colorAttachmentDesc0({}, m_Swapchain.GetFormat().format, vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
-
-    vk::AttachmentReference colorAttachmentRef0(0, vk::ImageLayout::eColorAttachmentOptimal);
-
-    vk::SubpassDescription subpassDesc({}, vk::PipelineBindPoint::eGraphics, {}, colorAttachmentRef0);   
-
-    vk::RenderPassCreateInfo renderPassInfo({}, colorAttachmentDesc0, subpassDesc);
-
-    vk::raii::RenderPass renderPass = m_Device.Get().createRenderPass(renderPassInfo);
+    RenderPass renderPass = m_RenderContext->CreateRenderPass(
+        RenderPassDesc
+        {
+            {GraphicsFormat::BGRA8_SRGB}
+        }
+    );
 
     std::vector<char> cubeVertBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Vertex, "vs");
     std::vector<char> cubeFragBytecode = LoadShaderBytecode("sample/cube", ShaderStage::Fragment, "ps");
@@ -1146,7 +1171,7 @@ void RenderSystem::CreatePipeline()
             .stencilFormat = GraphicsFormat::Undefined,
             .bindLayouts = { m_GlobalBindLayout },
             .dynamicBuffer = m_DynamicBufferHandle,
-            .renderPass = *renderPass,
+            .renderPass = renderPass.renderPass,
             .subpassIndex = 0
         }
     );
@@ -1216,7 +1241,7 @@ void RenderSystem::CreatePipeline()
             .depthFormat = GraphicsFormat::D32_FLOAT,
             .stencilFormat = GraphicsFormat::Undefined,
             .bindLayouts {},
-            .renderPass = *renderPass,
+            .renderPass = renderPass.renderPass,
             .subpassIndex = 0
         }
     );
@@ -1244,6 +1269,8 @@ void RenderSystem::CreatePipeline()
     //         .subpassIndex = 0
     //     }
     // );
+
+    m_RenderContext->DestroyRenderPass(renderPass);
 }
 
 void RenderSystem::CreateTextureObjects()

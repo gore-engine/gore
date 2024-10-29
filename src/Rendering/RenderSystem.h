@@ -17,11 +17,23 @@
 
 #include <functional>
 #include <deque>
+#include <unordered_map>
+#include <vector>
+
+#include "Rendering/DrawStream/Draw.h"
 
 #define RPS_VK_RUNTIME 1
 #include "rps/rps.h"
 
 #include "RenderPipelineShader/RpsSytem.h"
+
+namespace gore
+{
+namespace renderer
+{
+class MeshRendererSystem;
+} // namespace renderer
+} // namespace gore
 
 namespace gore
 {
@@ -51,6 +63,19 @@ struct DeletionQueue
     }
 };
 
+enum class InstanceDataStoragePolicy
+{
+    None,
+    PerDrawPushConstant,
+    PersistentDynamicUniformBuffer,
+    PersistentStructuredBuffer,
+};
+
+struct RenderSystemCreateInfo final
+{
+    InstanceDataStoragePolicy instanceDataStoragePolicy : 8 = InstanceDataStoragePolicy::PersistentDynamicUniformBuffer;
+};
+
 class RenderSystem final : System
 {
 public:
@@ -63,9 +88,14 @@ public:
     void Update() override;
     void Shutdown() override;
 
+    void PrepareDrawData();
+
     RenderContext& GetRenderContext() const { return *m_RenderContext; }
 
     void OnResize(Window* window, int width, int height);
+
+public:
+    GraphicsCaps GetGraphicsCaps() const { return m_GraphicsCaps; }
 
 private:
     // Imgui
@@ -76,6 +106,8 @@ private:
     vk::raii::DescriptorPool m_ImguiDescriptorPool;
 
 private:
+    void PrepareGPUSceneData();
+
     static void RecordDebugMarker(void* pUserContext, const RpsRuntimeOpRecordDebugMarkerArgs* pArgs);
     static void SetDebugName(void* pUserContext, const RpsRuntimeOpSetDebugNameArgs* pArgs);
 
@@ -149,14 +181,14 @@ private:
     GraphicsPipelineHandle m_UnLitPipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
     GraphicsPipelineHandle m_QuadPipelineHandle;
-    
+
     struct FrameFences
     {
-        vk::Fence     renderCompleteFence;
+        vk::Fence renderCompleteFence;
         vk::Semaphore renderCompleteSemaphore;
     };
-    std::vector<FrameFences>        m_frameFences;
-    
+    std::vector<FrameFences> m_frameFences;
+
     std::unique_ptr<RpsSytem> m_RpsSystem;
     std::vector<vk::Semaphore> m_queueSemaphores;
     vk::Semaphore m_pendingPresentSemaphore;
@@ -174,7 +206,7 @@ private:
     // Graphics, Compute, Transfer
     vk::Queue m_GpuQueues[RPS_QUEUE_COUNT];
     uint32_t m_GpuQueueFamilyIndices[RPS_QUEUE_COUNT];
-    
+
     vk::Queue m_PresentQueue;
     uint32_t m_PresentQueueFamilyIndex;
 
@@ -202,6 +234,8 @@ private:
 
     GraphicsCaps m_GraphicsCaps;
 
+    // TODO: Change this to drawStream
+    std::unordered_map<DrawCacheKey, std::vector<Draw>> m_DrawData;
 private:
     void UploadPerframeGlobalConstantBuffer(uint32_t imageIndex);
 
