@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include <cstring>
+#include <stdexcept>
 
 namespace gore
 {
@@ -11,6 +13,25 @@ public:
     void WriteUInt8(uint8_t value);
     void WriteUInt16(uint16_t value);
     void WriteUInt32(uint32_t value);
+
+    template <typename T>
+    void Write(const T& value)
+    {
+        size_t size = sizeof(T);
+        if (m_Index + size > m_Data.size())
+        {
+            if (m_AllowResize)
+            {
+                m_Data.resize(m_Index + size);
+            }
+            else
+            {
+                throw std::runtime_error("BitWriter overflow");
+            }
+        }
+        std::memcpy(&m_Data[m_Index], &value, size);
+        m_Index += size;
+    }
     
     bool IsAllowResize() const { return m_AllowResize; }
     
