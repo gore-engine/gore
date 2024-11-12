@@ -1,5 +1,5 @@
 #pragma once
-#include <vector>
+#include <span>
 
 namespace gore
 {
@@ -17,7 +17,7 @@ public:
     size_t GetBitsRead() const { return m_Index * 8; }
 
 private:
-    std::vector<uint8_t> m_Data;
+    std::span<uint8_t> m_Data;
     size_t m_Count;
     size_t m_Index;
 };
