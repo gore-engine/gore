@@ -3,6 +3,7 @@
 #include "Prefix.h"
 #include "Draw.h"
 
+#include <vector>
 
 namespace gore::renderer
 {
@@ -32,5 +33,8 @@ static_assert(sizeof(DrawStateMask) == 4, "DrawStateMask should be 4 bytes");
 
 struct DrawStream
 {
+    std::vector<uint8_t> data;
 };
+
+void CreateDrawStreamFromDrawData(const std::vector<Draw>& drawData, DrawStream& drawStream);
 } // namespace gore::renderer
