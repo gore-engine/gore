@@ -9,6 +9,10 @@ struct BitWriter
 {
 public:
     BitWriter(size_t maxBitsCount, bool allowResize = false);
+    BitWriter(void* data, size_t size);
+
+    void Flush() { m_Index = 0; }
+    void ShrinkToFit() { m_Data.resize(m_Index); }
 
     void WriteUInt8(uint8_t value);
     void WriteUInt16(uint16_t value);

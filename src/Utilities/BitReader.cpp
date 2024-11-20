@@ -4,10 +4,10 @@
 
 namespace gore
 {
-BitReader::BitReader(void* data, size_t count)
-    : m_Data(reinterpret_cast<uint8_t*>(data), reinterpret_cast<uint8_t*>(data) + count)
-    , m_Count(count)
-    , m_Index(0)
+BitReader::BitReader(void* data, size_t byteCount) :
+    m_Data(reinterpret_cast<uint8_t*>(data), reinterpret_cast<uint8_t*>(data) + byteCount),
+    m_Count(byteCount),
+    m_Index(0)
 {
 }
 

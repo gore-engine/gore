@@ -4,6 +4,13 @@
 
 namespace gore
 {
+BitWriter::BitWriter(void* data, size_t size) :
+    m_AllowResize(false),
+    m_Index(0)
+{
+    m_Data.assign(static_cast<uint8_t*>(data), static_cast<uint8_t*>(data) + size);
+}
+
 BitWriter::BitWriter(size_t maxBitsCount, bool allowResize) :
     m_AllowResize(allowResize),
     m_Index(0)

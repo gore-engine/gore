@@ -8,7 +8,7 @@ namespace gore
 struct BitReader
 {
 public:
-    BitReader(void* data, size_t count);
+    BitReader(void* data, size_t byteCount);
 
     uint8_t ReadUInt8();
     uint16_t ReadUInt16();

@@ -4,6 +4,7 @@
 #include "Draw.h"
 
 #include <vector>
+#include <unordered_map>
 
 namespace gore::renderer
 {
@@ -11,7 +12,7 @@ union DrawStateMask
 {
     struct
     {
-        uint32_t pipeline : 1;
+        uint32_t shader : 1;
         uint32_t bindgroup0 : 1;
         uint32_t bindgroup1 : 1;
         uint32_t bindgroup2 : 1;
@@ -23,18 +24,20 @@ union DrawStateMask
         uint32_t instanceOffset : 1;
         uint32_t instanceCount : 1;
         uint32_t dynamicBufferOffset : 1;
+        uint32_t indexCount : 1;
 
-        uint32_t pack : 20;
+        uint32_t pack : 19;
     };
 
     uint32_t mask;
 };
 static_assert(sizeof(DrawStateMask) == 4, "DrawStateMask should be 4 bytes");
 
-struct DrawStream
+struct DrawStream final
 {
     std::vector<uint8_t> data;
 };
 
 void CreateDrawStreamFromDrawData(const std::vector<Draw>& drawData, DrawStream& drawStream);
-} // namespace gore::renderer
+void ScheduleDrawStream(RenderContext& renderContext, DrawStream& drawStream, vk::CommandBuffer commandBuffer);
+} // namespace gore::renderer   
