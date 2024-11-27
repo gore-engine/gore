@@ -20,7 +20,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Rendering/DrawStream/Draw.h"
+#include "Rendering/DrawStream/DrawStream.h"
 
 #define RPS_VK_RUNTIME 1
 #include "rps/rps.h"
@@ -235,7 +235,7 @@ private:
     GraphicsCaps m_GraphicsCaps;
 
     // TODO: Change this to drawStream
-    std::unordered_map<DrawCacheKey, std::vector<Draw>> m_DrawData;
+    std::unordered_map<DrawCacheKey, DrawStream> m_DrawData;
 private:
     void UploadPerframeGlobalConstantBuffer(uint32_t imageIndex);
 

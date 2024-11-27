@@ -152,6 +152,9 @@ void RenderSystem::PrepareDrawData()
     std::vector<Draw> sortedDrawData;
     PrepareDrawDataAndSort(info, gameObjects, sortedDrawData);
 
+    DrawStream drawStream;
+    CreateDrawStreamFromDrawData(sortedDrawData, drawStream);
+
     // TODO: check if the draw data is already in the map
     m_DrawData.clear();
 
@@ -159,7 +162,7 @@ void RenderSystem::PrepareDrawData()
     key.passName = info.passName;
     key.alphaMode = info.alphaMode;
 
-    m_DrawData[key] = sortedDrawData;
+    m_DrawData[key] = drawStream;
 }
 
 void RenderSystem::Update()
@@ -947,7 +950,14 @@ void RenderSystem::DrawTriangle(vk::CommandBuffer commandBuffer)
 {    
     DrawCacheKey key = { "ForwardPass", AlphaMode::Opaque };
 
-    ScheduleDraws(*m_RenderContext, m_DrawData, key, commandBuffer);
+    if (m_DrawData.find(key) != m_DrawData.end())
+    {
+        ScheduleDrawStream(*m_RenderContext, m_DrawData[key], commandBuffer);
+    }
+
+    // ScheduleDrawStream(*m_RenderContext, m_DrawData, commandBuffer);
+
+    // ScheduleDraws(*m_RenderContext, m_DrawData, key, commandBuffer);
 
     // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
     // commandBuffer.draw(3, 1, 0, 0);
