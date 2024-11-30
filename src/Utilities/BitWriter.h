@@ -14,6 +14,8 @@ public:
     void Flush() { m_Index = 0; }
     void ShrinkToFit() { m_Data.resize(m_Index); }
 
+    uint8_t* GetData() { return m_Data.data(); }
+
     void WriteUInt8(uint8_t value);
     void WriteUInt16(uint16_t value);
     void WriteUInt32(uint32_t value);
@@ -39,9 +41,9 @@ public:
     
     bool IsAllowResize() const { return m_AllowResize; }
     
-    size_t GetBitsCount() const { return m_Data.size() * 8; }
-    size_t GetBitsWritten() const { return m_Index * 8; }
-    size_t GetBitsRemaining() const { return GetBitsCount() - GetBitsWritten(); }
+    size_t GetByteCount() const { return m_Data.size(); }
+    size_t GetByteWritten() const { return m_Index; }
+    size_t GetByteRemaining() const { return GetByteCount() - GetByteWritten(); }
 
 private:
     bool m_AllowResize;

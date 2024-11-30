@@ -28,30 +28,30 @@ struct TestStruct
 
 TEST_CASE_METHOD(BitWriterTest, "BitWriter Initialization", "[BitWriter]")
 {
-    REQUIRE(bitWriter.GetBitsCount() == 128);
-    REQUIRE(bitWriter.GetBitsWritten() == 0);
-    REQUIRE(bitWriter.GetBitsRemaining() == 128);
+    REQUIRE(bitWriter.GetByteCount() == 128);
+    REQUIRE(bitWriter.GetByteWritten() == 0);
+    REQUIRE(bitWriter.GetByteRemaining() == 128);
 }
 
 TEST_CASE_METHOD(BitWriterTest, "BitWriter WriteUInt8", "[BitWriter]")
 {
     bitWriter.WriteUInt8(0xFF);
-    REQUIRE(bitWriter.GetBitsWritten() == 8);
-    REQUIRE(bitWriter.GetBitsRemaining() == 120);
+    REQUIRE(bitWriter.GetByteWritten() == 8);
+    REQUIRE(bitWriter.GetByteRemaining() == 120);
 }
 
 TEST_CASE_METHOD(BitWriterTest, "BitWriter WriteUInt16", "[BitWriter]")
 {
     bitWriter.WriteUInt16(0xFFFF);
-    REQUIRE(bitWriter.GetBitsWritten() == 16);
-    REQUIRE(bitWriter.GetBitsRemaining() == 112);
+    REQUIRE(bitWriter.GetByteWritten() == 16);
+    REQUIRE(bitWriter.GetByteRemaining() == 112);
 }
 
 TEST_CASE_METHOD(BitWriterTest, "BitWriter WriteUInt32", "[BitWriter]")
 {
     bitWriter.WriteUInt32(0xFFFFFFFF);
-    REQUIRE(bitWriter.GetBitsWritten() == 32);
-    REQUIRE(bitWriter.GetBitsRemaining() == 96);
+    REQUIRE(bitWriter.GetByteWritten() == 32);
+    REQUIRE(bitWriter.GetByteRemaining() == 96);
 }
 
 TEST_CASE_METHOD(BitWriterTest, "BitWriter AllowResize", "[BitWriter]")
@@ -63,8 +63,8 @@ TEST_CASE_METHOD(BitWriterTest, "BitWriter Write Struct", "[BitWriter]")
 {
     TestStruct testStruct = {0x01, 0x0203, 0x04050607};
     bitWriter.Write(testStruct);
-    REQUIRE(bitWriter.GetBitsWritten() == sizeof(TestStruct) * 8);
-    REQUIRE(bitWriter.GetBitsRemaining() == 128 - sizeof(TestStruct) * 8);
+    REQUIRE(bitWriter.GetByteWritten() == sizeof(TestStruct) * 8);
+    REQUIRE(bitWriter.GetByteRemaining() == 128 - sizeof(TestStruct) * 8);
 }
 
 class BitReaderTest
