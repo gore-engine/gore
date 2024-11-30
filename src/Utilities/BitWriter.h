@@ -8,7 +8,7 @@ namespace gore
 struct BitWriter
 {
 public:
-    BitWriter(size_t maxBitsCount, bool allowResize = false);
+    BitWriter(size_t maxByteCount, bool allowResize = false);
     BitWriter(void* data, size_t size);
 
     void Flush() { m_Index = 0; }

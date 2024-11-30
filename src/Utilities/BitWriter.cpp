@@ -11,11 +11,11 @@ BitWriter::BitWriter(void* data, size_t size) :
     m_Data.assign(static_cast<uint8_t*>(data), static_cast<uint8_t*>(data) + size);
 }
 
-BitWriter::BitWriter(size_t maxBitsCount, bool allowResize) :
+BitWriter::BitWriter(size_t maxByteCount, bool allowResize) :
     m_AllowResize(allowResize),
     m_Index(0)
 {
-    m_Data.resize(maxBitsCount / 8);
+    m_Data.resize(maxByteCount);
 }
 
 void BitWriter::WriteUInt8(uint8_t value)
