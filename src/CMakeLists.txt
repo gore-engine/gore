@@ -169,6 +169,10 @@ if (${ENABLE_TEST})
     target_include_directories(${PROJECT_NAME}Test PRIVATE ${COMMON_INCLUDE_FOLDERS} ${PLATFORM_INCLUDE_DIRECTORIES})
     target_compile_definitions(${PROJECT_NAME}Test PRIVATE ${COMMON_DEFINITIONS})
     target_link_libraries(${PROJECT_NAME}Test PRIVATE ${COMMON_LIBRARIES} ${PLATFORM_LIBRARIES})
+    
+    include(CTest)
+    include(Catch)
+    catch_discover_tests(${PROJECT_NAME}Test WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}Test>")
 endif()
 
 # Targets

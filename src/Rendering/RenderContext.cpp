@@ -353,8 +353,9 @@ GraphicsPipelineHandle RenderContext::CreateGraphicsPipeline(GraphicsPipelineDes
         createInfo.pNext = &rfInfo;
     }
 
-    GraphicsPipeline graphicsPipeline(std::move(VULKAN_DEVICE.createGraphicsPipeline(nullptr, createInfo).value));
-    graphicsPipeline.layout = pipelineLayout;
+    GraphicsPipeline graphicsPipeline;
+    graphicsPipeline.pipeline = VULKAN_DEVICE.createGraphicsPipeline(nullptr, createInfo).value;
+    graphicsPipeline.layout   = pipelineLayout;
 
     SetObjectDebugName(graphicsPipeline.pipeline, desc.debugName);
 
