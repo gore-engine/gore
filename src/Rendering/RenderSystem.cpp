@@ -512,6 +512,8 @@ void RenderSystem::CreateRpsRuntimeDeivce()
 
     RpsRenderGraph& renderGraph = *m_RpsSystem->rpsRDG;
     AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Triangle", &DrawTriangleWithRPSWrapper, this));
+    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Shadowmap", &ShadowmapPassWithRPSWrapper, this));
+    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "ForwardOpaque", &ForwardOpaquePassWithRPSWrapper, this));
 }
 
 void RenderSystem::DestroyRpsRuntimeDevice()
@@ -944,6 +946,14 @@ void RenderSystem::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pCont
     RenderSystem* renderSystem = reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
 
     renderSystem->DrawTriangle(cmd);
+}
+
+void RenderSystem::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+{
+}
+
+void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+{
 }
 
 void RenderSystem::DrawTriangle(vk::CommandBuffer commandBuffer)

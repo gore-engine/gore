@@ -164,6 +164,8 @@ private:
     uint64_t CalcGuaranteedCompletedFrameindexForRps() const;
 
     static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    static void ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    static void ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
     void DrawTriangle(vk::CommandBuffer commandBuffer);
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
