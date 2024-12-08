@@ -31,6 +31,6 @@ Varyings vs(Attributes IN)
 
 float4 ps(Varyings v) : SV_Target0
 {
-    return float4(1.0f, 1.0f, 1.0f, 1.0f);
+    return v.positionCS.z;
 }
 

@@ -67,6 +67,9 @@ compile_shader("Shaders/sample/quad.hlsl" "vulkan" "pixel" "ps")
 compile_shader("Shaders/sample/UnLit.hlsl" "vulkan" "vertex" "vs")
 compile_shader("Shaders/sample/UnLit.hlsl" "vulkan" "pixel" "ps")
 
+compile_shader("Shaders/sample/shadowmap.hlsl" "vulkan" "vertex" "vs")
+compile_shader("Shaders/sample/shadowmap.hlsl" "vulkan" "pixel" "ps")
+
 compile_rpsl_file("hello_triangle")
 
 # Platform Specific Configurations
