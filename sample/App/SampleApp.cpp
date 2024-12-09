@@ -45,6 +45,14 @@ SampleApp::~SampleApp()
 {
 }
 
+void SampleApp::InitializeRpsSystem()
+{
+    RpsRenderGraph& renderGraph = *m_RenderSystem->GetRpsSystem()->rpsRDG;
+    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Triangle", &DrawTriangleWithRPSWrapper, this));
+    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Shadowmap", &ShadowmapPassWithRPSWrapper, this));
+    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "ForwardOpaque", &ForwardOpaquePassWithRPSWrapper, this));
+}
+
 void SampleApp::CreateRenderPassDesc()
 {
     renderPasses.forwardPassDesc = {{GraphicsFormat::BGRA8_SRGB}};
@@ -118,6 +126,18 @@ void SampleApp::CreatePipelines()
     });
 }
 
+void SampleApp::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+{
+}
+
+void SampleApp::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+{
+}
+
+void SampleApp::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+{
+}
+
 void SampleApp::PrepareGraphics()
 {
     CreateRenderPassDesc();
@@ -157,6 +177,8 @@ void SampleApp::CreateGlobalBindGroup()
 void SampleApp::Initialize()
 {
     m_GraphicsCaps = m_RenderSystem->GetGraphicsCaps();
+
+    InitializeRpsSystem();
 
     PrepareGraphics();
 

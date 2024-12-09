@@ -6,6 +6,11 @@
 #include "Rendering/GraphicsCaps.h"
 #include "Rendering/RenderContext.h"
 
+#define RPS_VK_RUNTIME 1
+#include "rps/rps.h"
+
+#include "Rendering/RenderPipelineShader/RpsSytem.h"
+
 using namespace gore;
 
 class SampleApp final : public gore::App
@@ -28,11 +33,15 @@ private:
     void PreRender();
 
     // Temporary RenderPassDesc for pipeline creation
+    void InitializeRpsSystem();
     void CreateRenderPassDesc();
     void CreateUnifiedGlobalDynamicBuffer();
     void CreateGlobalBindGroup();
     void CreatePipelines();
 
+    static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    static void ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    static void ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
 private:
     void UpdateFPSText(float deltaTime);
 

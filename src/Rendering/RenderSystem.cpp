@@ -508,12 +508,7 @@ void RenderSystem::CreateRpsRuntimeDeivce()
     createInfo.pfnRecordDebugMarker = &RecordDebugMarker;
     createInfo.pfnSetDebugName = &SetDebugName;
 
-    m_RpsSystem = InitializeRpsSystem(createInfo);
-
-    RpsRenderGraph& renderGraph = *m_RpsSystem->rpsRDG;
-    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Triangle", &DrawTriangleWithRPSWrapper, this));
-    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Shadowmap", &ShadowmapPassWithRPSWrapper, this));
-    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "ForwardOpaque", &ForwardOpaquePassWithRPSWrapper, this));
+    m_RpsSystem = InitializeRpsSystem(createInfo);    
 }
 
 void RenderSystem::DestroyRpsRuntimeDevice()
@@ -940,21 +935,35 @@ uint64_t RenderSystem::CalcGuaranteedCompletedFrameindexForRps() const
     return (m_FrameCounter > maxQueuedFrames) ? m_FrameCounter - maxQueuedFrames : RPS_GPU_COMPLETED_FRAME_INDEX_NONE;
 }
 
-void RenderSystem::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext)
-{
-    vk::CommandBuffer cmd = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
-    RenderSystem* renderSystem = reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+// void RenderSystem::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+// {
+//     vk::CommandBuffer cmd = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+//     RenderSystem* renderSystem = reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
 
-    renderSystem->DrawTriangle(cmd);
-}
+//     renderSystem->DrawTriangle(cmd);
+// }
 
-void RenderSystem::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
-{
-}
+// void RenderSystem::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+// {
+//     RenderSystem* renderSystem = reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
 
-void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
-{
-}
+//     DrawCacheKey key = { "ShadowCaster", AlphaMode::Opaque };
+
+//     if (renderSystem->m_DrawData.find(key) != renderSystem->m_DrawData.end())
+//     {
+//         ScheduleDrawStream(*renderSystem->m_RenderContext, renderSystem->m_DrawData[key], rpsVKCommandBufferFromHandle(pContext->hCommandBuffer));
+//     }
+// }
+
+// void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+// {
+//     RenderSystem* renderSystem = reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+
+//     vk::CommandBuffer cmd = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+
+//     VkImageView shadowmapView;
+//     AssertIfRpsFailed(rpsVKGetCmdArgImageView(pContext, 0, &shadowmapView));
+// }
 
 void RenderSystem::DrawTriangle(vk::CommandBuffer commandBuffer)
 {    

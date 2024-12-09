@@ -91,6 +91,7 @@ public:
     void PrepareDrawData();
 
     RenderContext& GetRenderContext() const { return *m_RenderContext; }
+    std::unique_ptr<RpsSytem>& GetRpsSystem() { return m_RpsSystem; }
 
     void OnResize(Window* window, int width, int height);
 
@@ -163,9 +164,9 @@ private:
 
     uint64_t CalcGuaranteedCompletedFrameindexForRps() const;
 
-    static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
-    static void ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
-    static void ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    // static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    // static void ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    // static void ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
     void DrawTriangle(vk::CommandBuffer commandBuffer);
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
