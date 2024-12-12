@@ -408,6 +408,14 @@ void RenderSystem::OnResize(Window* window, int width, int height)
     CreateDepthBuffer();
 }
 
+void RenderSystem::DrawRenderer(DrawKey key, vk::CommandBuffer cmd)
+{
+    if (m_DrawData.find(key) == m_DrawData.end())
+        return;
+
+    ScheduleDrawStream(*m_RenderContext, m_DrawData[key], cmd);        
+}
+
 void RenderSystem::InitImgui()
 {
     //1: create descriptor pool for IMGUI
@@ -965,22 +973,22 @@ uint64_t RenderSystem::CalcGuaranteedCompletedFrameindexForRps() const
 //     AssertIfRpsFailed(rpsVKGetCmdArgImageView(pContext, 0, &shadowmapView));
 // }
 
-void RenderSystem::DrawTriangle(vk::CommandBuffer commandBuffer)
-{    
-    DrawKey key = { "ForwardPass", AlphaMode::Opaque };
+// void RenderSystem::DrawTriangle(vk::CommandBuffer commandBuffer)
+// {    
+//     DrawKey key = { "ForwardPass", AlphaMode::Opaque };
 
-    if (m_DrawData.find(key) != m_DrawData.end())
-    {
-        ScheduleDrawStream(*m_RenderContext, m_DrawData[key], commandBuffer);
-    }
+//     if (m_DrawData.find(key) != m_DrawData.end())
+//     {
+//         ScheduleDrawStream(*m_RenderContext, m_DrawData[key], commandBuffer);
+//     }
 
-    // ScheduleDrawStream(*m_RenderContext, m_DrawData, commandBuffer);
+//     ScheduleDrawStream(*m_RenderContext, m_DrawData, commandBuffer);
 
-    // ScheduleDraws(*m_RenderContext, m_DrawData, key, commandBuffer);
+//     ScheduleDraws(*m_RenderContext, m_DrawData, key, commandBuffer);
 
-    // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
-    // commandBuffer.draw(3, 1, 0, 0);
-}
+//     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
+//     commandBuffer.draw(3, 1, 0, 0);
+// }
 
 void RenderSystem::UploadPerframeGlobalConstantBuffer(uint32_t imageIndex)
 {

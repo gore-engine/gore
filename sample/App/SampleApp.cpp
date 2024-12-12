@@ -128,14 +128,32 @@ void SampleApp::CreatePipelines()
 
 void SampleApp::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext)
 {
+    RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+    vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+
+    DrawKey key = {"ForwardPass", AlphaMode::Opaque};
+
+    renderSystem.DrawRenderer(key, cmd);
 }
 
 void SampleApp::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
 {
+    RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+    vk::CommandBuffer cmd = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+
+    DrawKey key = { "ShadowCaster", AlphaMode::Opaque };
+
+    renderSystem.DrawRenderer(key, cmd);
 }
 
 void SampleApp::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
 {
+    RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+    vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+
+    DrawKey key = {"ForwardPass", AlphaMode::Opaque};
+
+    renderSystem.DrawRenderer(key, cmd);
 }
 
 void SampleApp::PrepareGraphics()
@@ -185,10 +203,9 @@ void SampleApp::Initialize()
     Material forwardMat;
     forwardMat.SetAlphaMode(AlphaMode::Opaque);
     forwardMat.AddPass(Pass{
-        .name   = "ForwardPass",
-        .shader = pipelines.forwardPipeline,
-        .bindGroup = { m_GlobalBindGroup }
-    });
+        .name      = "ForwardPass",
+        .shader    = pipelines.forwardPipeline,
+        .bindGroup = {m_GlobalBindGroup}});
 
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
 
@@ -396,10 +413,10 @@ void SampleApp::PreRender()
     {
         return;
     }
-    
+
     PerframeData perframeData;
     perframeData.vpMatrix = mainCamera->GetViewProjectionMatrix();
-    
+
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
     renderContext.CopyDataToBuffer(m_GlobalConstantBuffer, perframeData);
 

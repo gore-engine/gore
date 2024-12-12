@@ -76,7 +76,7 @@ struct RenderSystemCreateInfo final
     InstanceDataStoragePolicy instanceDataStoragePolicy : 8 = InstanceDataStoragePolicy::PersistentDynamicUniformBuffer;
 };
 
-class RenderSystem final : System
+ENGINE_CLASS(RenderSystem) final : System
 {
 public:
     explicit RenderSystem(App* app);
@@ -97,6 +97,7 @@ public:
 
 public:
     GraphicsCaps GetGraphicsCaps() const { return m_GraphicsCaps; }
+    void DrawRenderer(DrawKey key, vk::CommandBuffer cmd);
 
 private:
     // Imgui
@@ -167,7 +168,7 @@ private:
     // static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
     // static void ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
     // static void ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
-    void DrawTriangle(vk::CommandBuffer commandBuffer);
+    // void DrawTriangle(vk::CommandBuffer commandBuffer);
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
 
