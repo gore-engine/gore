@@ -158,7 +158,7 @@ void RenderSystem::PrepareDrawData()
     // TODO: check if the draw data is already in the map
     m_DrawData.clear();
 
-    DrawCacheKey key = {};
+    DrawKey key = {};
     key.passName = info.passName;
     key.alphaMode = info.alphaMode;
 
@@ -947,7 +947,7 @@ uint64_t RenderSystem::CalcGuaranteedCompletedFrameindexForRps() const
 // {
 //     RenderSystem* renderSystem = reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
 
-//     DrawCacheKey key = { "ShadowCaster", AlphaMode::Opaque };
+//     DrawKey key = { "ShadowCaster", AlphaMode::Opaque };
 
 //     if (renderSystem->m_DrawData.find(key) != renderSystem->m_DrawData.end())
 //     {
@@ -967,7 +967,7 @@ uint64_t RenderSystem::CalcGuaranteedCompletedFrameindexForRps() const
 
 void RenderSystem::DrawTriangle(vk::CommandBuffer commandBuffer)
 {    
-    DrawCacheKey key = { "ForwardPass", AlphaMode::Opaque };
+    DrawKey key = { "ForwardPass", AlphaMode::Opaque };
 
     if (m_DrawData.find(key) != m_DrawData.end())
     {

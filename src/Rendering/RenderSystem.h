@@ -238,7 +238,7 @@ private:
     GraphicsCaps m_GraphicsCaps;
 
     // TODO: Change this to drawStream
-    std::unordered_map<DrawCacheKey, DrawStream> m_DrawData;
+    std::unordered_map<DrawKey, DrawStream> m_DrawData;
 private:
     void UploadPerframeGlobalConstantBuffer(uint32_t imageIndex);
 
