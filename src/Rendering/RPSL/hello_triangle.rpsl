@@ -16,7 +16,7 @@ export void main([readonly(present)] texture backbuffer)
     
     const uint shadowmapWidth = 1024;
     const uint shadowmapHeight = 1024;
-    texture shadowmap = create_tex2d(RPS_FORMAT_D24_UNORM_S8_UINT, shadowmapWidth, shadowmapHeight);
+    texture shadowmap = create_tex2d(RPS_FORMAT_D32_FLOAT, shadowmapWidth, shadowmapHeight);
     
     Shadowmap(shadowmap, 0.0);
     ForwardOpaque(shadowmap, backbuffer);
