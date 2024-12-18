@@ -19,6 +19,8 @@
 #include "Core/Log.h"
 #include "Math/Constants.h"
 
+#include "Rendering/Components/Light.h"
+
 #include "Scripts/Utils/GraphicsUtils.h"
 
 #include "Scripts/TestComponent.h"
@@ -227,6 +229,15 @@ void SampleApp::Initialize()
     gore::Transform* cameraTransform = cameraGameObject->GetComponent<gore::Transform>();
     cameraTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
     cameraTransform->SetLocalPosition((gore::Vector3::Backward + gore::Vector3::Up) * 7.5f);
+    
+    // Light
+    {
+        gore::GameObject* lightGameObject = scene->NewObject();
+        lightGameObject->SetName("Directional Light");
+        
+        gore::Light* light = lightGameObject->AddComponent<gore::Light>();
+        light->SetType(gore::LightType::Directional);
+    }
 
     {
         gore::GameObject* gameObject = scene->NewObject();
