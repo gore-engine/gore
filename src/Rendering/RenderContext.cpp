@@ -141,7 +141,7 @@ Buffer RenderContext::CreateStagingBuffer(const Device& device, void const* data
         .usage = VMA_MEMORY_USAGE_AUTO,
     };
 
-    Buffer buffer;
+    Buffer buffer = {};
     buffer.vmaAllocator = device.GetVmaAllocator();
 
     VK_CHECK_RESULT(vmaCreateBuffer(device.GetVmaAllocator(), &bufferInfo, &allocCreateInfo, &buffer.vkBuffer, &buffer.vmaAllocation, &buffer.vmaAllocationInfo));
