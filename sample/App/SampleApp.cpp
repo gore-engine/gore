@@ -50,7 +50,7 @@ SampleApp::~SampleApp()
 void SampleApp::InitializeRpsSystem()
 {
     RpsRenderGraph& renderGraph = *m_RenderSystem->GetRpsSystem()->rpsRDG;
-    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Triangle", &DrawTriangleWithRPSWrapper, this));
+    // AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Triangle", &DrawTriangleWithRPSWrapper, this));
     AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Shadowmap", &ShadowmapPassWithRPSWrapper, this));
     AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "ForwardOpaque", &ForwardOpaquePassWithRPSWrapper, this));
 }
@@ -228,7 +228,7 @@ void SampleApp::Initialize()
 
     gore::Transform* cameraTransform = cameraGameObject->GetComponent<gore::Transform>();
     cameraTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
-    cameraTransform->SetLocalPosition((gore::Vector3::Backward + gore::Vector3::Up) * 7.5f);
+    cameraTransform->SetLocalPosition(gore::Vector3::Backward * 20.0f + gore::Vector3::Up * 20.0f);
     
     // Light
     {
@@ -416,9 +416,6 @@ static int frameCount = 0;
 
 void SampleApp::PreRender()
 {
-    if (frameCount != 0)
-        return;
-
     Camera* mainCamera = Camera::Main;
     if (mainCamera == nullptr)
     {
@@ -427,11 +424,10 @@ void SampleApp::PreRender()
 
     PerframeData perframeData;
     perframeData.vpMatrix = mainCamera->GetViewProjectionMatrix();
-
+    
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
     renderContext.CopyDataToBuffer(m_GlobalConstantBuffer, perframeData);
 
-    frameCount = (frameCount + 1) % 3;
 }
 
 void SampleApp::UpdateFPSText(float deltaTime)

@@ -20,7 +20,7 @@ export void main([readonly(present)] texture backbuffer)
     
     Shadowmap(shadowmap, 0.0);
     ForwardOpaque(shadowmap, backbuffer);
-    Triangle(backbuffer);
+    // Triangle(backbuffer);
 }
 
 // ---------- Only Relevant for Tutorial Part 3 (Begin) ----------
