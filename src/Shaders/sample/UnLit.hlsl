@@ -1,5 +1,5 @@
 #include "../ShaderLibrary/Core/Common.hlsl"
-#include "../ShaderLibrary/GlobalConstantBuffer.hlsl"
+#include "../ShaderLibrary/Core/GlobalConstantBuffer.hlsl"
 
 #define MAIN_LIGHT_DIRECTION float3(0.0f, -1.0f, 0.0f)
 

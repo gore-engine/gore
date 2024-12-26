@@ -1,5 +1,5 @@
 #include "../ShaderLibrary/Core/Common.hlsl"
-#include "../ShaderLibrary/GlobalConstantBuffer.hlsl"
+#include "../ShaderLibrary/Core/GlobalConstantBuffer.hlsl"
 
 struct Attributes
 {
