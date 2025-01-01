@@ -41,6 +41,10 @@ private:
 
     void CreateForwardPipeline();
     void CreateShadowmapPipeline();
+
+    const int K_OBJECT_BATCH_COUNT = 128;
+
+    void UpdateAllGameObjectsGPUPerObjectData();
     
     static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
     static void ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
