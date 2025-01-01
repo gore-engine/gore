@@ -39,6 +39,9 @@ private:
     void CreateGlobalBindGroup();
     void CreatePipelines();
 
+    void CreateForwardPipeline();
+    void CreateShadowmapPipeline();
+    
     static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
     static void ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
     static void ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
@@ -50,6 +53,7 @@ private:
     struct SampleRenderPass
     {
         RenderPassDesc forwardPassDesc;
+        RenderPassDesc shadowPassDesc;
     } renderPasses;
 
     struct SamplePipeline

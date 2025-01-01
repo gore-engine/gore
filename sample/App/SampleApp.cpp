@@ -58,6 +58,7 @@ void SampleApp::InitializeRpsSystem()
 void SampleApp::CreateRenderPassDesc()
 {
     renderPasses.forwardPassDesc = {{GraphicsFormat::BGRA8_SRGB}};
+    renderPasses.shadowPassDesc  = {{}, GraphicsFormat::D32_FLOAT};
 }
 
 void SampleApp::CreateUnifiedGlobalDynamicBuffer()
@@ -90,6 +91,12 @@ void SampleApp::CreateUnifiedGlobalDynamicBuffer()
 }
 
 void SampleApp::CreatePipelines()
+{
+    CreateForwardPipeline();
+    CreateShadowmapPipeline();
+}
+
+void SampleApp::CreateForwardPipeline()
 {
     using namespace gore::gfx;
 
@@ -128,6 +135,46 @@ void SampleApp::CreatePipelines()
     });
 }
 
+void SampleApp::CreateShadowmapPipeline()
+{
+    using namespace gore::gfx;
+
+    RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+    AutoRenderPass shadowPass(&renderContext, renderPasses.shadowPassDesc);
+
+    // Create a pipeline for the shadowmap rendering
+    std::vector<char> vertexShaderBytecode   = sample::utils::LoadShaderBytecode("sample/Shadowmap", ShaderStage::Vertex, "main");
+    std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("sample/Shadowmap", ShaderStage::Fragment, "main");
+
+    pipelines.shadowPipeline = renderContext.CreateGraphicsPipeline({
+        GraphicsPipelineDesc{
+            .debugName = "Shadowmap Pipeline",
+            .VS{
+                .byteCode  = reinterpret_cast<uint8_t*>(vertexShaderBytecode.data()),
+                .byteSize  = static_cast<uint32_t>(vertexShaderBytecode.size()),
+                .entryFunc = "vs"},
+            .PS{
+                .byteCode  = reinterpret_cast<uint8_t*>(fragmentShaderBytecode.data()),
+                .byteSize  = static_cast<uint32_t>(fragmentShaderBytecode.size()),
+                .entryFunc = "ps"},
+            .colorFormats  = {},
+            .depthFormat   = GraphicsFormat::D32_FLOAT,
+            .stencilFormat = GraphicsFormat::Undefined,
+            .vertexBufferBindings{
+                {.byteStride = sizeof(Vector3) + sizeof(Vector2) + sizeof(Vector3),
+                 .attributes =
+                     {
+                         {.byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT},
+                         {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
+                         {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
+            .bindLayouts   = {m_GlobalBindLayout},
+            .dynamicBuffer = m_UnifiedDynamicBufferHandle,
+            .renderPass    = shadowPass.GetRenderPass().renderPass,
+            .subpassIndex  = 0
+        }
+    });
+}
+
 void SampleApp::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext)
 {
     RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
@@ -141,9 +188,9 @@ void SampleApp::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext
 void SampleApp::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
 {
     RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
-    vk::CommandBuffer cmd = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+    vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
 
-    DrawKey key = { "ShadowCaster", AlphaMode::Opaque };
+    DrawKey key = {"ShadowCaster", AlphaMode::Opaque};
 
     renderSystem.DrawRenderer(key, cmd);
 }
@@ -229,12 +276,12 @@ void SampleApp::Initialize()
     gore::Transform* cameraTransform = cameraGameObject->GetComponent<gore::Transform>();
     cameraTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
     cameraTransform->SetLocalPosition(gore::Vector3::Backward * 20.0f + gore::Vector3::Up * 20.0f);
-    
+
     // Light
     {
         gore::GameObject* lightGameObject = scene->NewObject();
         lightGameObject->SetName("Directional Light");
-        
+
         gore::Light* light = lightGameObject->AddComponent<gore::Light>();
         light->SetType(gore::LightType::Directional);
     }
@@ -424,10 +471,9 @@ void SampleApp::PreRender()
 
     PerframeData perframeData;
     perframeData.vpMatrix = mainCamera->GetViewProjectionMatrix();
-    
+
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
     renderContext.CopyDataToBuffer(m_GlobalConstantBuffer, perframeData);
-
 }
 
 void SampleApp::UpdateFPSText(float deltaTime)
