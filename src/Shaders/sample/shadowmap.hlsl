@@ -24,8 +24,7 @@ Varyings vs(Attributes IN)
 {
     Varyings v;
     float4 objVertPos = float4(IN.positionOS, 1);
-    v.positionCS = mul(_VPMatrix, mul(perDrawData.m, objVertPos));
-    v.positionCS.y *= -1.0f;
+    v.positionCS = mul(_DirectionalLightVPMatrix, mul(perDrawData.m, objVertPos));
     return v;
 }
 
