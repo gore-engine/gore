@@ -31,6 +31,9 @@ void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& game
         Material& material = renderer->GetMaterial();
         for (const auto& pass : material.GetPasses())
         {
+            if (MatchDrawFilter(pass, info) == false)
+                continue;
+
             Draw draw;
             assert(pass.shader.empty() == false);
 
