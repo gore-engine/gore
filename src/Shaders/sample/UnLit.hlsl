@@ -12,10 +12,10 @@ struct Attributes
 
 struct PerDrawData
 {
-    float4x4 m;
+    float4x4 m[128];
 };
 
-DESCRIPTOR_SET_BINDING(0, 3) ConstantBuffer<PerDrawData> perDrawData[128];
+DESCRIPTOR_SET_BINDING(0, 3) ConstantBuffer<PerDrawData> perDrawData;
 
 struct Varyings
 {
@@ -28,7 +28,7 @@ Varyings vs(Attributes IN)
 {
     Varyings v;
     float4 objVertPos = float4(IN.positionOS, 1);
-    v.positionCS = mul(_VPMatrix, mul(perDrawData[0].m, objVertPos));
+    v.positionCS = mul(_VPMatrix, mul(perDrawData.m[0], objVertPos));
     v.uv = IN.uv;
     v.normal = IN.normal;
     return v;
