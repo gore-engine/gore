@@ -73,7 +73,7 @@ void SampleApp::CreateUnifiedGlobalDynamicBuffer()
     for (size_t i = 0; i < renderCount; ++i)
     {
         PerDrawData* perDrawData = reinterpret_cast<PerDrawData*>(dynamicUniformBufferData.data() + (i * alignmentSize));
-        perDrawData->model       = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
+        perDrawData->model[0]       = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
     }
 
     m_UnifiedDynamicBuffer = renderContext.CreateBuffer(
@@ -252,10 +252,15 @@ void SampleApp::Initialize()
     Material forwardMat;
     forwardMat.SetAlphaMode(AlphaMode::Opaque);
     forwardMat.AddPass(Pass{
+        .name      = "ShadowCaster",
+        .shader    = pipelines.shadowPipeline,
+        .bindGroup = {m_GlobalBindGroup}});
+    
+    forwardMat.AddPass(Pass{
         .name      = "ForwardPass",
         .shader    = pipelines.forwardPipeline,
         .bindGroup = {m_GlobalBindGroup}});
-
+    
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
 
     // GraphicsPipelineHandle forwardPipeline = renderContext.CreateGraphicsPipeline(
