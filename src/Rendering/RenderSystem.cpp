@@ -142,27 +142,36 @@ void RenderSystem::Initialize()
     InitImgui();
 }
 
-void RenderSystem::PrepareDrawData()
+static void PrepareDrawStreamByDrawInfo(std::unordered_map<DrawKey, DrawStream>& map, DrawCreateInfo info, std::vector<GameObject*>& gameObjects)
 {
-    DrawCreateInfo info = {};
-    info.passName = "ForwardPass";
-    info.alphaMode = AlphaMode::Opaque;
+    DrawKey key = {};
+    key.passName = info.passName;
+    key.alphaMode = info.alphaMode;
 
-    std::vector<GameObject*> gameObjects = Scene::GetActiveScene()->GetGameObjects();
     std::vector<Draw> sortedDrawData;
     PrepareDrawDataAndSort(info, gameObjects, sortedDrawData);
 
     DrawStream drawStream;
     CreateDrawStreamFromDrawData(sortedDrawData, drawStream);
 
-    // TODO: check if the draw data is already in the map
+    map[key] = drawStream;
+}
+
+void RenderSystem::PrepareDrawData()
+{
+    DrawCreateInfo info = {};
+    info.passName = "ForwardPass";
+    info.alphaMode = AlphaMode::Opaque;
+
+    DrawCreateInfo shadowInfo = {};
+    shadowInfo.passName = "ShadowCaster";
+    shadowInfo.alphaMode = AlphaMode::Opaque;
+
+    std::vector<GameObject*> gameObjects = Scene::GetActiveScene()->GetGameObjects();
     m_DrawData.clear();
 
-    DrawKey key = {};
-    key.passName = info.passName;
-    key.alphaMode = info.alphaMode;
-
-    m_DrawData[key] = drawStream;
+    PrepareDrawStreamByDrawInfo(m_DrawData, info, gameObjects);
+    PrepareDrawStreamByDrawInfo(m_DrawData, shadowInfo, gameObjects);
 }
 
 void RenderSystem::Update()

@@ -1048,7 +1048,8 @@ void RenderContext::DestroyFence(Fence& fence)
 
 RenderPass RenderContext::CreateRenderPass(RenderPassDesc&& desc)
 {
-    bool hasDepthStencil = desc.depthFormat != GraphicsFormat::Undefined && desc.stencilFormat != GraphicsFormat::Undefined;
+    bool hasDepthStencil = desc.depthFormat != GraphicsFormat::Undefined || desc.stencilFormat != GraphicsFormat::Undefined;
+    bool hasColor        = desc.colorFormats.size() > 0;
 
     std::vector<VkFormat> colorFormats = VulkanHelper::GetVkFormats(desc.colorFormats);
     vk::Format depthFormat             = VulkanHelper::GetVkFormat(desc.depthFormat);
@@ -1078,11 +1079,11 @@ RenderPass RenderContext::CreateRenderPass(RenderPassDesc&& desc)
             {},
             depthFormat,
             vk::SampleCountFlagBits::e1,
+            vk::AttachmentLoadOp::eDontCare,
+            vk::AttachmentStoreOp::eStore,
             vk::AttachmentLoadOp::eClear,
             vk::AttachmentStoreOp::eStore,
-            vk::AttachmentLoadOp::eDontCare,
-            vk::AttachmentStoreOp::eDontCare,
-            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eDepthStencilAttachmentOptimal,
             vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
         attachments.push_back(attachment);
@@ -1106,7 +1107,7 @@ RenderPass RenderContext::CreateRenderPass(RenderPassDesc&& desc)
         0,
         nullptr,
         static_cast<uint32_t>(colorFormats.size()),
-        colorAttachmentRefs,
+        hasColor? colorAttachmentRefs : nullptr,
         nullptr,
         hasDepthStencil ? &depthAttachmentRef : nullptr,
         0,
