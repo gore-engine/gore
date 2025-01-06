@@ -26,6 +26,8 @@
 #include "RenderPassDesc.h"
 #include "Pool.h"
 
+#include "RawBindGroupUpdateDesc.h"
+
 #include <vector>
 
 namespace gore::gfx
@@ -124,6 +126,9 @@ public:
     void DestroyBindGroup(BindGroupHandle handle);
     const BindGroup& GetBindGroup(BindGroupHandle handle);
     const BindGroupDesc& GetBindGroupDesc(BindGroupHandle handle);
+
+    // BindGroup Update for RPSL
+    void UpdateBindGroup(BindGroupHandle handle, const RawBindGroupUpdateDesc& desc);
 
     DynamicBufferHandle CreateDynamicBuffer(DynamicBufferDesc&& desc);
     const DynamicBufferDesc& GetDynamicBufferDesc(DynamicBufferHandle handle);

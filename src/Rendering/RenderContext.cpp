@@ -1127,4 +1127,76 @@ void RenderContext::DestroyRenderPass(RenderPass& renderPass)
 {
     VULKAN_DEVICE.destroyRenderPass(renderPass.renderPass);
 }
+
+void RenderContext::UpdateBindGroup(BindGroupHandle handle, const RawBindGroupUpdateDesc& desc)
+{
+    const int updateCount = static_cast<int>(desc.buffers.size() + desc.textures.size() + desc.samplers.size());
+
+    std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+    writeDescriptorSets.reserve(updateCount);
+
+    vk::DescriptorSet descriptorSet = m_BindGroupPool.getObject(handle).set;
+
+    for (const auto& rawBuffer : desc.buffers)
+    {
+        vk::Buffer vkBuffer = rawBuffer.buffer;
+
+        vk::DescriptorBufferInfo bufferInfoDesc = {
+            vkBuffer,
+            rawBuffer.offset,
+            rawBuffer.range == 0 ? VK_WHOLE_SIZE : rawBuffer.range};
+        
+        vk::WriteDescriptorSet writeDescriptorSet(
+            descriptorSet,
+            rawBuffer.binding,
+            0,
+            1,
+            VulkanHelper::GetVkDescriptorType(rawBuffer.bindType),
+            nullptr,
+            &bufferInfoDesc,
+            nullptr);
+        writeDescriptorSets.push_back(writeDescriptorSet);
+    }
+
+    for (const auto& rawTexture : desc.textures)
+    {
+        vk::DescriptorImageInfo imageInfo;
+        imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        imageInfo.imageView   = rawTexture.imageView;
+        imageInfo.sampler     = rawTexture.bindType == BindType::CombinedSampledImage ? rawTexture.sampler : VK_NULL_HANDLE;
+
+        vk::WriteDescriptorSet writeDescriptorSet(
+            descriptorSet,
+            rawTexture.binding,
+            0,
+            1,
+            VulkanHelper::GetVkDescriptorType(rawTexture.bindType),
+            &imageInfo,
+            nullptr,
+            nullptr);
+        
+        writeDescriptorSets.push_back(writeDescriptorSet);
+    }
+
+    for (const auto& rawSampler : desc.samplers)
+    {
+        vk::DescriptorImageInfo imageInfo;
+        imageInfo.sampler = rawSampler.sampler;
+
+        vk::WriteDescriptorSet writeDescriptorSet(
+            descriptorSet,
+            rawSampler.binding,
+            0,
+            1,
+            VulkanHelper::GetVkDescriptorType(rawSampler.bindType),
+            &imageInfo,
+            nullptr,
+            nullptr);
+        
+        writeDescriptorSets.push_back(writeDescriptorSet);
+    }
+
+    VULKAN_DEVICE.updateDescriptorSets(writeDescriptorSets, {});
+}
+
 } // namespace gore::gfx
