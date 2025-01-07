@@ -187,6 +187,14 @@ void SampleApp::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext
 
 void SampleApp::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
 {
+    // Update ShadowMap Descriptor Set
+    VkImageView shadowmapView;
+    RpsResult result = rpsVKGetCmdArgImageView(pContext, 0, &shadowmapView);
+
+    RawBindGroupUpdateDesc updateDesc = {
+        .textures = {{0, shadowmapView, BindType::SampledImage}},
+    };
+
     RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
     vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
 
