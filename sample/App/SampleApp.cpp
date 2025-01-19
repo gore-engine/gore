@@ -96,6 +96,36 @@ void SampleApp::CreatePipelines()
     CreateShadowmapPipeline();
 }
 
+void SampleApp::CreateDefaultResources()
+{
+    using namespace gore::gfx;
+    
+    RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+
+    std::vector<uint8_t> blackTextureData(4, 0);
+    std::vector<uint8_t> whiteTextureData(4, 255);
+
+    defaultResources.blackTexture = renderContext.CreateTextureHandle(
+        TextureDesc
+        {
+            .debugName = "Black Texture",
+            .width     = 1,
+            .height    = 1,
+            .data      = blackTextureData.data(),
+            .dataSize  = 4,
+        });
+
+    defaultResources.whiteTexture = renderContext.CreateTextureHandle(
+        TextureDesc
+        {
+            .debugName = "White Texture",
+            .width     = 1,
+            .height    = 1,
+            .data      = whiteTextureData.data(),
+            .dataSize  = 4,
+        });
+}
+
 void SampleApp::CreateForwardPipeline()
 {
     using namespace gore::gfx;
@@ -215,6 +245,7 @@ void SampleApp::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pCo
 
 void SampleApp::PrepareGraphics()
 {
+    CreateDefaultResources();
     CreateRenderPassDesc();
     CreateUnifiedGlobalDynamicBuffer();
     CreateGlobalBindGroup();
@@ -248,9 +279,9 @@ void SampleApp::CreateGlobalBindGroup()
     m_GlobalBindGroup = renderContext.CreateBindGroup({
         .debugName       = "Global BindGroup",
         .updateFrequency = UpdateFrequency::PerFrame,
-        .textures        = {},
+        .textures        = {{1, defaultResources.blackTexture}},
         .buffers         = {{0, m_GlobalConstantBuffer, 0, sizeof(PerframeData), BindType::UniformBuffer}},
-        .samplers        = {{2, m_ShadowmapSampler, BindType::Sampler}},
+        .samplers        = {{2, m_ShadowmapSampler}},
         .bindLayout      = &m_GlobalBindLayout,
     });
 }

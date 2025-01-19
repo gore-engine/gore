@@ -39,6 +39,8 @@ private:
     void CreateGlobalBindGroup();
     void CreatePipelines();
 
+    void CreateDefaultResources();
+
     void CreateForwardPipeline();
     void CreateShadowmapPipeline();
 
@@ -67,6 +69,12 @@ private:
         GraphicsPipelineHandle shadowPipeline;
         GraphicsPipelineHandle gbuffferPipeline;
     } pipelines;
+
+    struct DefaultResources
+    {
+        gore::gfx::TextureHandle whiteTexture;
+        gore::gfx::TextureHandle blackTexture;
+    } defaultResources;
 
     gore::gfx::BufferHandle m_UnifiedDynamicBuffer;
     gore::gfx::SamplerHandle m_ShadowmapSampler;
