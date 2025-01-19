@@ -230,9 +230,15 @@ void SampleApp::CreateGlobalBindGroup()
                                                                .byteSize  = sizeof(PerframeData),
                                                                .usage     = BufferUsage::Uniform,
                                                                .memUsage  = MemoryUsage::CPU_TO_GPU});
+    
+    m_ShadowmapSampler = renderContext.CreateSampler({
+        .debugName = "Shadowmap Sampler",
+    });
 
     std::vector<Binding> bindings{
-        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex}
+        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex},
+        {1, BindType::SampledImage, 1, ShaderStage::Fragment},
+        {2, BindType::Sampler, 1, ShaderStage::Fragment},
     };
 
     BindLayoutCreateInfo bindLayoutCreateInfo = {.name = "Global Descriptor Set Layout", .bindings = bindings};
@@ -244,7 +250,7 @@ void SampleApp::CreateGlobalBindGroup()
         .updateFrequency = UpdateFrequency::PerFrame,
         .textures        = {},
         .buffers         = {{0, m_GlobalConstantBuffer, 0, sizeof(PerframeData), BindType::UniformBuffer}},
-        .samplers        = {},
+        .samplers        = {{2, m_ShadowmapSampler, BindType::Sampler}},
         .bindLayout      = &m_GlobalBindLayout,
     });
 }

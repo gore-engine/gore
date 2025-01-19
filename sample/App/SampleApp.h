@@ -69,6 +69,7 @@ private:
     } pipelines;
 
     gore::gfx::BufferHandle m_UnifiedDynamicBuffer;
+    gore::gfx::SamplerHandle m_ShadowmapSampler;
     gore::gfx::DynamicBufferHandle m_UnifiedDynamicBufferHandle;
 
     gore::gfx::BindLayout m_GlobalBindLayout;
