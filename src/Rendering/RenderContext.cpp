@@ -385,7 +385,7 @@ TextureHandle RenderContext::CreateTextureHandle(const std::string& name)
         return TextureHandle();
     }
 
-    TextureHandle handle = CreateTexture({.debugName = name.c_str(),
+    TextureHandle handle = CreateTextureHandle({.debugName = name.c_str(),
                                           .width     = static_cast<uint32_t>(width),
                                           .height    = static_cast<uint32_t>(height),
                                           .data      = pixels,
@@ -396,7 +396,7 @@ TextureHandle RenderContext::CreateTextureHandle(const std::string& name)
     return handle;
 }
 
-TextureHandle RenderContext::CreateTexture(TextureDesc&& desc)
+TextureHandle RenderContext::CreateTextureHandle(TextureDesc&& desc)
 {
     VkImageCreateInfo imageInfo = {
         .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,

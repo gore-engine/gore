@@ -56,56 +56,57 @@ ENGINE_CLASS(RenderContext) final
 {
     SINGLETON(RenderContext)
     
-public:
+    public:
     RenderContext(const RenderContextCreateInfo& createInfo);
     ~RenderContext();
-
+    
     void LoadMeshToMeshRenderer(const std::string& name, MeshRenderer& meshRenderer, uint32_t meshIndex = 0, ShaderChannel channel = ShaderChannel::Default);
     void LoadMesh();
-
+    
     // Debug Utils
     void BeginDebugLabel(CommandBuffer& cmd, const char* label, float r = 1.0f, float g = 0.0f, float b = 0.0f);
     void InsertDebugLabel(CommandBuffer& cmd, const char* label, float r = 1.0f, float g = 0.0f, float b = 0.0f);
     void EndDebugLabel(CommandBuffer& cmd);
-
+    
     // RenderPass
     RenderPass CreateRenderPass(RenderPassDesc&& desc);
     void DestroyRenderPass(RenderPass& renderPass);
-
+    
     void DestroyRenderPass(RenderPass* renderPass);
     void BeginRenderPass(RenderPass* renderPass);
     void EndRenderPass();
-
+    
     void PrepareRendering();
-
+    
     std::unique_ptr<CommandRing> CreateCommandRing(const CommandRingCreateDesc& desc);
     void DestroyCommandRing(std::unique_ptr<CommandRing>& commandRing);
     void ResetCommandPool(CommandPool* commandPool);
-
+    
     // Draw Call
     void DrawMesh(int instanceCount = 1, int firstInstance = 0);
     void DrawMeshIndirect();
     void DrawProcedural();
     void DrawProceduralIndirect();
-
+    
     TextureHandle CreateTextureHandle(const std::string& name);
-
+    TextureHandle CreateTextureHandle(TextureDesc&& desc);
+    
     void DestroyTexture(TextureHandle handle);
     const Texture& GetTexture(TextureHandle handle);
     const TextureDesc& GetTextureDesc(TextureHandle handle);
-
+    
     template <typename T>
     void CopyDataToBuffer(BufferHandle handle, const T& data)
     {
         CopyDataToBuffer(handle, &data, sizeof(T));
     }
-
+    
     template <typename T>
     void CopyDataToTexture(TextureHandle handle, const std::vector<T>& data)
     {
         CopyDataToTexture(handle, data.data(), data.size() * sizeof(T));
     }
-
+    
     template <typename T>
     void CopyDataToBuffer(BufferHandle handle, const std::vector<T>& data)
     {
@@ -165,7 +166,6 @@ private:
     }
 
     void DestroyTextureObject(const Texture& texture, const TextureDesc& desc);
-    TextureHandle CreateTexture(TextureDesc&& desc);
 
     template <typename T>
     static Buffer CreateStagingBuffer(const Device& device, std::vector<T> const& data)
