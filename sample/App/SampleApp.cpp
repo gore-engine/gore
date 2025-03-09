@@ -134,8 +134,8 @@ void SampleApp::CreateForwardPipeline()
     AutoRenderPass forwardPass(&renderContext, renderPasses.forwardPassDesc);
 
     // Create a pipeline for the forward rendering
-    std::vector<char> vertexShaderBytecode   = sample::utils::LoadShaderBytecode("sample/UnLit", ShaderStage::Vertex, "main");
-    std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("sample/UnLit", ShaderStage::Fragment, "main");
+    std::vector<char> vertexShaderBytecode   = sample::utils::LoadShaderBytecode("sample/SimpleLit", ShaderStage::Vertex, "main");
+    std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("sample/SimpleLit", ShaderStage::Fragment, "main");
 
     pipelines.forwardPipeline = renderContext.CreateGraphicsPipeline(
         GraphicsPipelineDesc{
