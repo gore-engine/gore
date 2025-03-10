@@ -217,19 +217,11 @@ void SampleApp::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext
 
 void SampleApp::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
 {
-    // Update ShadowMap Descriptor Set
-    VkImageView shadowmapView;
-    RpsResult result = rpsVKGetCmdArgImageView(pContext, 0, &shadowmapView);
-
-    RawBindGroupUpdateDesc updateDesc = {
-        .textures = {{0, shadowmapView, BindType::SampledImage}},
-    };
-
     RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
     vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
-
+    
     DrawKey key = {"ShadowCaster", AlphaMode::Opaque};
-
+    
     renderSystem.DrawRenderer(key, cmd);
 }
 
@@ -237,6 +229,20 @@ void SampleApp::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pCo
 {
     RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
     vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+    
+    // Update ShadowMap Descriptor Set
+    VkImageView shadowmapView;
+    RpsResult result = rpsVKGetCmdArgImageView(pContext, 0, &shadowmapView);
+    if (RPS_SUCCEEDED(result) == true)
+    {   
+        SampleApp* app = dynamic_cast<SampleApp*>(App::Get());
+
+        RawBindGroupUpdateDesc updateDesc = {
+            .textures = {{1, shadowmapView, BindType::SampledImage}},
+        };
+
+        renderSystem.GetRenderContext().UpdateBindGroup(app->m_GlobalBindGroup, updateDesc);
+    }
 
     DrawKey key = {"ForwardPass", AlphaMode::Opaque};
 
@@ -334,6 +340,10 @@ void SampleApp::Initialize()
 
         gore::Light* light = lightGameObject->AddComponent<gore::Light>();
         light->SetType(gore::LightType::Directional);
+
+        gore::Transform* lightTransform = lightGameObject->GetTransform();
+        lightTransform->SetLocalPosition(gore::Vector3::Backward * 20.0f + gore::Vector3::Up * 20.0f);
+        lightTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
     }
 
     {
@@ -521,6 +531,24 @@ void SampleApp::PreRender()
 
     PerframeData perframeData;
     perframeData.vpMatrix = mainCamera->GetViewProjectionMatrix();
+    
+    // Update Main Light
+    auto& gameObjects = scene->GetActiveScene()->GetGameObjects();
+    for (auto& gameObject : gameObjects)
+    {
+        Light* light = gameObject->GetComponent<Light>();
+        if (light == nullptr)
+            continue;
+        
+        Matrix4x4 lightMatrix = gameObject->GetTransform()->GetWorldToLocalMatrixIgnoreScale();
+        Matrix4x4 orthoMatrix = Matrix4x4::CreateOrthographicLH(100.0f, 100.0f, .1f, 100.0f);
+        perframeData.directionalLightVPMatrix = lightMatrix * orthoMatrix;
+        
+        LightData lightData = light->GetData();
+        perframeData.directionalLightColor = lightData.color;
+        perframeData.directionalLightIntensity = lightData.intensity;
+        break;
+    }
 
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
     renderContext.CopyDataToBuffer(m_GlobalConstantBuffer, perframeData);
