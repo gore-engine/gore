@@ -6,12 +6,21 @@
 // See file LICENSE.txt for full license details.
 
 graphics node Triangle([readwrite(rendertarget)] texture renderTarget : SV_Target0);
+graphics node Shadowmap(dsv shadowmap : SV_DepthStencil, float clearDepth : SV_ClearDepth);
+graphics node ForwardOpaque(ps_srv shadowmap, rtv backbuffer : SV_Target0);
 
 export void main([readonly(present)] texture backbuffer)
 {
     // clear and then render geometry to backbuffer
     clear(backbuffer, float4(0.0, 0.2, 0.4, 1.0));
-    Triangle(backbuffer);
+    
+    const uint shadowmapWidth = 1024;
+    const uint shadowmapHeight = 1024;
+    texture shadowmap = create_tex2d(RPS_FORMAT_D32_FLOAT, shadowmapWidth, shadowmapHeight);
+    
+    Shadowmap(shadowmap, 0.0);
+    ForwardOpaque(shadowmap, backbuffer);
+    // Triangle(backbuffer);
 }
 
 // ---------- Only Relevant for Tutorial Part 3 (Begin) ----------

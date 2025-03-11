@@ -141,7 +141,7 @@ Buffer RenderContext::CreateStagingBuffer(const Device& device, void const* data
         .usage = VMA_MEMORY_USAGE_AUTO,
     };
 
-    Buffer buffer;
+    Buffer buffer = {};
     buffer.vmaAllocator = device.GetVmaAllocator();
 
     VK_CHECK_RESULT(vmaCreateBuffer(device.GetVmaAllocator(), &bufferInfo, &allocCreateInfo, &buffer.vkBuffer, &buffer.vmaAllocation, &buffer.vmaAllocationInfo));
@@ -385,7 +385,7 @@ TextureHandle RenderContext::CreateTextureHandle(const std::string& name)
         return TextureHandle();
     }
 
-    TextureHandle handle = CreateTexture({.debugName = name.c_str(),
+    TextureHandle handle = CreateTextureHandle({.debugName = name.c_str(),
                                           .width     = static_cast<uint32_t>(width),
                                           .height    = static_cast<uint32_t>(height),
                                           .data      = pixels,
@@ -396,7 +396,7 @@ TextureHandle RenderContext::CreateTextureHandle(const std::string& name)
     return handle;
 }
 
-TextureHandle RenderContext::CreateTexture(TextureDesc&& desc)
+TextureHandle RenderContext::CreateTextureHandle(TextureDesc&& desc)
 {
     VkImageCreateInfo imageInfo = {
         .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -1048,7 +1048,8 @@ void RenderContext::DestroyFence(Fence& fence)
 
 RenderPass RenderContext::CreateRenderPass(RenderPassDesc&& desc)
 {
-    bool hasDepthStencil = desc.depthFormat != GraphicsFormat::Undefined && desc.stencilFormat != GraphicsFormat::Undefined;
+    bool hasDepthStencil = desc.depthFormat != GraphicsFormat::Undefined || desc.stencilFormat != GraphicsFormat::Undefined;
+    bool hasColor        = desc.colorFormats.size() > 0;
 
     std::vector<VkFormat> colorFormats = VulkanHelper::GetVkFormats(desc.colorFormats);
     vk::Format depthFormat             = VulkanHelper::GetVkFormat(desc.depthFormat);
@@ -1078,11 +1079,11 @@ RenderPass RenderContext::CreateRenderPass(RenderPassDesc&& desc)
             {},
             depthFormat,
             vk::SampleCountFlagBits::e1,
+            vk::AttachmentLoadOp::eDontCare,
+            vk::AttachmentStoreOp::eStore,
             vk::AttachmentLoadOp::eClear,
             vk::AttachmentStoreOp::eStore,
-            vk::AttachmentLoadOp::eDontCare,
-            vk::AttachmentStoreOp::eDontCare,
-            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eDepthStencilAttachmentOptimal,
             vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
         attachments.push_back(attachment);
@@ -1106,7 +1107,7 @@ RenderPass RenderContext::CreateRenderPass(RenderPassDesc&& desc)
         0,
         nullptr,
         static_cast<uint32_t>(colorFormats.size()),
-        colorAttachmentRefs,
+        hasColor? colorAttachmentRefs : nullptr,
         nullptr,
         hasDepthStencil ? &depthAttachmentRef : nullptr,
         0,
@@ -1126,4 +1127,76 @@ void RenderContext::DestroyRenderPass(RenderPass& renderPass)
 {
     VULKAN_DEVICE.destroyRenderPass(renderPass.renderPass);
 }
+
+void RenderContext::UpdateBindGroup(BindGroupHandle handle, const RawBindGroupUpdateDesc& desc)
+{
+    const int updateCount = static_cast<int>(desc.buffers.size() + desc.textures.size() + desc.samplers.size());
+
+    std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+    writeDescriptorSets.reserve(updateCount);
+
+    vk::DescriptorSet descriptorSet = m_BindGroupPool.getObject(handle).set;
+
+    for (const auto& rawBuffer : desc.buffers)
+    {
+        vk::Buffer vkBuffer = rawBuffer.buffer;
+
+        vk::DescriptorBufferInfo bufferInfoDesc = {
+            vkBuffer,
+            rawBuffer.offset,
+            rawBuffer.range == 0 ? VK_WHOLE_SIZE : rawBuffer.range};
+        
+        vk::WriteDescriptorSet writeDescriptorSet(
+            descriptorSet,
+            rawBuffer.binding,
+            0,
+            1,
+            VulkanHelper::GetVkDescriptorType(rawBuffer.bindType),
+            nullptr,
+            &bufferInfoDesc,
+            nullptr);
+        writeDescriptorSets.push_back(writeDescriptorSet);
+    }
+
+    for (const auto& rawTexture : desc.textures)
+    {
+        vk::DescriptorImageInfo imageInfo;
+        imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        imageInfo.imageView   = rawTexture.imageView;
+        imageInfo.sampler     = rawTexture.bindType == BindType::CombinedSampledImage ? rawTexture.sampler : VK_NULL_HANDLE;
+
+        vk::WriteDescriptorSet writeDescriptorSet(
+            descriptorSet,
+            rawTexture.binding,
+            0,
+            1,
+            VulkanHelper::GetVkDescriptorType(rawTexture.bindType),
+            &imageInfo,
+            nullptr,
+            nullptr);
+        
+        writeDescriptorSets.push_back(writeDescriptorSet);
+    }
+
+    for (const auto& rawSampler : desc.samplers)
+    {
+        vk::DescriptorImageInfo imageInfo;
+        imageInfo.sampler = rawSampler.sampler;
+
+        vk::WriteDescriptorSet writeDescriptorSet(
+            descriptorSet,
+            rawSampler.binding,
+            0,
+            1,
+            VulkanHelper::GetVkDescriptorType(rawSampler.bindType),
+            &imageInfo,
+            nullptr,
+            nullptr);
+        
+        writeDescriptorSets.push_back(writeDescriptorSet);
+    }
+
+    VULKAN_DEVICE.updateDescriptorSets(writeDescriptorSets, {});
+}
+
 } // namespace gore::gfx

@@ -32,22 +32,22 @@ struct DrawCreateInfo
     AlphaMode alphaMode  = AlphaMode::Opaque;
 };
 
-struct DrawCacheKey
+struct DrawKey
 {
     std::string passName = "";
     AlphaMode alphaMode  = AlphaMode::Opaque;
 
-    bool operator==(const DrawCacheKey& other) const
+    bool operator==(const DrawKey& other) const
     {
         return passName == other.passName && alphaMode == other.alphaMode;
     }
 
-    bool operator!=(const DrawCacheKey& other) const
+    bool operator!=(const DrawKey& other) const
     {
         return !(*this == other);
     }
 
-    bool operator<(const DrawCacheKey& other) const
+    bool operator<(const DrawKey& other) const
     {
         if (passName != other.passName)
             return passName < other.passName;
@@ -117,15 +117,15 @@ struct DrawSorter
 
 void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& gameObjects, std::vector<Draw>& sortedDrawData);
 bool MatchDrawFilter(const Pass& pass, const DrawCreateInfo& info);
-void ScheduleDraws(RenderContext& renderContext, const std::unordered_map<DrawCacheKey, std::vector<Draw>>& drawData, const DrawCacheKey& key, vk::CommandBuffer commandBuffer);
+void ScheduleDraws(RenderContext& renderContext, const std::unordered_map<DrawKey, std::vector<Draw>>& drawData, const DrawKey& key, vk::CommandBuffer commandBuffer);
 } // namespace gore::renderer
 
 namespace std
 {
 template <>
-struct hash<gore::renderer::DrawCacheKey>
+struct hash<gore::renderer::DrawKey>
 {
-    size_t operator()(const gore::renderer::DrawCacheKey& key) const
+    size_t operator()(const gore::renderer::DrawKey& key) const
     {
         size_t result = 0;
         gore::utils::hash_combine(result, key.passName);

@@ -76,7 +76,7 @@ struct RenderSystemCreateInfo final
     InstanceDataStoragePolicy instanceDataStoragePolicy : 8 = InstanceDataStoragePolicy::PersistentDynamicUniformBuffer;
 };
 
-class RenderSystem final : System
+ENGINE_CLASS(RenderSystem) final : System
 {
 public:
     explicit RenderSystem(App* app);
@@ -91,11 +91,13 @@ public:
     void PrepareDrawData();
 
     RenderContext& GetRenderContext() const { return *m_RenderContext; }
+    std::unique_ptr<RpsSytem>& GetRpsSystem() { return m_RpsSystem; }
 
     void OnResize(Window* window, int width, int height);
 
 public:
     GraphicsCaps GetGraphicsCaps() const { return m_GraphicsCaps; }
+    void DrawRenderer(DrawKey key, vk::CommandBuffer cmd);
 
 private:
     // Imgui
@@ -163,8 +165,10 @@ private:
 
     uint64_t CalcGuaranteedCompletedFrameindexForRps() const;
 
-    static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
-    void DrawTriangle(vk::CommandBuffer commandBuffer);
+    // static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    // static void ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    // static void ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    // void DrawTriangle(vk::CommandBuffer commandBuffer);
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
 
@@ -235,7 +239,7 @@ private:
     GraphicsCaps m_GraphicsCaps;
 
     // TODO: Change this to drawStream
-    std::unordered_map<DrawCacheKey, DrawStream> m_DrawData;
+    std::unordered_map<DrawKey, DrawStream> m_DrawData;
 private:
     void UploadPerframeGlobalConstantBuffer(uint32_t imageIndex);
 

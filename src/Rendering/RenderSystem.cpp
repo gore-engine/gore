@@ -142,27 +142,36 @@ void RenderSystem::Initialize()
     InitImgui();
 }
 
-void RenderSystem::PrepareDrawData()
+static void PrepareDrawStreamByDrawInfo(std::unordered_map<DrawKey, DrawStream>& map, DrawCreateInfo info, std::vector<GameObject*>& gameObjects)
 {
-    DrawCreateInfo info = {};
-    info.passName = "ForwardPass";
-    info.alphaMode = AlphaMode::Opaque;
+    DrawKey key = {};
+    key.passName = info.passName;
+    key.alphaMode = info.alphaMode;
 
-    std::vector<GameObject*> gameObjects = Scene::GetActiveScene()->GetGameObjects();
     std::vector<Draw> sortedDrawData;
     PrepareDrawDataAndSort(info, gameObjects, sortedDrawData);
 
     DrawStream drawStream;
     CreateDrawStreamFromDrawData(sortedDrawData, drawStream);
 
-    // TODO: check if the draw data is already in the map
+    map[key] = drawStream;
+}
+
+void RenderSystem::PrepareDrawData()
+{
+    DrawCreateInfo info = {};
+    info.passName = "ForwardPass";
+    info.alphaMode = AlphaMode::Opaque;
+
+    DrawCreateInfo shadowInfo = {};
+    shadowInfo.passName = "ShadowCaster";
+    shadowInfo.alphaMode = AlphaMode::Opaque;
+
+    std::vector<GameObject*> gameObjects = Scene::GetActiveScene()->GetGameObjects();
     m_DrawData.clear();
 
-    DrawCacheKey key = {};
-    key.passName = info.passName;
-    key.alphaMode = info.alphaMode;
-
-    m_DrawData[key] = drawStream;
+    PrepareDrawStreamByDrawInfo(m_DrawData, info, gameObjects);
+    PrepareDrawStreamByDrawInfo(m_DrawData, shadowInfo, gameObjects);
 }
 
 void RenderSystem::Update()
@@ -408,6 +417,14 @@ void RenderSystem::OnResize(Window* window, int width, int height)
     CreateDepthBuffer();
 }
 
+void RenderSystem::DrawRenderer(DrawKey key, vk::CommandBuffer cmd)
+{
+    if (m_DrawData.find(key) == m_DrawData.end())
+        return;
+
+    ScheduleDrawStream(*m_RenderContext, m_DrawData[key], cmd);        
+}
+
 void RenderSystem::InitImgui()
 {
     //1: create descriptor pool for IMGUI
@@ -508,10 +525,7 @@ void RenderSystem::CreateRpsRuntimeDeivce()
     createInfo.pfnRecordDebugMarker = &RecordDebugMarker;
     createInfo.pfnSetDebugName = &SetDebugName;
 
-    m_RpsSystem = InitializeRpsSystem(createInfo);
-
-    RpsRenderGraph& renderGraph = *m_RpsSystem->rpsRDG;
-    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Triangle", &DrawTriangleWithRPSWrapper, this));
+    m_RpsSystem = InitializeRpsSystem(createInfo);    
 }
 
 void RenderSystem::DestroyRpsRuntimeDevice()
@@ -938,30 +952,52 @@ uint64_t RenderSystem::CalcGuaranteedCompletedFrameindexForRps() const
     return (m_FrameCounter > maxQueuedFrames) ? m_FrameCounter - maxQueuedFrames : RPS_GPU_COMPLETED_FRAME_INDEX_NONE;
 }
 
-void RenderSystem::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext)
-{
-    vk::CommandBuffer cmd = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
-    RenderSystem* renderSystem = reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+// void RenderSystem::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+// {
+//     vk::CommandBuffer cmd = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+//     RenderSystem* renderSystem = reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
 
-    renderSystem->DrawTriangle(cmd);
-}
+//     renderSystem->DrawTriangle(cmd);
+// }
 
-void RenderSystem::DrawTriangle(vk::CommandBuffer commandBuffer)
-{    
-    DrawCacheKey key = { "ForwardPass", AlphaMode::Opaque };
+// void RenderSystem::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+// {
+//     RenderSystem* renderSystem = reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
 
-    if (m_DrawData.find(key) != m_DrawData.end())
-    {
-        ScheduleDrawStream(*m_RenderContext, m_DrawData[key], commandBuffer);
-    }
+//     DrawKey key = { "ShadowCaster", AlphaMode::Opaque };
 
-    // ScheduleDrawStream(*m_RenderContext, m_DrawData, commandBuffer);
+//     if (renderSystem->m_DrawData.find(key) != renderSystem->m_DrawData.end())
+//     {
+//         ScheduleDrawStream(*renderSystem->m_RenderContext, renderSystem->m_DrawData[key], rpsVKCommandBufferFromHandle(pContext->hCommandBuffer));
+//     }
+// }
 
-    // ScheduleDraws(*m_RenderContext, m_DrawData, key, commandBuffer);
+// void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+// {
+//     RenderSystem* renderSystem = reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
 
-    // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
-    // commandBuffer.draw(3, 1, 0, 0);
-}
+//     vk::CommandBuffer cmd = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+
+//     VkImageView shadowmapView;
+//     AssertIfRpsFailed(rpsVKGetCmdArgImageView(pContext, 0, &shadowmapView));
+// }
+
+// void RenderSystem::DrawTriangle(vk::CommandBuffer commandBuffer)
+// {    
+//     DrawKey key = { "ForwardPass", AlphaMode::Opaque };
+
+//     if (m_DrawData.find(key) != m_DrawData.end())
+//     {
+//         ScheduleDrawStream(*m_RenderContext, m_DrawData[key], commandBuffer);
+//     }
+
+//     ScheduleDrawStream(*m_RenderContext, m_DrawData, commandBuffer);
+
+//     ScheduleDraws(*m_RenderContext, m_DrawData, key, commandBuffer);
+
+//     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_RenderContext->GetGraphicsPipeline(m_TrianglePipelineHandle).pipeline);
+//     commandBuffer.draw(3, 1, 0, 0);
+// }
 
 void RenderSystem::UploadPerframeGlobalConstantBuffer(uint32_t imageIndex)
 {

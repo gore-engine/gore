@@ -4,5 +4,5 @@
 
 struct PerDrawData
 {
-    gore::Matrix4x4 model;
+    gore::Matrix4x4 model[128];
 };

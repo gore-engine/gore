@@ -31,6 +31,9 @@ void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& game
         Material& material = renderer->GetMaterial();
         for (const auto& pass : material.GetPasses())
         {
+            if (MatchDrawFilter(pass, info) == false)
+                continue;
+
             Draw draw;
             assert(pass.shader.empty() == false);
 
@@ -60,7 +63,7 @@ void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& game
     std::sort(sortedDrawData.begin(), sortedDrawData.end(), DrawSorter());
 }
 
-void ScheduleDraws(RenderContext& renderContext, const std::unordered_map<DrawCacheKey, std::vector<Draw>>& drawData, const DrawCacheKey& key, vk::CommandBuffer commandBuffer)
+void ScheduleDraws(RenderContext& renderContext, const std::unordered_map<DrawKey, std::vector<Draw>>& drawData, const DrawKey& key, vk::CommandBuffer commandBuffer)
 {
     if (drawData.find(key) == drawData.end())
         return;

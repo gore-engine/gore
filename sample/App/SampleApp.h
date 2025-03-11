@@ -6,6 +6,11 @@
 #include "Rendering/GraphicsCaps.h"
 #include "Rendering/RenderContext.h"
 
+#define RPS_VK_RUNTIME 1
+#include "rps/rps.h"
+
+#include "Rendering/RenderPipelineShader/RpsSytem.h"
+
 using namespace gore;
 
 class SampleApp final : public gore::App
@@ -28,11 +33,24 @@ private:
     void PreRender();
 
     // Temporary RenderPassDesc for pipeline creation
+    void InitializeRpsSystem();
     void CreateRenderPassDesc();
     void CreateUnifiedGlobalDynamicBuffer();
     void CreateGlobalBindGroup();
     void CreatePipelines();
 
+    void CreateDefaultResources();
+
+    void CreateForwardPipeline();
+    void CreateShadowmapPipeline();
+
+    const int K_OBJECT_BATCH_COUNT = 128;
+
+    void UpdateAllGameObjectsGPUPerObjectData();
+    
+    static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    static void ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    static void ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
 private:
     void UpdateFPSText(float deltaTime);
 
@@ -41,6 +59,7 @@ private:
     struct SampleRenderPass
     {
         RenderPassDesc forwardPassDesc;
+        RenderPassDesc shadowPassDesc;
     } renderPasses;
 
     struct SamplePipeline
@@ -51,7 +70,14 @@ private:
         GraphicsPipelineHandle gbuffferPipeline;
     } pipelines;
 
+    struct DefaultResources
+    {
+        gore::gfx::TextureHandle whiteTexture;
+        gore::gfx::TextureHandle blackTexture;
+    } defaultResources;
+
     gore::gfx::BufferHandle m_UnifiedDynamicBuffer;
+    gore::gfx::SamplerHandle m_ShadowmapSampler;
     gore::gfx::DynamicBufferHandle m_UnifiedDynamicBufferHandle;
 
     gore::gfx::BindLayout m_GlobalBindLayout;

@@ -20,11 +20,11 @@ struct BufferDesc final
 
 struct Buffer
 {
-    VmaAllocator vmaAllocator;
-    VkBuffer vkBuffer; // TODO: better name!
-    VkDeviceAddress vkDeviceAddress;
-    VmaAllocation vmaAllocation;
-    VmaAllocationInfo vmaAllocationInfo;
+    VmaAllocator vmaAllocator           = VK_NULL_HANDLE;
+    VkBuffer vkBuffer                   = VK_NULL_HANDLE; // TODO: better name!
+    VkDeviceAddress vkDeviceAddress     = 0;
+    VmaAllocation vmaAllocation         = VK_NULL_HANDLE;
+    VmaAllocationInfo vmaAllocationInfo = {};
 };
 
 using BufferHandle = Handle<Buffer>;

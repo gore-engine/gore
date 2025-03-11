@@ -19,6 +19,8 @@
 #include "Core/Log.h"
 #include "Math/Constants.h"
 
+#include "Rendering/Components/Light.h"
+
 #include "Scripts/Utils/GraphicsUtils.h"
 
 #include "Scripts/TestComponent.h"
@@ -45,9 +47,18 @@ SampleApp::~SampleApp()
 {
 }
 
+void SampleApp::InitializeRpsSystem()
+{
+    RpsRenderGraph& renderGraph = *m_RenderSystem->GetRpsSystem()->rpsRDG;
+    // AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Triangle", &DrawTriangleWithRPSWrapper, this));
+    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Shadowmap", &ShadowmapPassWithRPSWrapper, this));
+    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "ForwardOpaque", &ForwardOpaquePassWithRPSWrapper, this));
+}
+
 void SampleApp::CreateRenderPassDesc()
 {
     renderPasses.forwardPassDesc = {{GraphicsFormat::BGRA8_SRGB}};
+    renderPasses.shadowPassDesc  = {{}, GraphicsFormat::D32_FLOAT};
 }
 
 void SampleApp::CreateUnifiedGlobalDynamicBuffer()
@@ -62,7 +73,7 @@ void SampleApp::CreateUnifiedGlobalDynamicBuffer()
     for (size_t i = 0; i < renderCount; ++i)
     {
         PerDrawData* perDrawData = reinterpret_cast<PerDrawData*>(dynamicUniformBufferData.data() + (i * alignmentSize));
-        perDrawData->model       = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
+        perDrawData->model[0]       = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
     }
 
     m_UnifiedDynamicBuffer = renderContext.CreateBuffer(
@@ -81,14 +92,50 @@ void SampleApp::CreateUnifiedGlobalDynamicBuffer()
 
 void SampleApp::CreatePipelines()
 {
+    CreateForwardPipeline();
+    CreateShadowmapPipeline();
+}
+
+void SampleApp::CreateDefaultResources()
+{
+    using namespace gore::gfx;
+    
+    RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+
+    std::vector<uint8_t> blackTextureData(4, 0);
+    std::vector<uint8_t> whiteTextureData(4, 255);
+
+    defaultResources.blackTexture = renderContext.CreateTextureHandle(
+        TextureDesc
+        {
+            .debugName = "Black Texture",
+            .width     = 1,
+            .height    = 1,
+            .data      = blackTextureData.data(),
+            .dataSize  = 4,
+        });
+
+    defaultResources.whiteTexture = renderContext.CreateTextureHandle(
+        TextureDesc
+        {
+            .debugName = "White Texture",
+            .width     = 1,
+            .height    = 1,
+            .data      = whiteTextureData.data(),
+            .dataSize  = 4,
+        });
+}
+
+void SampleApp::CreateForwardPipeline()
+{
     using namespace gore::gfx;
 
     RenderContext& renderContext = m_RenderSystem->GetRenderContext();
     AutoRenderPass forwardPass(&renderContext, renderPasses.forwardPassDesc);
 
     // Create a pipeline for the forward rendering
-    std::vector<char> vertexShaderBytecode   = sample::utils::LoadShaderBytecode("sample/UnLit", ShaderStage::Vertex, "main");
-    std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("sample/UnLit", ShaderStage::Fragment, "main");
+    std::vector<char> vertexShaderBytecode   = sample::utils::LoadShaderBytecode("sample/SimpleLit", ShaderStage::Vertex, "main");
+    std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("sample/SimpleLit", ShaderStage::Fragment, "main");
 
     pipelines.forwardPipeline = renderContext.CreateGraphicsPipeline(
         GraphicsPipelineDesc{
@@ -118,8 +165,93 @@ void SampleApp::CreatePipelines()
     });
 }
 
+void SampleApp::CreateShadowmapPipeline()
+{
+    using namespace gore::gfx;
+
+    RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+    AutoRenderPass shadowPass(&renderContext, renderPasses.shadowPassDesc);
+
+    // Create a pipeline for the shadowmap rendering
+    std::vector<char> vertexShaderBytecode   = sample::utils::LoadShaderBytecode("sample/Shadowmap", ShaderStage::Vertex, "main");
+    std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("sample/Shadowmap", ShaderStage::Fragment, "main");
+
+    pipelines.shadowPipeline = renderContext.CreateGraphicsPipeline({
+        GraphicsPipelineDesc{
+            .debugName = "Shadowmap Pipeline",
+            .VS{
+                .byteCode  = reinterpret_cast<uint8_t*>(vertexShaderBytecode.data()),
+                .byteSize  = static_cast<uint32_t>(vertexShaderBytecode.size()),
+                .entryFunc = "vs"},
+            .PS{
+                .byteCode  = reinterpret_cast<uint8_t*>(fragmentShaderBytecode.data()),
+                .byteSize  = static_cast<uint32_t>(fragmentShaderBytecode.size()),
+                .entryFunc = "ps"},
+            .colorFormats  = {},
+            .depthFormat   = GraphicsFormat::D32_FLOAT,
+            .stencilFormat = GraphicsFormat::Undefined,
+            .vertexBufferBindings{
+                {.byteStride = sizeof(Vector3) + sizeof(Vector2) + sizeof(Vector3),
+                 .attributes =
+                     {
+                         {.byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT},
+                         {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
+                         {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
+            .bindLayouts   = {m_GlobalBindLayout},
+            .dynamicBuffer = m_UnifiedDynamicBufferHandle,
+            .renderPass    = shadowPass.GetRenderPass().renderPass,
+            .subpassIndex  = 0
+        }
+    });
+}
+
+void SampleApp::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+{
+    RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+    vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+
+    DrawKey key = {"ForwardPass", AlphaMode::Opaque};
+
+    renderSystem.DrawRenderer(key, cmd);
+}
+
+void SampleApp::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+{
+    RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+    vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+    
+    DrawKey key = {"ShadowCaster", AlphaMode::Opaque};
+    
+    renderSystem.DrawRenderer(key, cmd);
+}
+
+void SampleApp::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+{
+    RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+    vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+    
+    // Update ShadowMap Descriptor Set
+    VkImageView shadowmapView;
+    RpsResult result = rpsVKGetCmdArgImageView(pContext, 0, &shadowmapView);
+    if (RPS_SUCCEEDED(result) == true)
+    {   
+        SampleApp* app = dynamic_cast<SampleApp*>(App::Get());
+
+        RawBindGroupUpdateDesc updateDesc = {
+            .textures = {{1, shadowmapView, BindType::SampledImage}},
+        };
+
+        renderSystem.GetRenderContext().UpdateBindGroup(app->m_GlobalBindGroup, updateDesc);
+    }
+
+    DrawKey key = {"ForwardPass", AlphaMode::Opaque};
+
+    renderSystem.DrawRenderer(key, cmd);
+}
+
 void SampleApp::PrepareGraphics()
 {
+    CreateDefaultResources();
     CreateRenderPassDesc();
     CreateUnifiedGlobalDynamicBuffer();
     CreateGlobalBindGroup();
@@ -135,9 +267,15 @@ void SampleApp::CreateGlobalBindGroup()
                                                                .byteSize  = sizeof(PerframeData),
                                                                .usage     = BufferUsage::Uniform,
                                                                .memUsage  = MemoryUsage::CPU_TO_GPU});
+    
+    m_ShadowmapSampler = renderContext.CreateSampler({
+        .debugName = "Shadowmap Sampler",
+    });
 
     std::vector<Binding> bindings{
-        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex}
+        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex},
+        {1, BindType::SampledImage, 1, ShaderStage::Fragment},
+        {2, BindType::Sampler, 1, ShaderStage::Fragment},
     };
 
     BindLayoutCreateInfo bindLayoutCreateInfo = {.name = "Global Descriptor Set Layout", .bindings = bindings};
@@ -147,9 +285,9 @@ void SampleApp::CreateGlobalBindGroup()
     m_GlobalBindGroup = renderContext.CreateBindGroup({
         .debugName       = "Global BindGroup",
         .updateFrequency = UpdateFrequency::PerFrame,
-        .textures        = {},
+        .textures        = {{1, defaultResources.blackTexture}},
         .buffers         = {{0, m_GlobalConstantBuffer, 0, sizeof(PerframeData), BindType::UniformBuffer}},
-        .samplers        = {},
+        .samplers        = {{2, m_ShadowmapSampler}},
         .bindLayout      = &m_GlobalBindLayout,
     });
 }
@@ -158,16 +296,22 @@ void SampleApp::Initialize()
 {
     m_GraphicsCaps = m_RenderSystem->GetGraphicsCaps();
 
+    InitializeRpsSystem();
+
     PrepareGraphics();
 
     Material forwardMat;
     forwardMat.SetAlphaMode(AlphaMode::Opaque);
     forwardMat.AddPass(Pass{
-        .name   = "ForwardPass",
-        .shader = pipelines.forwardPipeline,
-        .bindGroup = { m_GlobalBindGroup }
-    });
-
+        .name      = "ShadowCaster",
+        .shader    = pipelines.shadowPipeline,
+        .bindGroup = {m_GlobalBindGroup}});
+    
+    forwardMat.AddPass(Pass{
+        .name      = "ForwardPass",
+        .shader    = pipelines.forwardPipeline,
+        .bindGroup = {m_GlobalBindGroup}});
+    
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
 
     // GraphicsPipelineHandle forwardPipeline = renderContext.CreateGraphicsPipeline(
@@ -187,7 +331,20 @@ void SampleApp::Initialize()
 
     gore::Transform* cameraTransform = cameraGameObject->GetComponent<gore::Transform>();
     cameraTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
-    cameraTransform->SetLocalPosition((gore::Vector3::Backward + gore::Vector3::Up) * 7.5f);
+    cameraTransform->SetLocalPosition(gore::Vector3::Backward * 20.0f + gore::Vector3::Up * 20.0f);
+
+    // Light
+    {
+        gore::GameObject* lightGameObject = scene->NewObject();
+        lightGameObject->SetName("Directional Light");
+
+        gore::Light* light = lightGameObject->AddComponent<gore::Light>();
+        light->SetType(gore::LightType::Directional);
+
+        gore::Transform* lightTransform = lightGameObject->GetTransform();
+        lightTransform->SetLocalPosition(gore::Vector3::Backward * 20.0f + gore::Vector3::Up * 20.0f);
+        lightTransform->RotateAroundAxis(gore::Vector3::Right, gore::math::constants::PI_4);
+    }
 
     {
         gore::GameObject* gameObject = scene->NewObject();
@@ -366,22 +523,35 @@ static int frameCount = 0;
 
 void SampleApp::PreRender()
 {
-    if (frameCount != 0)
-        return;
-
     Camera* mainCamera = Camera::Main;
     if (mainCamera == nullptr)
     {
         return;
     }
-    
+
     PerframeData perframeData;
     perframeData.vpMatrix = mainCamera->GetViewProjectionMatrix();
     
+    // Update Main Light
+    auto& gameObjects = scene->GetActiveScene()->GetGameObjects();
+    for (auto& gameObject : gameObjects)
+    {
+        Light* light = gameObject->GetComponent<Light>();
+        if (light == nullptr)
+            continue;
+        
+        Matrix4x4 lightMatrix = gameObject->GetTransform()->GetWorldToLocalMatrixIgnoreScale();
+        Matrix4x4 orthoMatrix = Matrix4x4::CreateOrthographicLH(100.0f, 100.0f, .1f, 100.0f);
+        perframeData.directionalLightVPMatrix = lightMatrix * orthoMatrix;
+        
+        LightData lightData = light->GetData();
+        perframeData.directionalLightColor = lightData.color;
+        perframeData.directionalLightIntensity = lightData.intensity;
+        break;
+    }
+
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
     renderContext.CopyDataToBuffer(m_GlobalConstantBuffer, perframeData);
-
-    frameCount = (frameCount + 1) % 3;
 }
 
 void SampleApp::UpdateFPSText(float deltaTime)

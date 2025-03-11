@@ -4,6 +4,9 @@
 [[vk::binding(0, 0)]] cbuffer GlobalConstantBuffer
 {
     float4x4 _VPMatrix;
+    float4x4 _DirectionalLightVPMatrix;
+    float3 _DirectionalLightColor;
+    float _DirectionalLightIntensity;
 };
 
 #ifndef USE_UNIFIED_GEOMETRY_BUFFER
