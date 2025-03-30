@@ -27,6 +27,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/RpslCompile.cmake)
 
 set(COMMON_SOURCE_FOLDERS
         "Core"
+        "Profiler"
         "FileSystem"
         "Math"
         "Memory"
@@ -80,7 +81,8 @@ compile_rpsl_file("hello_triangle")
 if (${TARGET_PLATFORM} STREQUAL "Windows")
     set(PLATFORM_SOURCE_FOLDERS "Platform/Windows")
     set(PLATFORM_INCLUDE_DIRECTORIES)
-    set(PLATFORM_LIBRARIES)
+    # Add ws2_32.lib for microprofile
+    set(PLATFORM_LIBRARIES ws2_32)
     set(PLATFORM_DEFINITIONS "WIN32_LEAN_AND_MEAN" "NOMINMAX")
 elseif (${TARGET_PLATFORM} STREQUAL "Linux")
     find_package(X11 REQUIRED)

@@ -12,6 +12,8 @@
 #include "Scene/Scene.h"
 #include "Input/GLFW/GLFWInputSystem.h"
 
+#include "Profiler/microprofile.h"
+
 namespace gore
 {
 
@@ -46,6 +48,10 @@ void App::OnWindowResize(Window* window, int width, int height)
 
 int App::Run(int width, int height, const char* title)
 {
+    MicroProfileOnThreadCreate("Main");
+    MicroProfileSetEnableAllGroups(true);
+    MicroProfileSetForceMetaCounters(true);
+
     glfwInit();
 
     m_Window = new Window(this, width, height);
@@ -65,6 +71,7 @@ int App::Run(int width, int height, const char* title)
 
     while (!m_Window->ShouldClose())
     {
+        MICROPROFILE_SCOPEI("PlayerLoop", "MainLoop", MP_AUTO);
         m_TimeSystem->Update();
         m_InputSystem->Update();
 
@@ -75,6 +82,8 @@ int App::Run(int width, int height, const char* title)
             scene->Update();
 
         m_RenderSystem->Update();
+
+        MicroProfileFlip(nullptr);
     }
 
     m_TimeSystem->Shutdown();
@@ -91,6 +100,8 @@ int App::Run(int width, int height, const char* title)
     delete m_Window;
 
     glfwTerminate();
+
+    MicroProfileShutdown();
 
     return 0;
 }
