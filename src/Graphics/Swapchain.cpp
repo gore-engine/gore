@@ -129,7 +129,7 @@ void Swapchain::CreateSwapchain()
         }
     }
 
-    vk::PresentModeKHR surfacePresentMode = vk::PresentModeKHR::eFifo;
+    vk::PresentModeKHR surfacePresentMode = vk::PresentModeKHR::eImmediate;
     for (const auto& presentMode : surfaceSupportedPresentModes)
     {
         if (presentMode == vk::PresentModeKHR::eMailbox)
