@@ -24,6 +24,7 @@
 #include "Pipeline.h"
 #include "RenderPass.h"
 #include "RenderPassDesc.h"
+#include "DescriptorPoolHolder.h"
 #include "Pool.h"
 
 #include "RawBindGroupUpdateDesc.h"
@@ -205,7 +206,7 @@ private:
 
     vk::DescriptorSetLayout m_EmptySetLayout;
 
-    vk::DescriptorPool m_DescriptorPool[(uint32_t)UpdateFrequency::Count];
+    DescriptorPoolHolder m_DescriptorPool[(uint32_t)UpdateFrequency::Count];
 
     ResourceCache m_ResourceCache;
 

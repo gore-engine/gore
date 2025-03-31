@@ -196,16 +196,16 @@ void RenderContext::CreateDescriptorPools()
         static_cast<uint32_t>(std::size(poolSizes)),
         poolSizes);
 
-    m_DescriptorPool[(uint32_t)UpdateFrequency::None] = VULKAN_DEVICE.createDescriptorPool(poolCreateInfo);
+    m_DescriptorPool[(uint32_t)UpdateFrequency::None] = static_cast<DescriptorPoolHolder>(VULKAN_DEVICE.createDescriptorPool(poolCreateInfo));
 
     poolCreateInfo.maxSets                                = 100;
-    m_DescriptorPool[(uint32_t)UpdateFrequency::PerFrame] = VULKAN_DEVICE.createDescriptorPool(poolCreateInfo);
+    m_DescriptorPool[(uint32_t)UpdateFrequency::PerFrame] = static_cast<DescriptorPoolHolder>(VULKAN_DEVICE.createDescriptorPool(poolCreateInfo));
 
     poolCreateInfo.maxSets                                = 100;
-    m_DescriptorPool[(uint32_t)UpdateFrequency::PerBatch] = VULKAN_DEVICE.createDescriptorPool(poolCreateInfo);
+    m_DescriptorPool[(uint32_t)UpdateFrequency::PerBatch] = static_cast<DescriptorPoolHolder>(VULKAN_DEVICE.createDescriptorPool(poolCreateInfo));
 
     poolCreateInfo.maxSets                               = 100;
-    m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw] = VULKAN_DEVICE.createDescriptorPool(poolCreateInfo);
+    m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw] = static_cast<DescriptorPoolHolder>(VULKAN_DEVICE.createDescriptorPool(poolCreateInfo));
 
     m_EmptySetLayout = VULKAN_DEVICE.createDescriptorSetLayout({});
 }
