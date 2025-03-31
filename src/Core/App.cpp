@@ -14,6 +14,12 @@
 
 #include "Profiler/microprofile.h"
 
+MICROPROFILE_DEFINE(g_PlayerLoop, "Loop", "PlayerLoop", MP_AUTO);
+MICROPROFILE_DEFINE(g_AppUpdate, "Loop", "AppUpdate", MP_AUTO);
+MICROPROFILE_DEFINE(g_SceneUpdate, "Loop", "SceneUpdate", MP_AUTO);
+MICROPROFILE_DEFINE(g_RenderSystemUpdate, "Loop", "RenderSystemUpdate", MP_AUTO);
+MICROPROFILE_DEFINE(g_AppInitialize, "System", "AppInitialize", MP_AUTO);
+
 namespace gore
 {
 
@@ -52,36 +58,51 @@ int App::Run(int width, int height, const char* title)
     MicroProfileSetEnableAllGroups(true);
     MicroProfileSetForceMetaCounters(true);
 
-    glfwInit();
-
-    m_Window = new Window(this, width, height);
-    m_Window->SetTitle(title);
-
-    // TODO: Choose backend
-    m_InputSystem = new GLFWInputSystem(this);
-    m_InputSystem->Initialize();
-
-    m_RenderSystem = new RenderSystem(this);
-    m_RenderSystem->Initialize();
-
-    Initialize();
-
-    m_TimeSystem = new Time(this);
-    m_TimeSystem->Initialize();
+    MICROPROFILE_SCOPE(g_AppInitialize);
+    {   
+        glfwInit();
+        
+        m_Window = new Window(this, width, height);
+        m_Window->SetTitle(title);
+        
+        // TODO: Choose backend
+        m_InputSystem = new GLFWInputSystem(this);
+        m_InputSystem->Initialize();
+        
+        m_RenderSystem = new RenderSystem(this);
+        m_RenderSystem->Initialize();
+        
+        Initialize();
+        
+        m_TimeSystem = new Time(this);
+        m_TimeSystem->Initialize();
+    }
 
     while (!m_Window->ShouldClose())
     {
-        MICROPROFILE_SCOPEI("PlayerLoop", "MainLoop", MP_AUTO);
-        m_TimeSystem->Update();
-        m_InputSystem->Update();
+        {
+            MICROPROFILE_SCOPE(g_PlayerLoop);
+            m_TimeSystem->Update();
+            m_InputSystem->Update();
+        }
+        
+        {
+            MICROPROFILE_SCOPE(g_AppUpdate);
+            Update();
+        }
 
-        Update();
-
-        std::vector<Scene*> scenes = Scene::GetScenes();
-        for (Scene* scene : scenes)
+        {
+            MICROPROFILE_SCOPE(g_SceneUpdate);
+            std::vector<Scene*> scenes = Scene::GetScenes();
+            for (Scene* scene : scenes)
             scene->Update();
+        }
 
-        m_RenderSystem->Update();
+        {
+            MICROPROFILE_SCOPE(g_RenderSystemUpdate);
+            m_RenderSystem->Update();
+        }
+
         EndofFrame();
 
         MicroProfileFlip(nullptr);
