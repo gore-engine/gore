@@ -25,6 +25,7 @@ protected:
     void Initialize() final;
     void Update() final;
     void Shutdown() final;
+    void EndofFrame() final;
 
 private:
     void Preupdate();

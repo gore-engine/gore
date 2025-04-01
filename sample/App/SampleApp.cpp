@@ -519,6 +519,10 @@ void SampleApp::PostUpdate()
 {
 }
 
+void SampleApp::EndofFrame()
+{
+}
+
 static int frameCount = 0;
 
 void SampleApp::PreRender()

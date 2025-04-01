@@ -38,6 +38,7 @@ protected:
     virtual void Initialize() = 0;
     virtual void Update()     = 0;
     virtual void Shutdown()   = 0;
+    virtual void EndofFrame() = 0;
 
     [[nodiscard]] bool HasArg(const std::string& arg) const;
 
