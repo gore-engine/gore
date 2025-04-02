@@ -28,7 +28,7 @@ jobs:
           windows-latest,
         # macos-latest
         ]
-        build_type: [Debug, Release]
+        build_type: [Debug, RelWithDebInfo, MinSizeRel, Release]
         c_compiler: [
           gcc, 
           clang,
@@ -82,6 +82,7 @@ jobs:
         version: latest
         cache: true
         quiet: true
+  
     
     - name: Install Clang-17 for C++20 support
       if: matrix.os == 'ubuntu-latest' && matrix.c_compiler == 'clang-17'
