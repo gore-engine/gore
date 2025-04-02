@@ -181,6 +181,22 @@ private:
     // Surface & Swapchain
     Swapchain m_Swapchain;
 
+    struct RPSPipelines
+    {
+        GraphicsPipelineHandle forwardPipeline;
+        GraphicsPipelineHandle shadowPipeline;
+    } m_RpsPipelines;
+    
+    void CreateRpsPipelines();
+
+    struct DefaultResources
+    {
+        TextureHandle whiteTexture;
+        TextureHandle blackTexture;
+    } m_DefaultResources;
+
+    void CreateDefaultResources();
+
     GraphicsPipelineHandle m_CubePipelineHandle;
     GraphicsPipelineHandle m_UnLitPipelineHandle;
     GraphicsPipelineHandle m_TrianglePipelineHandle;
