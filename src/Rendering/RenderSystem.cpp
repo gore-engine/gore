@@ -1441,4 +1441,13 @@ const PhysicalDevice& RenderSystem::GetBestDevice(const std::vector<PhysicalDevi
 
     return devices[physicalDeviceIndex];
 }
+
+void RenderSystem::CreateRpsPipelines()
+{
+}
+
+void RenderSystem::CreateDefaultResources()
+{
+}
+
 } // namespace gore
