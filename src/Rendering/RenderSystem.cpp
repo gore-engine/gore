@@ -22,6 +22,7 @@
 #include "Utilities/Math/MathHelpers.h"
 
 #include "Rendering/GPUData/GlobalConstantBuffer.h"
+#include "Rendering/AutoRenderPass.h"
 #include "RenderContextHelper.h"
 
 #include <vector>
@@ -1444,10 +1445,100 @@ const PhysicalDevice& RenderSystem::GetBestDevice(const std::vector<PhysicalDevi
 
 void RenderSystem::CreateRpsPipelines()
 {
+    // Forward Pipeline
+    RenderPassDesc forwardPassDesc = {{GraphicsFormat::BGRA8_SRGB}};
+    AutoRenderPass forwardPass(m_RenderContext.get(), forwardPassDesc);
+
+    std::vector<char> vertexShaderByteCode = LoadShaderBytecode("sample/SimpleLit", ShaderStage::Vertex, "main");
+    std::vector<char> fragmentShaderByteCode = LoadShaderBytecode("sample/SimpleLit", ShaderStage::Fragment, "main");
+
+    m_RpsPipelines.forwardPipeline = m_RenderContext->CreateGraphicsPipeline(
+        GraphicsPipelineDesc{
+            .debugName = "SimpleLit",
+            .VS{
+                .byteCode  = reinterpret_cast<uint8_t*>(vertexShaderByteCode.data()),
+                .byteSize  = static_cast<uint32_t>(vertexShaderByteCode.size()),
+                .entryFunc = "vs"},
+            .PS{
+                .byteCode  = reinterpret_cast<uint8_t*>(fragmentShaderByteCode.data()),
+                .byteSize  = static_cast<uint32_t>(fragmentShaderByteCode.size()),
+                .entryFunc = "ps"},
+            .colorFormats  = {GraphicsFormat::BGRA8_SRGB},
+            .depthFormat   = GraphicsFormat::D32_FLOAT,
+            .stencilFormat = GraphicsFormat::Undefined,
+            .vertexBufferBindings{
+                {.byteStride = sizeof(Vector3) + sizeof(Vector2) + sizeof(Vector3),
+                 .attributes =
+                     {
+                         {.byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT},
+                         {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
+                         {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
+            .bindLayouts   = { m_GlobalBindLayout },
+            .dynamicBuffer = m_DynamicBufferHandle,
+            .renderPass    = forwardPass.GetRenderPass().renderPass,
+            .subpassIndex  = 0
+    });
+
+    // Shadow Pipeline
+    RenderPassDesc shadowPassDesc = {{}, GraphicsFormat::D32_FLOAT};
+    AutoRenderPass shadowPass(m_RenderContext.get(), shadowPassDesc);
+
+    std::vector<char> vertexShaderBytecode   = LoadShaderBytecode("sample/Shadowmap", ShaderStage::Vertex, "main");
+    std::vector<char> fragmentShaderBytecode = LoadShaderBytecode("sample/Shadowmap", ShaderStage::Fragment, "main");
+
+    m_RpsPipelines.shadowPipeline = m_RenderContext->CreateGraphicsPipeline({
+        GraphicsPipelineDesc{
+            .debugName = "Shadowmap Pipeline",
+            .VS{
+                .byteCode  = reinterpret_cast<uint8_t*>(vertexShaderBytecode.data()),
+                .byteSize  = static_cast<uint32_t>(vertexShaderBytecode.size()),
+                .entryFunc = "vs"},
+            .PS{
+                .byteCode  = reinterpret_cast<uint8_t*>(fragmentShaderBytecode.data()),
+                .byteSize  = static_cast<uint32_t>(fragmentShaderBytecode.size()),
+                .entryFunc = "ps"},
+            .colorFormats  = {},
+            .depthFormat   = GraphicsFormat::D32_FLOAT,
+            .stencilFormat = GraphicsFormat::Undefined,
+            .vertexBufferBindings{
+                {.byteStride = sizeof(Vector3) + sizeof(Vector2) + sizeof(Vector3),
+                 .attributes =
+                     {
+                         {.byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT},
+                         {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
+                         {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
+            .bindLayouts   = { m_GlobalBindLayout },
+            .dynamicBuffer = m_DynamicBufferHandle,
+            .renderPass    = shadowPass.GetRenderPass().renderPass,
+            .subpassIndex  = 0
+        }
+    });
 }
 
 void RenderSystem::CreateDefaultResources()
 {
+    std::vector<uint8_t> blackTextureData(4, 0);
+    std::vector<uint8_t> whiteTextureData(4, 255);
+
+    m_DefaultResources.blackTexture = m_RenderContext->CreateTextureHandle(
+        TextureDesc
+        {
+            .debugName = "Black Texture",
+            .width     = 1,
+            .height    = 1,
+            .data      = blackTextureData.data(),
+            .dataSize  = 4,
+        });
+
+    m_DefaultResources.whiteTexture = m_RenderContext->CreateTextureHandle(
+        TextureDesc
+        {
+            .debugName = "White Texture",
+            .width     = 1,
+            .height    = 1,
+            .data      = whiteTextureData.data(),
+            .dataSize  = 4,
+        });
 }
 
 } // namespace gore
