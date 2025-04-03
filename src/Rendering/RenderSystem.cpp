@@ -1541,4 +1541,12 @@ void RenderSystem::CreateDefaultResources()
         });
 }
 
+void RenderSystem::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+{
+}
+
+void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+{
+}
+
 } // namespace gore
