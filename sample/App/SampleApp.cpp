@@ -273,7 +273,7 @@ void SampleApp::CreateGlobalBindGroup()
     });
 
     std::vector<Binding> bindings{
-        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex},
+        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex | ShaderStage::Fragment},
         {1, BindType::SampledImage, 1, ShaderStage::Fragment},
         {2, BindType::Sampler, 1, ShaderStage::Fragment},
     };
