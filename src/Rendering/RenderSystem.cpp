@@ -25,11 +25,18 @@
 #include "Rendering/AutoRenderPass.h"
 #include "RenderContextHelper.h"
 
+#include "Profiler/microprofile.h"
+
 #include <vector>
 #include <string>
 #include <sstream>
 #include <algorithm>
 #include <filesystem>
+
+MICROPROFILE_DEFINE(g_RenderSystemInit, "System", "RenderSystemInit", MP_AUTO);
+MICROPROFILE_DEFINE(g_PrepareDrawData, "RenderSystemLoop", "PrepareDrawData", MP_BLUE);
+MICROPROFILE_DEFINE(g_RenderGraphUpdate, "RenderSystemLoop", "RenderGraphUpdate", MP_BLUE);
+MICROPROFILE_DEFINE(g_ExecuteRenderGraph, "RenderSystemLoop", "ExecuteRenderGraph", MP_BLUE);
 
 namespace gore
 {
@@ -78,6 +85,8 @@ RenderSystem::~RenderSystem()
 
 void RenderSystem::Initialize()
 {
+    MICROPROFILE_SCOPE(g_RenderSystemInit);
+
     Window* window = m_App->GetWindow();
     int width, height;
     window->GetSize(&width, &height);
@@ -160,6 +169,8 @@ static void PrepareDrawStreamByDrawInfo(std::unordered_map<DrawKey, DrawStream>&
 
 void RenderSystem::PrepareDrawData()
 {
+    MICROPROFILE_SCOPE(g_PrepareDrawData);
+
     DrawCreateInfo info = {};
     info.passName = "ForwardPass";
     info.alphaMode = AlphaMode::Opaque;
@@ -526,7 +537,12 @@ void RenderSystem::CreateRpsRuntimeDeivce()
     createInfo.pfnRecordDebugMarker = &RecordDebugMarker;
     createInfo.pfnSetDebugName = &SetDebugName;
 
-    m_RpsSystem = InitializeRpsSystem(createInfo);    
+    m_RpsSystem = InitializeRpsSystem(createInfo);
+    
+    RpsRenderGraph& renderGraph = *m_RpsSystem->rpsRDG;
+
+    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Shadowmap", &ShadowmapPassWithRPSWrapper, this));
+    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "ForwardOpaque", &ForwardOpaquePassWithRPSWrapper, this));
 }
 
 void RenderSystem::DestroyRpsRuntimeDevice()
@@ -566,6 +582,8 @@ void RenderSystem::RunRpsSystem()
 
 void RenderSystem::UpdateRenderGraph()
 {
+    MICROPROFILE_SCOPE(g_RenderGraphUpdate);
+
     if (IsRpsReady() == false)
         return;
 
@@ -618,6 +636,8 @@ RpsResult RenderSystem::ExecuteRenderGraph(
     bool bWaitSwapChain,
     bool frameEnd)
 {
+    MICROPROFILE_SCOPE(g_ExecuteRenderGraph);
+
     if (IsRpsReady() == false)
     {
         LOG_STREAM(FATAL) << "RPS system is not ready." << std::endl;
