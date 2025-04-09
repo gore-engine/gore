@@ -34,7 +34,6 @@ private:
     void PreRender();
 
     // Temporary RenderPassDesc for pipeline creation
-    void InitializeRpsSystem();
     void CreateRenderPassDesc();
     void CreateUnifiedGlobalDynamicBuffer();
     void CreateGlobalBindGroup();

@@ -35,9 +35,6 @@
 
 #include "Scripts/Math/BitUtils.h"
 
-#include "Scripts/Rendering/PerframeData.h"
-#include "Scripts/Rendering/PerDrawData.h"
-
 SampleApp::SampleApp(int argc, char** argv) :
     App(argc, argv)
 {
@@ -45,14 +42,6 @@ SampleApp::SampleApp(int argc, char** argv) :
 
 SampleApp::~SampleApp()
 {
-}
-
-void SampleApp::InitializeRpsSystem()
-{
-    RpsRenderGraph& renderGraph = *m_RenderSystem->GetRpsSystem()->rpsRDG;
-    // AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Triangle", &DrawTriangleWithRPSWrapper, this));
-    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Shadowmap", &ShadowmapPassWithRPSWrapper, this));
-    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "ForwardOpaque", &ForwardOpaquePassWithRPSWrapper, this));
 }
 
 void SampleApp::CreateRenderPassDesc()
@@ -63,31 +52,31 @@ void SampleApp::CreateRenderPassDesc()
 
 void SampleApp::CreateUnifiedGlobalDynamicBuffer()
 {
-    auto& renderContext = m_RenderSystem->GetRenderContext();
+    // auto& renderContext = m_RenderSystem->GetRenderContext();
 
-    size_t alignmentSize = MathUtils::AlignUp(sizeof(PerDrawData), m_GraphicsCaps.minUniformBufferOffsetAlignment);
+    // size_t alignmentSize = MathUtils::AlignUp(sizeof(PerDrawData), m_GraphicsCaps.minUniformBufferOffsetAlignment);
 
-    size_t renderCount = 4;
-    std::vector<uint8_t> dynamicUniformBufferData(alignmentSize * renderCount);
+    // size_t renderCount = 4;
+    // std::vector<uint8_t> dynamicUniformBufferData(alignmentSize * renderCount);
 
-    for (size_t i = 0; i < renderCount; ++i)
-    {
-        PerDrawData* perDrawData = reinterpret_cast<PerDrawData*>(dynamicUniformBufferData.data() + (i * alignmentSize));
-        perDrawData->model[0]       = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
-    }
+    // for (size_t i = 0; i < renderCount; ++i)
+    // {
+    //     PerDrawData* perDrawData = reinterpret_cast<PerDrawData*>(dynamicUniformBufferData.data() + (i * alignmentSize));
+    //     perDrawData->model[0]       = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
+    // }
 
-    m_UnifiedDynamicBuffer = renderContext.CreateBuffer(
-        {.debugName = "Dynamic Uniform Buffer",
-         .byteSize  = static_cast<uint32_t>(dynamicUniformBufferData.size()),
-         .usage     = BufferUsage::Uniform,
-         .memUsage  = MemoryUsage::GPU,
-         .data      = dynamicUniformBufferData.data()});
+    // m_UnifiedDynamicBuffer = renderContext.CreateBuffer(
+    //     {.debugName = "Dynamic Uniform Buffer",
+    //      .byteSize  = static_cast<uint32_t>(dynamicUniformBufferData.size()),
+    //      .usage     = BufferUsage::Uniform,
+    //      .memUsage  = MemoryUsage::GPU,
+    //      .data      = dynamicUniformBufferData.data()});
 
-    m_UnifiedDynamicBufferHandle = renderContext.CreateDynamicBuffer(
-        {.debugName = "Dynamic Uniform Buffer",
-         .buffer    = m_UnifiedDynamicBuffer,
-         .offset    = 0,
-         .range     = sizeof(PerDrawData)});
+    // m_UnifiedDynamicBufferHandle = renderContext.CreateDynamicBuffer(
+    //     {.debugName = "Dynamic Uniform Buffer",
+    //      .buffer    = m_UnifiedDynamicBuffer,
+    //      .offset    = 0,
+    //      .range     = sizeof(PerDrawData)});
 }
 
 void SampleApp::CreatePipelines()
@@ -260,43 +249,41 @@ void SampleApp::PrepareGraphics()
 
 void SampleApp::CreateGlobalBindGroup()
 {
-    using namespace gore::gfx;
+    // using namespace gore::gfx;
 
-    RenderContext& renderContext = m_RenderSystem->GetRenderContext();
-    m_GlobalConstantBuffer       = renderContext.CreateBuffer({.debugName = "Global Constant Buffer",
-                                                               .byteSize  = sizeof(PerframeData),
-                                                               .usage     = BufferUsage::Uniform,
-                                                               .memUsage  = MemoryUsage::CPU_TO_GPU});
+    // RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+    // m_GlobalConstantBuffer       = renderContext.CreateBuffer({.debugName = "Global Constant Buffer",
+    //                                                            .byteSize  = sizeof(PerframeData),
+    //                                                            .usage     = BufferUsage::Uniform,
+    //                                                            .memUsage  = MemoryUsage::CPU_TO_GPU});
     
-    m_ShadowmapSampler = renderContext.CreateSampler({
-        .debugName = "Shadowmap Sampler",
-    });
+    // m_ShadowmapSampler = renderContext.CreateSampler({
+    //     .debugName = "Shadowmap Sampler",
+    // });
 
-    std::vector<Binding> bindings{
-        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex | ShaderStage::Fragment},
-        {1, BindType::SampledImage, 1, ShaderStage::Fragment},
-        {2, BindType::Sampler, 1, ShaderStage::Fragment},
-    };
+    // std::vector<Binding> bindings{
+    //     {0, BindType::UniformBuffer, 1, ShaderStage::Vertex | ShaderStage::Fragment},
+    //     {1, BindType::SampledImage, 1, ShaderStage::Fragment},
+    //     {2, BindType::Sampler, 1, ShaderStage::Fragment},
+    // };
 
-    BindLayoutCreateInfo bindLayoutCreateInfo = {.name = "Global Descriptor Set Layout", .bindings = bindings};
+    // BindLayoutCreateInfo bindLayoutCreateInfo = {.name = "Global Descriptor Set Layout", .bindings = bindings};
 
-    m_GlobalBindLayout = renderContext.GetOrCreateBindLayout(bindLayoutCreateInfo);
+    // m_GlobalBindLayout = renderContext.GetOrCreateBindLayout(bindLayoutCreateInfo);
 
-    m_GlobalBindGroup = renderContext.CreateBindGroup({
-        .debugName       = "Global BindGroup",
-        .updateFrequency = UpdateFrequency::PerFrame,
-        .textures        = {{1, defaultResources.blackTexture}},
-        .buffers         = {{0, m_GlobalConstantBuffer, 0, sizeof(PerframeData), BindType::UniformBuffer}},
-        .samplers        = {{2, m_ShadowmapSampler}},
-        .bindLayout      = &m_GlobalBindLayout,
-    });
+    // m_GlobalBindGroup = renderContext.CreateBindGroup({
+    //     .debugName       = "Global BindGroup",
+    //     .updateFrequency = UpdateFrequency::PerFrame,
+    //     .textures        = {{1, defaultResources.blackTexture}},
+    //     .buffers         = {{0, m_GlobalConstantBuffer, 0, sizeof(PerframeData), BindType::UniformBuffer}},
+    //     .samplers        = {{2, m_ShadowmapSampler}},
+    //     .bindLayout      = &m_GlobalBindLayout,
+    // });
 }
 
 void SampleApp::Initialize()
 {
     m_GraphicsCaps = m_RenderSystem->GetGraphicsCaps();
-
-    InitializeRpsSystem();
 
     PrepareGraphics();
 
@@ -527,35 +514,6 @@ static int frameCount = 0;
 
 void SampleApp::PreRender()
 {
-    Camera* mainCamera = Camera::Main;
-    if (mainCamera == nullptr)
-    {
-        return;
-    }
-
-    PerframeData perframeData;
-    perframeData.vpMatrix = mainCamera->GetViewProjectionMatrix();
-    
-    // Update Main Light
-    auto& gameObjects = scene->GetActiveScene()->GetGameObjects();
-    for (auto& gameObject : gameObjects)
-    {
-        Light* light = gameObject->GetComponent<Light>();
-        if (light == nullptr)
-            continue;
-        
-        Matrix4x4 lightMatrix = gameObject->GetTransform()->GetWorldToLocalMatrixIgnoreScale();
-        Matrix4x4 orthoMatrix = Matrix4x4::CreateOrthographicLH(100.0f, 100.0f, .1f, 100.0f);
-        perframeData.directionalLightVPMatrix = lightMatrix * orthoMatrix;
-        
-        LightData lightData = light->GetData();
-        perframeData.directionalLightColor = lightData.color;
-        perframeData.directionalLightIntensity = lightData.intensity;
-        break;
-    }
-
-    gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
-    renderContext.CopyDataToBuffer(m_GlobalConstantBuffer, perframeData);
 }
 
 void SampleApp::UpdateFPSText(float deltaTime)

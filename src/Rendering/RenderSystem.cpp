@@ -21,9 +21,11 @@
 #include "Utilities/GLTFLoader.h"
 #include "Utilities/Math/MathHelpers.h"
 
-#include "Rendering/GPUData/GlobalConstantBuffer.h"
 #include "Rendering/AutoRenderPass.h"
 #include "RenderContextHelper.h"
+#include "Rendering/Components/Light.h"
+#include "Rendering/GPUData/PerDrawData.h"
+#include "Rendering/GPUData/PerFrameData.h"
 
 #include "Profiler/microprofile.h"
 
@@ -1022,6 +1024,34 @@ uint64_t RenderSystem::CalcGuaranteedCompletedFrameindexForRps() const
 
 void RenderSystem::UploadPerframeGlobalConstantBuffer(uint32_t imageIndex)
 {
+    Camera* mainCamera = Camera::Main;
+    if (mainCamera == nullptr)
+    {
+        return;
+    }
+
+    PerframeData perframeData;
+    perframeData.vpMatrix = mainCamera->GetViewProjectionMatrix();
+    
+    // Update Main Light
+    auto& gameObjects = Scene::GetActiveScene()->GetGameObjects();
+    for (auto& gameObject : gameObjects)
+    {
+        Light* light = gameObject->GetComponent<Light>();
+        if (light == nullptr)
+            continue;
+        
+        Matrix4x4 lightMatrix = gameObject->GetTransform()->GetWorldToLocalMatrixIgnoreScale();
+        Matrix4x4 orthoMatrix = Matrix4x4::CreateOrthographicLH(100.0f, 100.0f, .1f, 100.0f);
+        perframeData.directionalLightVPMatrix = lightMatrix * orthoMatrix;
+        
+        LightData lightData = light->GetData();
+        perframeData.directionalLightColor = lightData.color;
+        perframeData.directionalLightIntensity = lightData.intensity;
+        break;
+    }
+
+    m_RenderContext->CopyDataToBuffer(m_GlobalConstantBuffer, perframeData);
 }
 
 void RenderSystem::CreateDepthBuffer()
@@ -1099,7 +1129,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
 {
     m_GlobalConstantBuffer = m_RenderContext->CreateBuffer({
         .debugName = "Global Constant Buffer",
-        .byteSize  = sizeof(GlobalConstantBuffer),
+        .byteSize  = sizeof(PerframeData),
         .usage     = BufferUsage::Uniform,
         .memUsage  = MemoryUsage::CPU_TO_GPU
     });
@@ -1120,7 +1150,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
         .debugName = "Global BindGroup",
         .updateFrequency = UpdateFrequency::PerFrame,
         .textures = {},
-        .buffers = {{0, m_GlobalConstantBuffer, 0, sizeof(GlobalConstantBuffer), BindType::UniformBuffer}},
+        .buffers = {{0, m_GlobalConstantBuffer, 0, sizeof(PerframeData), BindType::UniformBuffer}},
         .samplers = {},
         .bindLayout = &m_GlobalBindLayout,
     });
