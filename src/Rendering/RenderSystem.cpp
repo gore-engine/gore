@@ -1593,10 +1593,36 @@ void RenderSystem::CreateDefaultResources()
 
 void RenderSystem::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
 {
+    RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+    vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+    
+    DrawKey key = {"ShadowCaster", AlphaMode::Opaque};
+    
+    renderSystem.DrawRenderer(key, cmd);
 }
 
 void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
 {
+    RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+    vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+    
+    // Update ShadowMap Descriptor Set
+    // VkImageView shadowmapView;
+    // RpsResult result = rpsVKGetCmdArgImageView(pContext, 0, &shadowmapView);
+    // if (RPS_SUCCEEDED(result) == true)
+    // {   
+    //     // SampleApp* app = dynamic_cast<SampleApp*>(App::Get());
+
+    //     RawBindGroupUpdateDesc updateDesc = {
+    //         .textures = {{1, shadowmapView, BindType::SampledImage}},
+    //     };
+
+    //     renderSystem.GetRenderContext().UpdateBindGroup(app->m_GlobalBindGroup, updateDesc);
+    // }
+
+    DrawKey key = {"ForwardPass", AlphaMode::Opaque};
+
+    renderSystem.DrawRenderer(key, cmd);
 }
 
 } // namespace gore
