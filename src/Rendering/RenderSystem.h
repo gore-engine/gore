@@ -97,7 +97,7 @@ public:
 
 public:
     GraphicsCaps GetGraphicsCaps() const { return m_GraphicsCaps; }
-    void DrawRenderer(DrawKey key, vk::CommandBuffer cmd);
+    void DrawRenderer(DrawKey key, vk::CommandBuffer cmd, GraphicsPipelineHandle overridePipeline = {});
 
 private:
     // Imgui

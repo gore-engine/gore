@@ -35,7 +35,7 @@ void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& game
                 continue;
 
             Draw draw;
-            assert(pass.shader.empty() == false);
+            // assert(pass.shader.empty() == false);
 
             draw.shader       = pass.shader;
             draw.bindGroup[0] = pass.bindGroup[0];

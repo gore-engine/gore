@@ -431,7 +431,7 @@ void RenderSystem::OnResize(Window* window, int width, int height)
     CreateDepthBuffer();
 }
 
-void RenderSystem::DrawRenderer(DrawKey key, vk::CommandBuffer cmd)
+void RenderSystem::DrawRenderer(DrawKey key, vk::CommandBuffer cmd, GraphicsPipelineHandle overridePipeline)
 {
     if (m_DrawData.find(key) == m_DrawData.end())
         return;
@@ -1598,7 +1598,7 @@ void RenderSystem::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pCon
     
     DrawKey key = {"ShadowCaster", AlphaMode::Opaque};
     
-    renderSystem.DrawRenderer(key, cmd);
+    renderSystem.DrawRenderer(key, cmd, renderSystem.m_RpsPipelines.shadowPipeline);
 }
 
 void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
@@ -1622,7 +1622,7 @@ void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* 
 
     DrawKey key = {"ForwardPass", AlphaMode::Opaque};
 
-    renderSystem.DrawRenderer(key, cmd);
+    renderSystem.DrawRenderer(key, cmd, renderSystem.m_RpsPipelines.forwardPipeline);
 }
 
 } // namespace gore

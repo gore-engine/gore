@@ -44,14 +44,14 @@ SampleApp::~SampleApp()
 {
 }
 
-void SampleApp::CreateRenderPassDesc()
-{
-    renderPasses.forwardPassDesc = {{GraphicsFormat::BGRA8_SRGB}};
-    renderPasses.shadowPassDesc  = {{}, GraphicsFormat::D32_FLOAT};
-}
+// void SampleApp::CreateRenderPassDesc()
+// {
+//     renderPasses.forwardPassDesc = {{GraphicsFormat::BGRA8_SRGB}};
+//     renderPasses.shadowPassDesc  = {{}, GraphicsFormat::D32_FLOAT};
+// }
 
-void SampleApp::CreateUnifiedGlobalDynamicBuffer()
-{
+// void SampleApp::CreateUnifiedGlobalDynamicBuffer()
+// {
     // auto& renderContext = m_RenderSystem->GetRenderContext();
 
     // size_t alignmentSize = MathUtils::AlignUp(sizeof(PerDrawData), m_GraphicsCaps.minUniformBufferOffsetAlignment);
@@ -77,43 +77,13 @@ void SampleApp::CreateUnifiedGlobalDynamicBuffer()
     //      .buffer    = m_UnifiedDynamicBuffer,
     //      .offset    = 0,
     //      .range     = sizeof(PerDrawData)});
-}
+// }
 
-void SampleApp::CreatePipelines()
-{
-    CreateForwardPipeline();
-    CreateShadowmapPipeline();
-}
-
-void SampleApp::CreateDefaultResources()
-{
-    using namespace gore::gfx;
-    
-    RenderContext& renderContext = m_RenderSystem->GetRenderContext();
-
-    std::vector<uint8_t> blackTextureData(4, 0);
-    std::vector<uint8_t> whiteTextureData(4, 255);
-
-    defaultResources.blackTexture = renderContext.CreateTextureHandle(
-        TextureDesc
-        {
-            .debugName = "Black Texture",
-            .width     = 1,
-            .height    = 1,
-            .data      = blackTextureData.data(),
-            .dataSize  = 4,
-        });
-
-    defaultResources.whiteTexture = renderContext.CreateTextureHandle(
-        TextureDesc
-        {
-            .debugName = "White Texture",
-            .width     = 1,
-            .height    = 1,
-            .data      = whiteTextureData.data(),
-            .dataSize  = 4,
-        });
-}
+// void SampleApp::CreatePipelines()
+// {
+//     CreateForwardPipeline();
+//     CreateShadowmapPipeline();
+// }
 
 // void SampleApp::CreateForwardPipeline()
 // {
@@ -285,19 +255,19 @@ void SampleApp::Initialize()
 {
     m_GraphicsCaps = m_RenderSystem->GetGraphicsCaps();
 
-    PrepareGraphics();
+    // PrepareGraphics();
 
-    Material forwardMat;
-    forwardMat.SetAlphaMode(AlphaMode::Opaque);
-    forwardMat.AddPass(Pass{
-        .name      = "ShadowCaster",
-        .shader    = pipelines.shadowPipeline,
-        .bindGroup = {m_GlobalBindGroup}});
+    // Material forwardMat;
+    // forwardMat.SetAlphaMode(AlphaMode::Opaque);
+    // forwardMat.AddPass(Pass{
+    //     .name      = "ShadowCaster",
+    //     .shader    = pipelines.shadowPipeline,
+    //     .bindGroup = {m_GlobalBindGroup}});
     
-    forwardMat.AddPass(Pass{
-        .name      = "ForwardPass",
-        .shader    = pipelines.forwardPipeline,
-        .bindGroup = {m_GlobalBindGroup}});
+    // forwardMat.AddPass(Pass{
+    //     .name      = "ForwardPass",
+    //     .shader    = pipelines.forwardPipeline,
+    //     .bindGroup = {m_GlobalBindGroup}});
     
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
 
@@ -338,9 +308,9 @@ void SampleApp::Initialize()
         gameObject->SetName("cube");
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
         meshRenderer->LoadMesh("cube.gltf");
-        meshRenderer->SetMaterial(forwardMat);
-        meshRenderer->SetDynamicBuffer(m_UnifiedDynamicBufferHandle);
-        meshRenderer->SetDynamicBufferOffset(0);
+        // meshRenderer->SetMaterial(forwardMat);
+        // meshRenderer->SetDynamicBuffer(m_UnifiedDynamicBufferHandle);
+        // meshRenderer->SetDynamicBufferOffset(0);
 
         gore::Transform* transform = gameObject->GetTransform();
         transform->SetLocalPosition(gore::Vector3::Right * 20.0f);

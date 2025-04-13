@@ -150,7 +150,7 @@ void CreateDrawStreamFromDrawData(const std::vector<Draw>& drawData, DrawStream&
     drawStream.data.assign(writer.GetData(), writer.GetData() + writer.GetByteWritten());
 }
 
-void ScheduleDrawStream(RenderContext& renderContext, DrawStream& drawStream, vk::CommandBuffer commandBuffer)
+void ScheduleDrawStream(RenderContext& renderContext, DrawStream& drawStream, vk::CommandBuffer commandBuffer, GraphicsPipelineHandle overridePipeline)
 {
     BitReader reader(drawStream.data.data(), drawStream.data.size());
 
@@ -170,7 +170,7 @@ void ScheduleDrawStream(RenderContext& renderContext, DrawStream& drawStream, vk
 
         if (mask.shader != 0)
         {
-            auto shaderHandle = reader.Read<GraphicsPipelineHandle>();
+            auto shaderHandle = overridePipeline.empty() ? reader.Read<GraphicsPipelineHandle>() : overridePipeline;
             graphicsPipeline  = renderContext.GetGraphicsPipeline(shaderHandle);
             commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline.pipeline);
         }
