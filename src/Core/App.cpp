@@ -58,8 +58,8 @@ int App::Run(int width, int height, const char* title)
     MicroProfileSetEnableAllGroups(true);
     MicroProfileSetForceMetaCounters(true);
 
-    MICROPROFILE_SCOPE(g_AppInitialize);
     {   
+        MICROPROFILE_SCOPE(g_AppInitialize);
         glfwInit();
         
         m_Window = new Window(this, width, height);
