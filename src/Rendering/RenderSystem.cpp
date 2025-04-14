@@ -141,6 +141,8 @@ void RenderSystem::Initialize()
         }
     });
     
+    CreateDefaultResources();
+
     CreateDepthBuffer();
     
     CreateTextureObjects();
@@ -148,6 +150,7 @@ void RenderSystem::Initialize()
     CreateGlobalDescriptorSets();
     CreateUVQuadDescriptorSets();
     CreateDynamicUniformBuffer();
+    CreateRpsPipelines();
     CreatePipeline();
     GetQueues();
 
@@ -1154,6 +1157,22 @@ void RenderSystem::CreateGlobalDescriptorSets()
         .samplers = {},
         .bindLayout = &m_GlobalBindLayout,
     });
+}
+
+void RenderSystem::CreateShadowPassBindLayout()
+{
+    std::vector<Binding> bindings {
+        {0, BindType::SampledImage, 1, ShaderStage::Fragment},
+        {1, BindType::Sampler, 1, ShaderStage::Fragment}
+    };
+
+    BindLayoutCreateInfo bindLayoutCreateInfo = 
+    {
+        .name = "Shadow Pass Descriptor Set Layout",
+        .bindings = bindings
+    };
+
+    m_ShadowPassBindLayout = m_RenderContext->GetOrCreateBindLayout(bindLayoutCreateInfo);
 }
 
 void RenderSystem:: CreateUVQuadDescriptorSets()

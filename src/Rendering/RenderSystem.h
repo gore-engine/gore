@@ -234,6 +234,10 @@ private:
     BindGroupHandle m_GlobalBindGroup;
     BufferHandle m_GlobalConstantBuffer;
 
+    // Pass Binding
+    BindLayout m_ShadowPassBindLayout;
+    SamplerHandle m_ShadowmapSamplerHandler;
+
     // Material Descriptors
     BindLayout m_UVQuadBindLayout;
     BindGroupHandle m_UVQuadBindGroup;
@@ -265,6 +269,7 @@ private:
     void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
     void CreateDepthBuffer();
     void CreateGlobalDescriptorSets();
+    void CreateShadowPassBindLayout();
     void CreateUVQuadDescriptorSets();
     void CreateDynamicUniformBuffer();
     void CreatePipeline();

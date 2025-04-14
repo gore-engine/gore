@@ -257,17 +257,17 @@ void SampleApp::Initialize()
 
     // PrepareGraphics();
 
-    // Material forwardMat;
-    // forwardMat.SetAlphaMode(AlphaMode::Opaque);
-    // forwardMat.AddPass(Pass{
-    //     .name      = "ShadowCaster",
-    //     .shader    = pipelines.shadowPipeline,
-    //     .bindGroup = {m_GlobalBindGroup}});
+    Material forwardMat;
+    forwardMat.SetAlphaMode(AlphaMode::Opaque);
+    forwardMat.AddPass(Pass{
+        .name      = "ShadowCaster",
+        /*.shader    = pipelines.shadowPipeline,
+        .bindGroup = {m_GlobalBindGroup}*/});
     
-    // forwardMat.AddPass(Pass{
-    //     .name      = "ForwardPass",
-    //     .shader    = pipelines.forwardPipeline,
-    //     .bindGroup = {m_GlobalBindGroup}});
+    forwardMat.AddPass(Pass{
+        .name      = "ForwardPass",
+        /*.shader    = pipelines.forwardPipeline,
+        .bindGroup = {m_GlobalBindGroup}*/});
     
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
 
@@ -308,7 +308,7 @@ void SampleApp::Initialize()
         gameObject->SetName("cube");
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
         meshRenderer->LoadMesh("cube.gltf");
-        // meshRenderer->SetMaterial(forwardMat);
+        meshRenderer->SetMaterial(forwardMat);
         // meshRenderer->SetDynamicBuffer(m_UnifiedDynamicBufferHandle);
         // meshRenderer->SetDynamicBufferOffset(0);
 
