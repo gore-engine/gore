@@ -115,7 +115,7 @@ struct DrawSorter
     }
 };
 
-void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& gameObjects, std::vector<Draw>& sortedDrawData);
+void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& gameObjects, std::vector<Draw>& sortedDrawData, Material* overrideMaterial = nullptr);
 bool MatchDrawFilter(const Pass& pass, const DrawCreateInfo& info);
 void ScheduleDraws(RenderContext& renderContext, const std::unordered_map<DrawKey, std::vector<Draw>>& drawData, const DrawKey& key, vk::CommandBuffer commandBuffer);
 } // namespace gore::renderer

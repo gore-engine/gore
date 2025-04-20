@@ -148,6 +148,7 @@ void RenderSystem::Initialize()
     CreateTextureObjects();
 
     CreateGlobalDescriptorSets();
+    CreateShadowPassBindLayout();
     CreateUVQuadDescriptorSets();
     CreateDynamicUniformBuffer();
     CreateRpsPipelines();
@@ -157,14 +158,14 @@ void RenderSystem::Initialize()
     InitImgui();
 }
 
-static void PrepareDrawStreamByDrawInfo(std::unordered_map<DrawKey, DrawStream>& map, DrawCreateInfo info, std::vector<GameObject*>& gameObjects)
+static void PrepareDrawStreamByDrawInfo(std::unordered_map<DrawKey, DrawStream>& map, DrawCreateInfo info, std::vector<GameObject*>& gameObjects, Material* overrideMaterial)
 {
     DrawKey key = {};
     key.passName = info.passName;
     key.alphaMode = info.alphaMode;
 
     std::vector<Draw> sortedDrawData;
-    PrepareDrawDataAndSort(info, gameObjects, sortedDrawData);
+    PrepareDrawDataAndSort(info, gameObjects, sortedDrawData, overrideMaterial);
 
     DrawStream drawStream;
     CreateDrawStreamFromDrawData(sortedDrawData, drawStream);
@@ -187,8 +188,8 @@ void RenderSystem::PrepareDrawData()
     std::vector<GameObject*> gameObjects = Scene::GetActiveScene()->GetGameObjects();
     m_DrawData.clear();
 
-    PrepareDrawStreamByDrawInfo(m_DrawData, info, gameObjects);
-    PrepareDrawStreamByDrawInfo(m_DrawData, shadowInfo, gameObjects);
+    PrepareDrawStreamByDrawInfo(m_DrawData, info, gameObjects, &m_RpsMaterial.forward);
+    PrepareDrawStreamByDrawInfo(m_DrawData, shadowInfo, gameObjects, &m_RpsMaterial.forward);
 }
 
 void RenderSystem::Update()
@@ -1128,6 +1129,22 @@ void RenderSystem::CreateDepthBuffer()
     m_Device.SetName(m_DepthImageView, "Depth Buffer ImageView");
 }
 
+void RenderSystem::CreateShadowPassBindLayout()
+{
+    std::vector<Binding> bindings{
+        {0, BindType::SampledImage, 1, ShaderStage::Fragment},
+        {1, BindType::Sampler, 1, ShaderStage::Fragment}
+    };
+
+    BindLayoutCreateInfo bindLayoutCreateInfo = 
+    {
+        .name = "Shadow Pass Descriptor Set Layout",
+        .bindings = bindings
+    };
+
+    m_ShadowPassBindLayout = m_RenderContext->GetOrCreateBindLayout(bindLayoutCreateInfo);
+}
+
 void RenderSystem::CreateGlobalDescriptorSets()
 {
     m_GlobalConstantBuffer = m_RenderContext->CreateBuffer({
@@ -1138,7 +1155,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
     });
 
     std::vector<Binding> bindings {
-        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex}
+        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex | ShaderStage::Fragment}
     };
 
     BindLayoutCreateInfo bindLayoutCreateInfo = 
@@ -1157,22 +1174,6 @@ void RenderSystem::CreateGlobalDescriptorSets()
         .samplers = {},
         .bindLayout = &m_GlobalBindLayout,
     });
-}
-
-void RenderSystem::CreateShadowPassBindLayout()
-{
-    std::vector<Binding> bindings {
-        {0, BindType::SampledImage, 1, ShaderStage::Fragment},
-        {1, BindType::Sampler, 1, ShaderStage::Fragment}
-    };
-
-    BindLayoutCreateInfo bindLayoutCreateInfo = 
-    {
-        .name = "Shadow Pass Descriptor Set Layout",
-        .bindings = bindings
-    };
-
-    m_ShadowPassBindLayout = m_RenderContext->GetOrCreateBindLayout(bindLayoutCreateInfo);
 }
 
 void RenderSystem:: CreateUVQuadDescriptorSets()
@@ -1201,7 +1202,7 @@ void RenderSystem:: CreateUVQuadDescriptorSets()
 
 struct PerDrawData
 {
-    Matrix4x4 modelMatrix;
+    Matrix4x4 modelMatrix[128];
 };
 
 void RenderSystem::CreateDynamicUniformBuffer()
@@ -1214,7 +1215,7 @@ void RenderSystem::CreateDynamicUniformBuffer()
     for (size_t i = 0; i < renderCount; ++i)
     {
         PerDrawData* perDrawData = reinterpret_cast<PerDrawData*>(dynamicUniformBufferData.data() + (i * alignmentSize));
-        perDrawData->modelMatrix = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
+        perDrawData->modelMatrix[0] = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
     }
 
     m_DynamicUniformBuffer = m_RenderContext->CreateBuffer(
@@ -1542,7 +1543,7 @@ void RenderSystem::CreateRpsPipelines()
                          {.byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT},
                          {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
                          {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
-            .bindLayouts   = { m_GlobalBindLayout },
+            .bindLayouts   = { m_GlobalBindLayout, m_ShadowPassBindLayout },
             .dynamicBuffer = m_DynamicBufferHandle,
             .renderPass    = forwardPass.GetRenderPass().renderPass,
             .subpassIndex  = 0
@@ -1581,6 +1582,21 @@ void RenderSystem::CreateRpsPipelines()
             .renderPass    = shadowPass.GetRenderPass().renderPass,
             .subpassIndex  = 0
         }
+    });
+
+    Material& forwardMat = m_RpsMaterial.forward;
+    forwardMat.SetAlphaMode(AlphaMode::Opaque);
+    forwardMat.SetDynamicBuffer(m_DynamicBufferHandle);
+    forwardMat.AddPass(Pass{
+        .name = "ShadowCaster",
+        .shader = m_RpsPipelines.shadowPipeline,
+        .bindGroup = {m_GlobalBindGroup},
+    });
+
+    forwardMat.AddPass(Pass{
+        .name = "ForwardPass",
+        .shader = m_RpsPipelines.forwardPipeline,
+        .bindGroup = {m_GlobalBindGroup},
     });
 }
 
@@ -1622,6 +1638,7 @@ void RenderSystem::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pCon
 
 void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
 {
+    return;
     RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
     vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
     
@@ -1643,5 +1660,4 @@ void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* 
 
     renderSystem.DrawRenderer(key, cmd, renderSystem.m_RpsPipelines.forwardPipeline);
 }
-
 } // namespace gore

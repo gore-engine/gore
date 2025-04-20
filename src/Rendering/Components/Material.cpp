@@ -6,7 +6,8 @@ namespace gore::renderer
 {
 Material::Material() noexcept :
     m_Passes(),
-    m_AlphaMode(AlphaMode::Opaque)
+    m_AlphaMode(AlphaMode::Opaque),
+    m_DynamicBuffer()
 {
 }
 

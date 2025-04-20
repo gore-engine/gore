@@ -13,7 +13,10 @@ bool MatchDrawFilter(const Pass& pass, const DrawCreateInfo& info)
     return pass.name == info.passName;
 }
 
-void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& gameObjects, std::vector<Draw>& sortedDrawData)
+void PrepareDrawDataAndSort(DrawCreateInfo& info
+    , std::vector<GameObject*>& gameObjects
+    , std::vector<Draw>& sortedDrawData
+    , Material* overrideMaterial)
 {
     auto& renderContext = *RenderContext::GetInstance();
 
@@ -26,9 +29,9 @@ void PrepareDrawDataAndSort(DrawCreateInfo& info, std::vector<GameObject*>& game
         if (renderer->IsValid() == false)
             continue;
 
-        auto handle         = renderer->GetDynamicBuffer();
+        auto handle         = overrideMaterial? overrideMaterial->GetDynamicBuffer() : renderer->GetDynamicBuffer();
 
-        Material& material = renderer->GetMaterial();
+        Material& material = overrideMaterial ? *overrideMaterial : renderer->GetMaterial();
         for (const auto& pass : material.GetPasses())
         {
             if (MatchDrawFilter(pass, info) == false)

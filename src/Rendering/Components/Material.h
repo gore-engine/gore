@@ -5,7 +5,7 @@
 
 #include "Rendering/Pipeline.h"
 #include "Rendering/BindGroup.h"
-
+#include "Rendering/DynamicBuffer.h"
 namespace gore::renderer
 {
 using namespace gore::gfx;
@@ -69,9 +69,10 @@ public:
     }
 
     GETTER_SETTER(AlphaMode, AlphaMode)
-
+    GETTER_SETTER(DynamicBufferHandle, DynamicBuffer)
 private:
     std::vector<Pass> m_Passes;
+    DynamicBufferHandle m_DynamicBuffer;
     AlphaMode m_AlphaMode;
 };
 } // namespace gore::renderer

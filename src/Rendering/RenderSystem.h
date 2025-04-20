@@ -187,6 +187,11 @@ private:
         GraphicsPipelineHandle shadowPipeline;
     } m_RpsPipelines;
     
+    struct RPSMaterial
+    {
+        Material forward;
+    } m_RpsMaterial;
+
     void CreateRpsPipelines();
 
     struct DefaultResources
