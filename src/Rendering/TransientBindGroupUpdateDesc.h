@@ -7,7 +7,7 @@
 
 namespace gore::gfx
 {
-struct RawTextureBinding final
+struct TransientTextureBinding final
 {
     uint32_t binding        = 0;
     vk::ImageView imageView = {};
@@ -15,7 +15,7 @@ struct RawTextureBinding final
     vk::Sampler sampler     = {};
 };
 
-struct RawBufferBinding final
+struct TransientBufferBinding final
 {
     uint32_t binding  = 0;
     vk::Buffer buffer = {};
@@ -24,18 +24,18 @@ struct RawBufferBinding final
     BindType bindType = BindType::UniformBuffer;
 };
 
-struct RawSamplerBinding final
+struct TransientSamplerBinding final
 {
     uint32_t binding    = 0;
     vk::Sampler sampler = {};
     BindType bindType   = BindType::Sampler;
 };
 
-struct RawBindGroupUpdateDesc final
+struct TransientBindGroupUpdateDesc final
 {
-    std::vector<RawTextureBinding> textures;
-    std::vector<RawBufferBinding> buffers;
-    std::vector<RawSamplerBinding> samplers;
+    std::vector<TransientTextureBinding> textures;
+    std::vector<TransientBufferBinding> buffers;
+    std::vector<TransientSamplerBinding> samplers;
 };
 
 } // namespace gore::gfx

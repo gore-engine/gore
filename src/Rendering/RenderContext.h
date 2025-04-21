@@ -27,7 +27,7 @@
 #include "DescriptorPoolHolder.h"
 #include "Pool.h"
 
-#include "RawBindGroupUpdateDesc.h"
+#include "TransientBindGroupUpdateDesc.h"
 
 #include <vector>
 
@@ -130,7 +130,7 @@ ENGINE_CLASS(RenderContext) final
     const BindGroupDesc& GetBindGroupDesc(BindGroupHandle handle);
 
     // BindGroup Update for RPSL
-    void UpdateBindGroup(BindGroupHandle handle, const RawBindGroupUpdateDesc& desc);
+    void UpdateBindGroup(BindGroupHandle handle, const TransientBindGroupUpdateDesc& desc);
 
     DynamicBufferHandle CreateDynamicBuffer(DynamicBufferDesc&& desc);
     const DynamicBufferDesc& GetDynamicBufferDesc(DynamicBufferHandle handle);

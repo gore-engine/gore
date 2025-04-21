@@ -1128,7 +1128,7 @@ void RenderContext::DestroyRenderPass(RenderPass& renderPass)
     VULKAN_DEVICE.destroyRenderPass(renderPass.renderPass);
 }
 
-void RenderContext::UpdateBindGroup(BindGroupHandle handle, const RawBindGroupUpdateDesc& desc)
+void RenderContext::UpdateBindGroup(BindGroupHandle handle, const TransientBindGroupUpdateDesc& desc)
 {
     const int updateCount = static_cast<int>(desc.buffers.size() + desc.textures.size() + desc.samplers.size());
 
