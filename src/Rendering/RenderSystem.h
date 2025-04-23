@@ -274,7 +274,7 @@ private:
     void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
     void CreateDepthBuffer();
     void CreateGlobalDescriptorSets();
-    void CreateShadowPassBindLayout();
+    void CreateShadowPassObject();
     void CreateUVQuadDescriptorSets();
     void CreateDynamicUniformBuffer();
     void CreatePipeline();

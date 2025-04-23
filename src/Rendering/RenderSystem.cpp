@@ -148,7 +148,7 @@ void RenderSystem::Initialize()
     CreateTextureObjects();
 
     CreateGlobalDescriptorSets();
-    CreateShadowPassBindLayout();
+    CreateShadowPassObject();
     CreateUVQuadDescriptorSets();
     CreateDynamicUniformBuffer();
     CreateRpsPipelines();
@@ -1129,7 +1129,7 @@ void RenderSystem::CreateDepthBuffer()
     m_Device.SetName(m_DepthImageView, "Depth Buffer ImageView");
 }
 
-void RenderSystem::CreateShadowPassBindLayout()
+void RenderSystem::CreateShadowPassObject()
 {
     std::vector<Binding> bindings{
         {0, BindType::SampledImage, 1, ShaderStage::Fragment},
@@ -1143,6 +1143,10 @@ void RenderSystem::CreateShadowPassBindLayout()
     };
 
     m_ShadowPassBindLayout = m_RenderContext->GetOrCreateBindLayout(bindLayoutCreateInfo);
+
+    m_ShadowmapSamplerHandler = m_RenderContext->CreateSampler({
+        .debugName = "Shadowmap Sampler"
+    });
 }
 
 void RenderSystem::CreateGlobalDescriptorSets()
@@ -1643,10 +1647,10 @@ void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* 
     vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
     
     // Update ShadowMap Descriptor Set
-    // VkImageView shadowmapView;
-    // RpsResult result = rpsVKGetCmdArgImageView(pContext, 0, &shadowmapView);
-    // if (RPS_SUCCEEDED(result) == true)
-    // {   
+    VkImageView shadowmapView;
+    RpsResult result = rpsVKGetCmdArgImageView(pContext, 0, &shadowmapView);
+    if (RPS_SUCCEEDED(result) == true)
+    {   
     //     // SampleApp* app = dynamic_cast<SampleApp*>(App::Get());
 
     //     RawBindGroupUpdateDesc updateDesc = {
@@ -1654,7 +1658,7 @@ void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* 
     //     };
 
     //     renderSystem.GetRenderContext().UpdateBindGroup(app->m_GlobalBindGroup, updateDesc);
-    // }
+    }
 
     DrawKey key = {"ForwardPass", AlphaMode::Opaque};
 
