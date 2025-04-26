@@ -820,6 +820,161 @@ PipelineLayout RenderContext::GetOrCreatePipelineLayout(const std::vector<BindLa
 
     return pipelineLayout;
 }
+
+void RenderContext::UpdateBindGroup(BindGroupHandle handle
+    , BindGroupUpdateDesc&& bindGroupDesc
+    , TransientBindGroupUpdateDesc&& transientDesc)
+{
+    auto descirptorSet = GetBindGroup(handle).set;
+
+    std::vector<vk::DescriptorImageInfo> descriptorImageInfos;
+    descriptorImageInfos.reserve(c_MaxBindingsPerLayout);
+
+    std::vector<vk::DescriptorBufferInfo> descriptorBufferInfos;
+    descriptorBufferInfos.reserve(c_MaxBindingsPerLayout);
+    
+    std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+    writeDescriptorSets.reserve(c_MaxBindingsPerLayout);
+
+    auto generateWriteDescriptorData = 
+        [&](uint32_t binding
+        , vk::DescriptorType descriptorType
+        , vk::DescriptorImageInfo* imageInfo
+        , vk::DescriptorBufferInfo* bufferInfo
+        , vk::BufferView* texelBufferView
+        , const void* pNext = nullptr)
+        {
+            writeDescriptorSets.push_back(
+                vk::WriteDescriptorSet()
+                .setDstSet(descirptorSet)
+                .setDstBinding(binding)
+                .setDstArrayElement(0)
+                .setDescriptorCount(1)
+                .setDescriptorType(descriptorType)
+                .setPImageInfo(imageInfo)
+                .setPBufferInfo(bufferInfo)
+                .setPTexelBufferView(texelBufferView)
+                .setPNext(pNext));                
+        };
+    
+    // update persistent bindgroup update
+    for (const auto& textureBinding : bindGroupDesc.textures)
+    {
+        TextureHandle handle = textureBinding.handle;
+
+        const TextureDesc& textureDesc = GetTextureDesc(handle);
+        const Texture& textureInfo     = GetTexture(handle);
+
+        vk::ImageView imageView = VK_NULL_HANDLE;
+
+        if (HasFlag(textureBinding.usage, TextureUsageBits::Sampled))
+        {
+            imageView = textureInfo.srv;
+        }
+
+        if (HasFlag(textureBinding.usage, TextureUsageBits::Storage))
+        {
+            imageView = textureInfo.uav[0];
+        }
+
+        vk::DescriptorImageInfo imageInfo;
+        imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        imageInfo.imageView   = imageView;
+        imageInfo.sampler     = textureBinding.bindType == BindType::CombinedSampledImage ? GetSampler(textureBinding.samplerHandle).vkSampler : VK_NULL_HANDLE;
+
+        descriptorImageInfos.push_back(imageInfo);
+
+        generateWriteDescriptorData(
+            textureBinding.binding,
+            VulkanHelper::GetVkDescriptorType(textureBinding.bindType),
+            &descriptorImageInfos.back(),
+            nullptr,
+            nullptr);
+    }
+    for (const auto& bufferBinding : bindGroupDesc.buffers)
+    {
+        const BufferDesc& bufferDesc = GetBufferDesc(bufferBinding.handle);
+        const Buffer& bufferInfo     = GetBuffer(bufferBinding.handle);
+
+        descriptorBufferInfos.push_back({GetBuffer(bufferBinding.handle).vkBuffer,
+                                         bufferBinding.offset,
+                                         bufferBinding.range == 0 ? bufferDesc.byteSize : bufferBinding.range});
+
+        generateWriteDescriptorData(
+            bufferBinding.binding,
+            VulkanHelper::GetVkDescriptorType(bufferBinding.bindType),
+            nullptr,
+            &descriptorBufferInfos.back(),
+            nullptr);
+    }
+    for (const auto& samplerBinding : bindGroupDesc.samplers)
+    {
+        SamplerHandle handle = samplerBinding.handle;
+
+        const SamplerDesc& samplerDesc = GetSamplerDesc(handle);
+        const Sampler& samplerInfo     = GetSampler(handle);
+
+        vk::DescriptorImageInfo imageInfo;
+        imageInfo.sampler = samplerInfo.vkSampler;
+
+        descriptorImageInfos.push_back(imageInfo);
+
+        generateWriteDescriptorData(
+            samplerBinding.binding,
+            VulkanHelper::GetVkDescriptorType(samplerBinding.bindType),
+            &descriptorImageInfos.back(),
+            nullptr,
+            nullptr);
+    }
+    // update transient bindgroup update
+    for (const auto& textureBinding : transientDesc.textures)
+    {
+        vk::DescriptorImageInfo imageInfo;
+        imageInfo.imageLayout = textureBinding.imageLayout;
+        imageInfo.imageView   = textureBinding.imageView;
+
+        descriptorImageInfos.push_back(imageInfo);
+
+        generateWriteDescriptorData(
+            textureBinding.binding,
+            textureBinding.descriptorType,
+            &descriptorImageInfos.back(),
+            nullptr,
+            nullptr);
+    }
+
+    for (const auto& bufferBinding : transientDesc.buffers)
+    {
+        descriptorBufferInfos.push_back({bufferBinding.buffer,
+                                         bufferBinding.offset,
+                                         bufferBinding.range});
+
+        generateWriteDescriptorData(
+            bufferBinding.binding,
+            bufferBinding.descriptorType,
+            nullptr,
+            &descriptorBufferInfos.back(),
+            nullptr);
+    }
+
+    for (const auto& samplerBinding : transientDesc.samplers)
+    {
+        vk::DescriptorImageInfo imageInfo;
+        imageInfo.sampler = samplerBinding.sampler;
+
+        descriptorImageInfos.push_back(imageInfo);
+
+        generateWriteDescriptorData(
+            samplerBinding.binding,
+            vk::DescriptorType::eSampler,
+            &descriptorImageInfos.back(),
+            nullptr,
+            nullptr);
+    }
+
+    VULKAN_DEVICE.updateDescriptorSets(writeDescriptorSets, {});
+}
+
 DynamicBufferHandle RenderContext::CreateDynamicBuffer(DynamicBufferDesc&& desc)
 {
     std::vector<Binding> bindings = {
@@ -1127,76 +1282,4 @@ void RenderContext::DestroyRenderPass(RenderPass& renderPass)
 {
     VULKAN_DEVICE.destroyRenderPass(renderPass.renderPass);
 }
-
-void RenderContext::UpdateBindGroup(BindGroupHandle handle, const TransientBindGroupUpdateDesc& desc)
-{
-    const int updateCount = static_cast<int>(desc.buffers.size() + desc.textures.size() + desc.samplers.size());
-
-    std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
-    writeDescriptorSets.reserve(updateCount);
-
-    vk::DescriptorSet descriptorSet = m_BindGroupPool.getObject(handle).set;
-
-    for (const auto& rawBuffer : desc.buffers)
-    {
-        vk::Buffer vkBuffer = rawBuffer.buffer;
-
-        vk::DescriptorBufferInfo bufferInfoDesc = {
-            vkBuffer,
-            rawBuffer.offset,
-            rawBuffer.range == 0 ? VK_WHOLE_SIZE : rawBuffer.range};
-        
-        vk::WriteDescriptorSet writeDescriptorSet(
-            descriptorSet,
-            rawBuffer.binding,
-            0,
-            1,
-            VulkanHelper::GetVkDescriptorType(rawBuffer.bindType),
-            nullptr,
-            &bufferInfoDesc,
-            nullptr);
-        writeDescriptorSets.push_back(writeDescriptorSet);
-    }
-
-    for (const auto& rawTexture : desc.textures)
-    {
-        vk::DescriptorImageInfo imageInfo;
-        imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        imageInfo.imageView   = rawTexture.imageView;
-        imageInfo.sampler     = rawTexture.bindType == BindType::CombinedSampledImage ? rawTexture.sampler : VK_NULL_HANDLE;
-
-        vk::WriteDescriptorSet writeDescriptorSet(
-            descriptorSet,
-            rawTexture.binding,
-            0,
-            1,
-            VulkanHelper::GetVkDescriptorType(rawTexture.bindType),
-            &imageInfo,
-            nullptr,
-            nullptr);
-        
-        writeDescriptorSets.push_back(writeDescriptorSet);
-    }
-
-    for (const auto& rawSampler : desc.samplers)
-    {
-        vk::DescriptorImageInfo imageInfo;
-        imageInfo.sampler = rawSampler.sampler;
-
-        vk::WriteDescriptorSet writeDescriptorSet(
-            descriptorSet,
-            rawSampler.binding,
-            0,
-            1,
-            VulkanHelper::GetVkDescriptorType(rawSampler.bindType),
-            &imageInfo,
-            nullptr,
-            nullptr);
-        
-        writeDescriptorSets.push_back(writeDescriptorSet);
-    }
-
-    VULKAN_DEVICE.updateDescriptorSets(writeDescriptorSets, {});
-}
-
 } // namespace gore::gfx

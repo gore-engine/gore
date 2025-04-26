@@ -35,6 +35,16 @@ namespace gore::gfx
 {
 using namespace gore::renderer;
 
+static constexpr uint32_t c_MaxRenderTargets = 8;
+static constexpr uint32_t c_MaxViewports = 16;
+static constexpr uint32_t c_MaxVertexAttributes = 16;
+static constexpr uint32_t c_MaxBindingLayouts = 5;
+static constexpr uint32_t c_MaxBindingsPerLayout = 128;
+static constexpr uint32_t c_MaxVolatileConstantBuffersPerLayout = 6;
+static constexpr uint32_t c_MaxVolatileConstantBuffers = 32;
+static constexpr uint32_t c_MaxPushConstantSize = 128;
+static constexpr uint32_t c_ConstantBufferOffsetSizeAlignment = 256; // Partially bound constant buffers must have offsets aligned to this and sizes multiple of this
+
 enum PSOCreateRuntimeFlagBits
 {
     PSO_CREATE_FLAG_NONE                     = 0,
@@ -130,7 +140,7 @@ ENGINE_CLASS(RenderContext) final
     const BindGroupDesc& GetBindGroupDesc(BindGroupHandle handle);
 
     // BindGroup Update for RPSL
-    void UpdateBindGroup(BindGroupHandle handle, const TransientBindGroupUpdateDesc& desc);
+    void UpdateBindGroup(BindGroupHandle handle, BindGroupUpdateDesc&& desc, TransientBindGroupUpdateDesc&& transientDesc);
 
     DynamicBufferHandle CreateDynamicBuffer(DynamicBufferDesc&& desc);
     const DynamicBufferDesc& GetDynamicBufferDesc(DynamicBufferHandle handle);
