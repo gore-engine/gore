@@ -825,7 +825,7 @@ void RenderContext::UpdateBindGroup(BindGroupHandle handle
     , BindGroupUpdateDesc&& bindGroupDesc
     , TransientBindGroupUpdateDesc&& transientDesc)
 {
-    auto descirptorSet = GetBindGroup(handle).set;
+    auto descriptorSet = GetBindGroup(handle).set;
 
     std::vector<vk::DescriptorImageInfo> descriptorImageInfos;
     descriptorImageInfos.reserve(c_MaxBindingsPerLayout);
@@ -846,7 +846,7 @@ void RenderContext::UpdateBindGroup(BindGroupHandle handle
         {
             writeDescriptorSets.push_back(
                 vk::WriteDescriptorSet()
-                .setDstSet(descirptorSet)
+                .setDstSet(descriptorSet)
                 .setDstBinding(binding)
                 .setDstArrayElement(0)
                 .setDescriptorCount(1)
