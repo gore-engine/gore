@@ -52,6 +52,13 @@ struct SamplerBinding final
     BindType bindType    = BindType::Sampler;
 };
 
+struct BindGroupUpdateDesc final
+{
+    std::vector<TextureBinding> textures = {};
+    std::vector<BufferBinding> buffers   = {};
+    std::vector<SamplerBinding> samplers  = {};
+};
+
 struct BindGroupDesc final
 {
     const char* debugName                = nullptr;
