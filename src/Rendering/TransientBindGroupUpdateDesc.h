@@ -11,7 +11,8 @@ struct TransientTextureBinding final
 {
     uint32_t binding        = 0;
     vk::ImageView imageView = {};
-    BindType bindType       = BindType::SampledImage;
+    vk::ImageLayout imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    vk::DescriptorType descriptorType = vk::DescriptorType::eSampledImage;
     vk::Sampler sampler     = {};
 };
 
@@ -19,9 +20,9 @@ struct TransientBufferBinding final
 {
     uint32_t binding  = 0;
     vk::Buffer buffer = {};
+    vk::DescriptorType descriptorType = vk::DescriptorType::eUniformBuffer;
     uint32_t offset   = 0;
     uint32_t range    = 0;
-    BindType bindType = BindType::UniformBuffer;
 };
 
 struct TransientSamplerBinding final
