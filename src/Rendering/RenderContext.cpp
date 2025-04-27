@@ -769,6 +769,18 @@ const BindGroupDesc& RenderContext::GetBindGroupDesc(BindGroupHandle handle)
     return m_BindGroupPool.getObjectDesc(handle);
 }
 
+TransientBindGroup RenderContext::CreateTransientBindGroup(BindGroupDesc&& desc)
+{
+    vk::DescriptorSetLayout setLayout = desc.bindLayout->layout;
+    vk::DescriptorPool pool           = m_DescriptorPool[(uint32_t)desc.updateFrequency];
+
+    vk::DescriptorSet descriptorSet = VULKAN_DEVICE.allocateDescriptorSets({pool, 1, &setLayout})[0];
+
+    SetObjectDebugName(descriptorSet, desc.debugName);
+
+    return TransientBindGroup{descriptorSet};    
+}
+
 void RenderContext::PrepareRendering()
 {
     CreateDescriptorPools();
@@ -826,6 +838,15 @@ void RenderContext::UpdateBindGroup(BindGroupHandle handle
     , TransientBindGroupUpdateDesc&& transientDesc)
 {
     auto descriptorSet = GetBindGroup(handle).set;
+
+    TransientBindGroup bindGroup = TransientBindGroup{descriptorSet};
+
+    UpdateBindGroup(bindGroup, std::move(bindGroupDesc), std::move(transientDesc));
+}
+
+void RenderContext::UpdateBindGroup(TransientBindGroup& bindGroup, BindGroupUpdateDesc&& bindGroupDesc, TransientBindGroupUpdateDesc&& transientDesc)
+{
+    auto descriptorSet = bindGroup.descriptorSet;
 
     std::vector<vk::DescriptorImageInfo> descriptorImageInfos;
     descriptorImageInfos.reserve(c_MaxBindingsPerLayout);

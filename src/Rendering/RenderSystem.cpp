@@ -1642,7 +1642,6 @@ void RenderSystem::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pCon
 
 void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
 {
-    return;
     RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
     vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
     
@@ -1650,14 +1649,24 @@ void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* 
     VkImageView shadowmapView;
     RpsResult result = rpsVKGetCmdArgImageView(pContext, 0, &shadowmapView);
     if (RPS_SUCCEEDED(result) == true)
-    {   
-    //     // SampleApp* app = dynamic_cast<SampleApp*>(App::Get());
+    {
+        auto& renderContext = renderSystem.m_RenderContext;
+        
+        auto shadowmapBindGroup = renderContext->CreateTransientBindGroup({
+            .debugName = "Shadowmap BindGroup",
+            .updateFrequency = UpdateFrequency::PerFrame,
+            .bindLayout = &renderSystem.m_ShadowPassBindLayout,
+        });
 
-    //     RawBindGroupUpdateDesc updateDesc = {
-    //         .textures = {{1, shadowmapView, BindType::SampledImage}},
-    //     };
 
-    //     renderSystem.GetRenderContext().UpdateBindGroup(app->m_GlobalBindGroup, updateDesc);
+        renderContext->UpdateBindGroup(shadowmapBindGroup, 
+            {
+                .samplers = {{1, renderSystem.m_ShadowmapSamplerHandler}},
+            },
+            {
+                .textures = {{0, shadowmapView}},
+            }
+        );
     }
 
     DrawKey key = {"ForwardPass", AlphaMode::Opaque};

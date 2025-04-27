@@ -7,6 +7,11 @@
 
 namespace gore::gfx
 {
+struct TransientBindGroup
+{
+    vk::DescriptorSet descriptorSet = {};
+};
+
 struct TransientTextureBinding final
 {
     uint32_t binding        = 0;

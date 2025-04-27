@@ -139,7 +139,10 @@ ENGINE_CLASS(RenderContext) final
     const BindGroup& GetBindGroup(BindGroupHandle handle);
     const BindGroupDesc& GetBindGroupDesc(BindGroupHandle handle);
 
+    TransientBindGroup CreateTransientBindGroup(BindGroupDesc&& desc);
+
     // BindGroup Update for RPSL
+    void UpdateBindGroup(TransientBindGroup& bindGroup, BindGroupUpdateDesc&& desc, TransientBindGroupUpdateDesc&& transientDesc);
     void UpdateBindGroup(BindGroupHandle handle, BindGroupUpdateDesc&& desc, TransientBindGroupUpdateDesc&& transientDesc);
 
     DynamicBufferHandle CreateDynamicBuffer(DynamicBufferDesc&& desc);
