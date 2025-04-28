@@ -196,7 +196,7 @@ void RenderContext::CreateDescriptorPools()
         static_cast<uint32_t>(std::size(poolSizes)),
         poolSizes);
 
-    m_DescriptorPool[(uint32_t)UpdateFrequency::None] = static_cast<DescriptorPoolHolder>(VULKAN_DEVICE.createDescriptorPool(poolCreateInfo));
+    m_DescriptorPool[(uint32_t)UpdateFrequency::Persistent] = static_cast<DescriptorPoolHolder>(VULKAN_DEVICE.createDescriptorPool(poolCreateInfo));
 
     poolCreateInfo.maxSets                                = 100;
     m_DescriptorPool[(uint32_t)UpdateFrequency::PerFrame] = static_cast<DescriptorPoolHolder>(VULKAN_DEVICE.createDescriptorPool(poolCreateInfo));
@@ -214,7 +214,7 @@ void RenderContext::ClearDescriptorPools()
 {
     VULKAN_DEVICE.destroyDescriptorSetLayout(m_EmptySetLayout);
 
-    VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::None]);
+    VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::Persistent]);
     VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::PerFrame]);
     VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::PerBatch]);
     VULKAN_DEVICE.destroyDescriptorPool(m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw]);
@@ -1011,7 +1011,7 @@ DynamicBufferHandle RenderContext::CreateDynamicBuffer(DynamicBufferDesc&& desc)
 
     vk::DescriptorSetLayout setLayout = bindLayout.layout;
 
-    vk::DescriptorPool pool = m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw];
+    vk::DescriptorPool pool = m_DescriptorPool[(uint32_t)UpdateFrequency::Persistent];
 
     vk::DescriptorSetAllocateInfo allocInfo(
         pool,
