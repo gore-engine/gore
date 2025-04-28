@@ -566,6 +566,8 @@ void RenderSystem::RunRpsSystem()
 
     WaitForSwapChainBuffer();
 
+    ResetPerFrameDescriptorPool();
+
     ResetCommandPools();
 
     ExecuteRenderGraph(m_FrameCounter, *m_RpsSystem->rpsRDG);
@@ -1172,7 +1174,7 @@ void RenderSystem::CreateGlobalDescriptorSets()
 
     m_GlobalBindGroup = m_RenderContext->CreateBindGroup({
         .debugName = "Global BindGroup",
-        .updateFrequency = UpdateFrequency::PerFrame,
+        .updateFrequency = UpdateFrequency::Persistent,
         .textures = {},
         .buffers = {{0, m_GlobalConstantBuffer, 0, sizeof(PerframeData), BindType::UniformBuffer}},
         .samplers = {},
@@ -1196,7 +1198,7 @@ void RenderSystem:: CreateUVQuadDescriptorSets()
 
     m_UVQuadBindGroup = m_RenderContext->CreateBindGroup({
         .debugName = "UV Quad BindGroup",
-        .updateFrequency = UpdateFrequency::PerFrame,
+        .updateFrequency = UpdateFrequency::Persistent,
         .textures = { {0, m_UVCheckTextureHandle, TextureUsageBits::Sampled, 0, 0, BindType::CombinedSampledImage, m_UVCheckSamplerHandle}},
         .buffers = {},
         .samplers = {},
@@ -1658,7 +1660,6 @@ void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* 
             .bindLayout = &renderSystem.m_ShadowPassBindLayout,
         });
 
-
         renderContext->UpdateBindGroup(shadowmapBindGroup, 
             {
                 .samplers = {{1, renderSystem.m_ShadowmapSamplerHandler}},
@@ -1667,10 +1668,20 @@ void RenderSystem::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* 
                 .textures = {{0, shadowmapView}},
             }
         );
+
+        auto& pipeline = renderContext->GetGraphicsPipeline(renderSystem.m_RpsPipelines.forwardPipeline);
+
+        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.layout, 1, {shadowmapBindGroup.descriptorSet}, {});
     }
 
     DrawKey key = {"ForwardPass", AlphaMode::Opaque};
 
     renderSystem.DrawRenderer(key, cmd, renderSystem.m_RpsPipelines.forwardPipeline);
 }
+
+void RenderSystem::ResetPerFrameDescriptorPool()
+{
+    m_RenderContext->ResetDescriptorPool(UpdateFrequency::PerFrame);
+}
 } // namespace gore
+

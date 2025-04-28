@@ -159,6 +159,8 @@ private:
     void EndCmdList(ActiveCommandList& cmdList);
     void RecycleCmdList(ActiveCommandList& cmdList);
 
+    void ResetPerFrameDescriptorPool();
+    
     void ResetCommandPools();
 
     void ReserveSemaphores(uint32_t numSyncs);

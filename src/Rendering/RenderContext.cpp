@@ -184,6 +184,7 @@ void RenderContext::CreateDescriptorPools()
     vk::DescriptorPoolSize poolSizes[] = {
         {       vk::DescriptorType::eUniformBuffer, 1000},
         {vk::DescriptorType::eCombinedImageSampler, 1000},
+        {        vk::DescriptorType::eSampledImage, 1000},
         {       vk::DescriptorType::eStorageBuffer, 1000},
         {        vk::DescriptorType::eStorageImage, 1000},
         {             vk::DescriptorType::eSampler, 1000},
@@ -192,19 +193,13 @@ void RenderContext::CreateDescriptorPools()
 
     vk::DescriptorPoolCreateInfo poolCreateInfo(
         {},
-        1,
+        1024,
         static_cast<uint32_t>(std::size(poolSizes)),
         poolSizes);
 
     m_DescriptorPool[(uint32_t)UpdateFrequency::Persistent] = static_cast<DescriptorPoolHolder>(VULKAN_DEVICE.createDescriptorPool(poolCreateInfo));
-
-    poolCreateInfo.maxSets                                = 100;
     m_DescriptorPool[(uint32_t)UpdateFrequency::PerFrame] = static_cast<DescriptorPoolHolder>(VULKAN_DEVICE.createDescriptorPool(poolCreateInfo));
-
-    poolCreateInfo.maxSets                                = 100;
     m_DescriptorPool[(uint32_t)UpdateFrequency::PerBatch] = static_cast<DescriptorPoolHolder>(VULKAN_DEVICE.createDescriptorPool(poolCreateInfo));
-
-    poolCreateInfo.maxSets                               = 100;
     m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw] = static_cast<DescriptorPoolHolder>(VULKAN_DEVICE.createDescriptorPool(poolCreateInfo));
 
     m_EmptySetLayout = VULKAN_DEVICE.createDescriptorSetLayout({});
@@ -637,6 +632,13 @@ void RenderContext::DestroySampler(SamplerHandle handle)
     m_SamplerPool.destroy(handle);
 }
 
+void RenderContext::ResetDescriptorPool(UpdateFrequency poolType)
+{
+    vk::DescriptorPool pool = m_DescriptorPool[(uint32_t)poolType];
+
+    VULKAN_DEVICE.resetDescriptorPool(pool, {});
+}
+
 BindGroupHandle RenderContext::CreateBindGroup(BindGroupDesc&& desc)
 {
     vk::DescriptorSetLayout setLayout = desc.bindLayout->layout;
@@ -1066,7 +1068,7 @@ void RenderContext::DestroyDynamicBuffer(DynamicBufferHandle handle)
 {
     auto dynamicBuffer = m_DynamicBufferPool.getObject(handle);
 
-    vk::DescriptorPool pool = m_DescriptorPool[(uint32_t)UpdateFrequency::PerDraw];
+    vk::DescriptorPool pool = m_DescriptorPool[(uint32_t)UpdateFrequency::Persistent];
     VULKAN_DEVICE.freeDescriptorSets(pool, dynamicBuffer.set);
 
     m_DynamicBufferPool.destroy(handle);

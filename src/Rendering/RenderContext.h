@@ -134,6 +134,8 @@ ENGINE_CLASS(RenderContext) final
     const Sampler& GetSampler(SamplerHandle handle);
     void DestroySampler(SamplerHandle handle);
 
+    void ResetDescriptorPool(UpdateFrequency poolType = UpdateFrequency::PerFrame);
+
     BindGroupHandle CreateBindGroup(BindGroupDesc&& desc);
     void DestroyBindGroup(BindGroupHandle handle);
     const BindGroup& GetBindGroup(BindGroupHandle handle);
