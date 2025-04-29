@@ -221,7 +221,21 @@ private:
 
     vk::DescriptorSetLayout m_EmptySetLayout;
 
+    struct FramedDescriptorPool
+    {
+        static const uint32_t c_MaxFrames = 3;
+
+        std::vector<DescriptorPoolHolder> pools;
+        uint32_t currentPoolIndex = 0;
+    } m_FramedDescriptorPool;
+
     DescriptorPoolHolder m_DescriptorPool[(uint32_t)UpdateFrequency::Count];
+
+    DescriptorPoolHolder GetDescriptorPool(UpdateFrequency poolType = UpdateFrequency::PerFrame)
+    {
+        return poolType == UpdateFrequency::PerFrame ? 
+            m_FramedDescriptorPool.pools[m_FramedDescriptorPool.currentPoolIndex] : m_DescriptorPool[(uint32_t)poolType];
+    }
 
     ResourceCache m_ResourceCache;
 

@@ -15,11 +15,10 @@ namespace gore::gfx
 enum class UpdateFrequency : uint8_t
 {
     Persistent,
-    PerFrame,
     PerBatch,
-    // We should never use this, but it's here for completeness
     PerDraw,
-    Count
+    Count,
+    PerFrame // deprecated
 };
 
 struct TextureBinding final
