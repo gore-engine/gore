@@ -14,12 +14,11 @@ namespace gore::gfx
 
 enum class UpdateFrequency : uint8_t
 {
-    None,
-    PerFrame,
+    Persistent,
     PerBatch,
-    // We should never use this, but it's here for completeness
     PerDraw,
-    Count
+    Count,
+    PerFrame // deprecated
 };
 
 struct TextureBinding final
@@ -52,10 +51,17 @@ struct SamplerBinding final
     BindType bindType    = BindType::Sampler;
 };
 
+struct BindGroupUpdateDesc final
+{
+    std::vector<TextureBinding> textures = {};
+    std::vector<BufferBinding> buffers   = {};
+    std::vector<SamplerBinding> samplers  = {};
+};
+
 struct BindGroupDesc final
 {
     const char* debugName                = nullptr;
-    UpdateFrequency updateFrequency      = UpdateFrequency::None;
+    UpdateFrequency updateFrequency      = UpdateFrequency::Persistent;
     std::vector<TextureBinding> textures = {};
     std::vector<BufferBinding> buffers   = {};
     std::vector<SamplerBinding> samplers  = {};

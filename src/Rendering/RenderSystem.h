@@ -97,7 +97,7 @@ public:
 
 public:
     GraphicsCaps GetGraphicsCaps() const { return m_GraphicsCaps; }
-    void DrawRenderer(DrawKey key, vk::CommandBuffer cmd);
+    void DrawRenderer(DrawKey key, vk::CommandBuffer cmd, GraphicsPipelineHandle overridePipeline = {});
 
 private:
     // Imgui
@@ -108,8 +108,6 @@ private:
     vk::raii::DescriptorPool m_ImguiDescriptorPool;
 
 private:
-    void PrepareGPUSceneData();
-
     static void RecordDebugMarker(void* pUserContext, const RpsRuntimeOpRecordDebugMarkerArgs* pArgs);
     static void SetDebugName(void* pUserContext, const RpsRuntimeOpSetDebugNameArgs* pArgs);
 
@@ -159,15 +157,19 @@ private:
     void EndCmdList(ActiveCommandList& cmdList);
     void RecycleCmdList(ActiveCommandList& cmdList);
 
+    void ResetPerFrameDescriptorPool();
+    
     void ResetCommandPools();
 
     void ReserveSemaphores(uint32_t numSyncs);
 
     uint64_t CalcGuaranteedCompletedFrameindexForRps() const;
+    
+    void UpdateGlobalConstantBuffer();
 
     // static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
-    // static void ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
-    // static void ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    static void ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    static void ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
     // void DrawTriangle(vk::CommandBuffer commandBuffer);
 private:
     std::unique_ptr<RenderContext> m_RenderContext;
@@ -180,6 +182,27 @@ private:
 
     // Surface & Swapchain
     Swapchain m_Swapchain;
+
+    struct RPSPipelines
+    {
+        GraphicsPipelineHandle forwardPipeline;
+        GraphicsPipelineHandle shadowPipeline;
+    } m_RpsPipelines;
+    
+    struct RPSMaterial
+    {
+        Material forward;
+    } m_RpsMaterial;
+
+    void CreateRpsPipelines();
+
+    struct DefaultResources
+    {
+        TextureHandle whiteTexture;
+        TextureHandle blackTexture;
+    } m_DefaultResources;
+
+    void CreateDefaultResources();
 
     GraphicsPipelineHandle m_CubePipelineHandle;
     GraphicsPipelineHandle m_UnLitPipelineHandle;
@@ -218,6 +241,10 @@ private:
     BindGroupHandle m_GlobalBindGroup;
     BufferHandle m_GlobalConstantBuffer;
 
+    // Pass Binding
+    BindLayout m_ShadowPassBindLayout;
+    SamplerHandle m_ShadowmapSamplerHandler;
+
     // Material Descriptors
     BindLayout m_UVQuadBindLayout;
     BindGroupHandle m_UVQuadBindGroup;
@@ -249,6 +276,7 @@ private:
     void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
     void CreateDepthBuffer();
     void CreateGlobalDescriptorSets();
+    void CreateShadowPassObject();
     void CreateUVQuadDescriptorSets();
     void CreateDynamicUniformBuffer();
     void CreatePipeline();

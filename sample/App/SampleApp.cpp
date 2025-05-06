@@ -35,9 +35,6 @@
 
 #include "Scripts/Math/BitUtils.h"
 
-#include "Scripts/Rendering/PerframeData.h"
-#include "Scripts/Rendering/PerDrawData.h"
-
 SampleApp::SampleApp(int argc, char** argv) :
     App(argc, argv)
 {
@@ -47,270 +44,230 @@ SampleApp::~SampleApp()
 {
 }
 
-void SampleApp::InitializeRpsSystem()
-{
-    RpsRenderGraph& renderGraph = *m_RenderSystem->GetRpsSystem()->rpsRDG;
-    // AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Triangle", &DrawTriangleWithRPSWrapper, this));
-    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "Shadowmap", &ShadowmapPassWithRPSWrapper, this));
-    AssertIfRpsFailed(rpsProgramBindNode(rpsRenderGraphGetMainEntry(renderGraph), "ForwardOpaque", &ForwardOpaquePassWithRPSWrapper, this));
-}
+// void SampleApp::CreateRenderPassDesc()
+// {
+//     renderPasses.forwardPassDesc = {{GraphicsFormat::BGRA8_SRGB}};
+//     renderPasses.shadowPassDesc  = {{}, GraphicsFormat::D32_FLOAT};
+// }
 
-void SampleApp::CreateRenderPassDesc()
-{
-    renderPasses.forwardPassDesc = {{GraphicsFormat::BGRA8_SRGB}};
-    renderPasses.shadowPassDesc  = {{}, GraphicsFormat::D32_FLOAT};
-}
+// void SampleApp::CreateUnifiedGlobalDynamicBuffer()
+// {
+    // auto& renderContext = m_RenderSystem->GetRenderContext();
 
-void SampleApp::CreateUnifiedGlobalDynamicBuffer()
-{
-    auto& renderContext = m_RenderSystem->GetRenderContext();
+    // size_t alignmentSize = MathUtils::AlignUp(sizeof(PerDrawData), m_GraphicsCaps.minUniformBufferOffsetAlignment);
 
-    size_t alignmentSize = MathUtils::AlignUp(sizeof(PerDrawData), m_GraphicsCaps.minUniformBufferOffsetAlignment);
+    // size_t renderCount = 4;
+    // std::vector<uint8_t> dynamicUniformBufferData(alignmentSize * renderCount);
 
-    size_t renderCount = 4;
-    std::vector<uint8_t> dynamicUniformBufferData(alignmentSize * renderCount);
+    // for (size_t i = 0; i < renderCount; ++i)
+    // {
+    //     PerDrawData* perDrawData = reinterpret_cast<PerDrawData*>(dynamicUniformBufferData.data() + (i * alignmentSize));
+    //     perDrawData->model[0]       = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
+    // }
 
-    for (size_t i = 0; i < renderCount; ++i)
-    {
-        PerDrawData* perDrawData = reinterpret_cast<PerDrawData*>(dynamicUniformBufferData.data() + (i * alignmentSize));
-        perDrawData->model[0]       = Matrix4x4(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, i, 0.f, 0.f, 1.f);
-    }
+    // m_UnifiedDynamicBuffer = renderContext.CreateBuffer(
+    //     {.debugName = "Dynamic Uniform Buffer",
+    //      .byteSize  = static_cast<uint32_t>(dynamicUniformBufferData.size()),
+    //      .usage     = BufferUsage::Uniform,
+    //      .memUsage  = MemoryUsage::GPU,
+    //      .data      = dynamicUniformBufferData.data()});
 
-    m_UnifiedDynamicBuffer = renderContext.CreateBuffer(
-        {.debugName = "Dynamic Uniform Buffer",
-         .byteSize  = static_cast<uint32_t>(dynamicUniformBufferData.size()),
-         .usage     = BufferUsage::Uniform,
-         .memUsage  = MemoryUsage::GPU,
-         .data      = dynamicUniformBufferData.data()});
+    // m_UnifiedDynamicBufferHandle = renderContext.CreateDynamicBuffer(
+    //     {.debugName = "Dynamic Uniform Buffer",
+    //      .buffer    = m_UnifiedDynamicBuffer,
+    //      .offset    = 0,
+    //      .range     = sizeof(PerDrawData)});
+// }
 
-    m_UnifiedDynamicBufferHandle = renderContext.CreateDynamicBuffer(
-        {.debugName = "Dynamic Uniform Buffer",
-         .buffer    = m_UnifiedDynamicBuffer,
-         .offset    = 0,
-         .range     = sizeof(PerDrawData)});
-}
+// void SampleApp::CreatePipelines()
+// {
+//     CreateForwardPipeline();
+//     CreateShadowmapPipeline();
+// }
 
-void SampleApp::CreatePipelines()
-{
-    CreateForwardPipeline();
-    CreateShadowmapPipeline();
-}
+// void SampleApp::CreateForwardPipeline()
+// {
+//     using namespace gore::gfx;
 
-void SampleApp::CreateDefaultResources()
-{
-    using namespace gore::gfx;
+//     RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+//     AutoRenderPass forwardPass(&renderContext, renderPasses.forwardPassDesc);
+
+//     // Create a pipeline for the forward rendering
+//     std::vector<char> vertexShaderBytecode   = sample::utils::LoadShaderBytecode("sample/SimpleLit", ShaderStage::Vertex, "main");
+//     std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("sample/SimpleLit", ShaderStage::Fragment, "main");
+
+//     pipelines.forwardPipeline = renderContext.CreateGraphicsPipeline(
+//         GraphicsPipelineDesc{
+//             .debugName = "UnLit Pipeline",
+//             .VS{
+//                 .byteCode  = reinterpret_cast<uint8_t*>(vertexShaderBytecode.data()),
+//                 .byteSize  = static_cast<uint32_t>(vertexShaderBytecode.size()),
+//                 .entryFunc = "vs"},
+//             .PS{
+//                 .byteCode  = reinterpret_cast<uint8_t*>(fragmentShaderBytecode.data()),
+//                 .byteSize  = static_cast<uint32_t>(fragmentShaderBytecode.size()),
+//                 .entryFunc = "ps"},
+//             .colorFormats  = {GraphicsFormat::BGRA8_SRGB},
+//             .depthFormat   = GraphicsFormat::D32_FLOAT,
+//             .stencilFormat = GraphicsFormat::Undefined,
+//             .vertexBufferBindings{
+//                 {.byteStride = sizeof(Vector3) + sizeof(Vector2) + sizeof(Vector3),
+//                  .attributes =
+//                      {
+//                          {.byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT},
+//                          {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
+//                          {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
+//             .bindLayouts   = {m_GlobalBindLayout},
+//             .dynamicBuffer = m_UnifiedDynamicBufferHandle,
+//             .renderPass    = forwardPass.GetRenderPass().renderPass,
+//             .subpassIndex  = 0
+//     });
+// }
+
+// void SampleApp::CreateShadowmapPipeline()
+// {
+//     using namespace gore::gfx;
+
+//     RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+//     AutoRenderPass shadowPass(&renderContext, renderPasses.shadowPassDesc);
+
+//     // Create a pipeline for the shadowmap rendering
+//     std::vector<char> vertexShaderBytecode   = sample::utils::LoadShaderBytecode("sample/Shadowmap", ShaderStage::Vertex, "main");
+//     std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("sample/Shadowmap", ShaderStage::Fragment, "main");
+
+//     pipelines.shadowPipeline = renderContext.CreateGraphicsPipeline({
+//         GraphicsPipelineDesc{
+//             .debugName = "Shadowmap Pipeline",
+//             .VS{
+//                 .byteCode  = reinterpret_cast<uint8_t*>(vertexShaderBytecode.data()),
+//                 .byteSize  = static_cast<uint32_t>(vertexShaderBytecode.size()),
+//                 .entryFunc = "vs"},
+//             .PS{
+//                 .byteCode  = reinterpret_cast<uint8_t*>(fragmentShaderBytecode.data()),
+//                 .byteSize  = static_cast<uint32_t>(fragmentShaderBytecode.size()),
+//                 .entryFunc = "ps"},
+//             .colorFormats  = {},
+//             .depthFormat   = GraphicsFormat::D32_FLOAT,
+//             .stencilFormat = GraphicsFormat::Undefined,
+//             .vertexBufferBindings{
+//                 {.byteStride = sizeof(Vector3) + sizeof(Vector2) + sizeof(Vector3),
+//                  .attributes =
+//                      {
+//                          {.byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT},
+//                          {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
+//                          {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
+//             .bindLayouts   = {m_GlobalBindLayout},
+//             .dynamicBuffer = m_UnifiedDynamicBufferHandle,
+//             .renderPass    = shadowPass.GetRenderPass().renderPass,
+//             .subpassIndex  = 0
+//         }
+//     });
+// }
+
+// void SampleApp::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+// {
+//     RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+//     vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+
+//     DrawKey key = {"ForwardPass", AlphaMode::Opaque};
+
+//     renderSystem.DrawRenderer(key, cmd);
+// }
+
+// void SampleApp::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+// {
+//     RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+//     vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
     
-    RenderContext& renderContext = m_RenderSystem->GetRenderContext();
-
-    std::vector<uint8_t> blackTextureData(4, 0);
-    std::vector<uint8_t> whiteTextureData(4, 255);
-
-    defaultResources.blackTexture = renderContext.CreateTextureHandle(
-        TextureDesc
-        {
-            .debugName = "Black Texture",
-            .width     = 1,
-            .height    = 1,
-            .data      = blackTextureData.data(),
-            .dataSize  = 4,
-        });
-
-    defaultResources.whiteTexture = renderContext.CreateTextureHandle(
-        TextureDesc
-        {
-            .debugName = "White Texture",
-            .width     = 1,
-            .height    = 1,
-            .data      = whiteTextureData.data(),
-            .dataSize  = 4,
-        });
-}
-
-void SampleApp::CreateForwardPipeline()
-{
-    using namespace gore::gfx;
-
-    RenderContext& renderContext = m_RenderSystem->GetRenderContext();
-    AutoRenderPass forwardPass(&renderContext, renderPasses.forwardPassDesc);
-
-    // Create a pipeline for the forward rendering
-    std::vector<char> vertexShaderBytecode   = sample::utils::LoadShaderBytecode("sample/SimpleLit", ShaderStage::Vertex, "main");
-    std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("sample/SimpleLit", ShaderStage::Fragment, "main");
-
-    pipelines.forwardPipeline = renderContext.CreateGraphicsPipeline(
-        GraphicsPipelineDesc{
-            .debugName = "UnLit Pipeline",
-            .VS{
-                .byteCode  = reinterpret_cast<uint8_t*>(vertexShaderBytecode.data()),
-                .byteSize  = static_cast<uint32_t>(vertexShaderBytecode.size()),
-                .entryFunc = "vs"},
-            .PS{
-                .byteCode  = reinterpret_cast<uint8_t*>(fragmentShaderBytecode.data()),
-                .byteSize  = static_cast<uint32_t>(fragmentShaderBytecode.size()),
-                .entryFunc = "ps"},
-            .colorFormats  = {GraphicsFormat::BGRA8_SRGB},
-            .depthFormat   = GraphicsFormat::D32_FLOAT,
-            .stencilFormat = GraphicsFormat::Undefined,
-            .vertexBufferBindings{
-                {.byteStride = sizeof(Vector3) + sizeof(Vector2) + sizeof(Vector3),
-                 .attributes =
-                     {
-                         {.byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT},
-                         {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
-                         {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
-            .bindLayouts   = {m_GlobalBindLayout},
-            .dynamicBuffer = m_UnifiedDynamicBufferHandle,
-            .renderPass    = forwardPass.GetRenderPass().renderPass,
-            .subpassIndex  = 0
-    });
-}
-
-void SampleApp::CreateShadowmapPipeline()
-{
-    using namespace gore::gfx;
-
-    RenderContext& renderContext = m_RenderSystem->GetRenderContext();
-    AutoRenderPass shadowPass(&renderContext, renderPasses.shadowPassDesc);
-
-    // Create a pipeline for the shadowmap rendering
-    std::vector<char> vertexShaderBytecode   = sample::utils::LoadShaderBytecode("sample/Shadowmap", ShaderStage::Vertex, "main");
-    std::vector<char> fragmentShaderBytecode = sample::utils::LoadShaderBytecode("sample/Shadowmap", ShaderStage::Fragment, "main");
-
-    pipelines.shadowPipeline = renderContext.CreateGraphicsPipeline({
-        GraphicsPipelineDesc{
-            .debugName = "Shadowmap Pipeline",
-            .VS{
-                .byteCode  = reinterpret_cast<uint8_t*>(vertexShaderBytecode.data()),
-                .byteSize  = static_cast<uint32_t>(vertexShaderBytecode.size()),
-                .entryFunc = "vs"},
-            .PS{
-                .byteCode  = reinterpret_cast<uint8_t*>(fragmentShaderBytecode.data()),
-                .byteSize  = static_cast<uint32_t>(fragmentShaderBytecode.size()),
-                .entryFunc = "ps"},
-            .colorFormats  = {},
-            .depthFormat   = GraphicsFormat::D32_FLOAT,
-            .stencilFormat = GraphicsFormat::Undefined,
-            .vertexBufferBindings{
-                {.byteStride = sizeof(Vector3) + sizeof(Vector2) + sizeof(Vector3),
-                 .attributes =
-                     {
-                         {.byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT},
-                         {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
-                         {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
-            .bindLayouts   = {m_GlobalBindLayout},
-            .dynamicBuffer = m_UnifiedDynamicBufferHandle,
-            .renderPass    = shadowPass.GetRenderPass().renderPass,
-            .subpassIndex  = 0
-        }
-    });
-}
-
-void SampleApp::DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext)
-{
-    RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
-    vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
-
-    DrawKey key = {"ForwardPass", AlphaMode::Opaque};
-
-    renderSystem.DrawRenderer(key, cmd);
-}
-
-void SampleApp::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
-{
-    RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
-    vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+//     DrawKey key = {"ShadowCaster", AlphaMode::Opaque};
     
-    DrawKey key = {"ShadowCaster", AlphaMode::Opaque};
+//     renderSystem.DrawRenderer(key, cmd);
+// }
+
+// void SampleApp::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
+// {
+//     RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
+//     vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
     
-    renderSystem.DrawRenderer(key, cmd);
-}
+//     // Update ShadowMap Descriptor Set
+//     VkImageView shadowmapView;
+//     RpsResult result = rpsVKGetCmdArgImageView(pContext, 0, &shadowmapView);
+//     if (RPS_SUCCEEDED(result) == true)
+//     {   
+//         SampleApp* app = dynamic_cast<SampleApp*>(App::Get());
 
-void SampleApp::ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
-{
-    RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);
-    vk::CommandBuffer cmd      = rpsVKCommandBufferFromHandle(pContext->hCommandBuffer);
+//         RawBindGroupUpdateDesc updateDesc = {
+//             .textures = {{1, shadowmapView, BindType::SampledImage}},
+//         };
+
+//         renderSystem.GetRenderContext().UpdateBindGroup(app->m_GlobalBindGroup, updateDesc);
+//     }
+
+//     DrawKey key = {"ForwardPass", AlphaMode::Opaque};
+
+//     renderSystem.DrawRenderer(key, cmd);
+// }
+
+// void SampleApp::PrepareGraphics()
+// {
+//     CreateDefaultResources();
+//     CreateRenderPassDesc();
+//     CreateUnifiedGlobalDynamicBuffer();
+//     CreateGlobalBindGroup();
+//     CreatePipelines();
+// }
+
+// void SampleApp::CreateGlobalBindGroup()
+// {
+//     using namespace gore::gfx;
+
+//     RenderContext& renderContext = m_RenderSystem->GetRenderContext();
+//     m_GlobalConstantBuffer       = renderContext.CreateBuffer({.debugName = "Global Constant Buffer",
+//                                                                .byteSize  = sizeof(PerframeData),
+//                                                                .usage     = BufferUsage::Uniform,
+//                                                                .memUsage  = MemoryUsage::CPU_TO_GPU});
     
-    // Update ShadowMap Descriptor Set
-    VkImageView shadowmapView;
-    RpsResult result = rpsVKGetCmdArgImageView(pContext, 0, &shadowmapView);
-    if (RPS_SUCCEEDED(result) == true)
-    {   
-        SampleApp* app = dynamic_cast<SampleApp*>(App::Get());
+//     m_ShadowmapSampler = renderContext.CreateSampler({
+//         .debugName = "Shadowmap Sampler",
+//     });
 
-        RawBindGroupUpdateDesc updateDesc = {
-            .textures = {{1, shadowmapView, BindType::SampledImage}},
-        };
+//     std::vector<Binding> bindings{
+//         {0, BindType::UniformBuffer, 1, ShaderStage::Vertex | ShaderStage::Fragment},
+//         {1, BindType::SampledImage, 1, ShaderStage::Fragment},
+//         {2, BindType::Sampler, 1, ShaderStage::Fragment},
+//     };
 
-        renderSystem.GetRenderContext().UpdateBindGroup(app->m_GlobalBindGroup, updateDesc);
-    }
+//     BindLayoutCreateInfo bindLayoutCreateInfo = {.name = "Global Descriptor Set Layout", .bindings = bindings};
 
-    DrawKey key = {"ForwardPass", AlphaMode::Opaque};
+//     m_GlobalBindLayout = renderContext.GetOrCreateBindLayout(bindLayoutCreateInfo);
 
-    renderSystem.DrawRenderer(key, cmd);
-}
-
-void SampleApp::PrepareGraphics()
-{
-    CreateDefaultResources();
-    CreateRenderPassDesc();
-    CreateUnifiedGlobalDynamicBuffer();
-    CreateGlobalBindGroup();
-    CreatePipelines();
-}
-
-void SampleApp::CreateGlobalBindGroup()
-{
-    using namespace gore::gfx;
-
-    RenderContext& renderContext = m_RenderSystem->GetRenderContext();
-    m_GlobalConstantBuffer       = renderContext.CreateBuffer({.debugName = "Global Constant Buffer",
-                                                               .byteSize  = sizeof(PerframeData),
-                                                               .usage     = BufferUsage::Uniform,
-                                                               .memUsage  = MemoryUsage::CPU_TO_GPU});
-    
-    m_ShadowmapSampler = renderContext.CreateSampler({
-        .debugName = "Shadowmap Sampler",
-    });
-
-    std::vector<Binding> bindings{
-        {0, BindType::UniformBuffer, 1, ShaderStage::Vertex | ShaderStage::Fragment},
-        {1, BindType::SampledImage, 1, ShaderStage::Fragment},
-        {2, BindType::Sampler, 1, ShaderStage::Fragment},
-    };
-
-    BindLayoutCreateInfo bindLayoutCreateInfo = {.name = "Global Descriptor Set Layout", .bindings = bindings};
-
-    m_GlobalBindLayout = renderContext.GetOrCreateBindLayout(bindLayoutCreateInfo);
-
-    m_GlobalBindGroup = renderContext.CreateBindGroup({
-        .debugName       = "Global BindGroup",
-        .updateFrequency = UpdateFrequency::PerFrame,
-        .textures        = {{1, defaultResources.blackTexture}},
-        .buffers         = {{0, m_GlobalConstantBuffer, 0, sizeof(PerframeData), BindType::UniformBuffer}},
-        .samplers        = {{2, m_ShadowmapSampler}},
-        .bindLayout      = &m_GlobalBindLayout,
-    });
-}
+//     m_GlobalBindGroup = renderContext.CreateBindGroup({
+//         .debugName       = "Global BindGroup",
+//         .updateFrequency = UpdateFrequency::PerFrame,
+//         .textures        = {{1, defaultResources.blackTexture}},
+//         .buffers         = {{0, m_GlobalConstantBuffer, 0, sizeof(PerframeData), BindType::UniformBuffer}},
+//         .samplers        = {{2, m_ShadowmapSampler}},
+//         .bindLayout      = &m_GlobalBindLayout,
+//     });
+// }
 
 void SampleApp::Initialize()
 {
     m_GraphicsCaps = m_RenderSystem->GetGraphicsCaps();
 
-    InitializeRpsSystem();
-
-    PrepareGraphics();
+    // PrepareGraphics();
 
     Material forwardMat;
     forwardMat.SetAlphaMode(AlphaMode::Opaque);
     forwardMat.AddPass(Pass{
         .name      = "ShadowCaster",
-        .shader    = pipelines.shadowPipeline,
-        .bindGroup = {m_GlobalBindGroup}});
+        /*.shader    = pipelines.shadowPipeline,
+        .bindGroup = {m_GlobalBindGroup}*/});
     
     forwardMat.AddPass(Pass{
         .name      = "ForwardPass",
-        .shader    = pipelines.forwardPipeline,
-        .bindGroup = {m_GlobalBindGroup}});
+        /*.shader    = pipelines.forwardPipeline,
+        .bindGroup = {m_GlobalBindGroup}*/});
     
     gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
 
@@ -352,8 +309,8 @@ void SampleApp::Initialize()
         gore::gfx::MeshRenderer* meshRenderer = gameObject->AddComponent<MeshRenderer>();
         meshRenderer->LoadMesh("cube.gltf");
         meshRenderer->SetMaterial(forwardMat);
-        meshRenderer->SetDynamicBuffer(m_UnifiedDynamicBufferHandle);
-        meshRenderer->SetDynamicBufferOffset(0);
+        // meshRenderer->SetDynamicBuffer(m_UnifiedDynamicBufferHandle);
+        // meshRenderer->SetDynamicBufferOffset(0);
 
         gore::Transform* transform = gameObject->GetTransform();
         transform->SetLocalPosition(gore::Vector3::Right * 20.0f);
@@ -527,35 +484,6 @@ static int frameCount = 0;
 
 void SampleApp::PreRender()
 {
-    Camera* mainCamera = Camera::Main;
-    if (mainCamera == nullptr)
-    {
-        return;
-    }
-
-    PerframeData perframeData;
-    perframeData.vpMatrix = mainCamera->GetViewProjectionMatrix();
-    
-    // Update Main Light
-    auto& gameObjects = scene->GetActiveScene()->GetGameObjects();
-    for (auto& gameObject : gameObjects)
-    {
-        Light* light = gameObject->GetComponent<Light>();
-        if (light == nullptr)
-            continue;
-        
-        Matrix4x4 lightMatrix = gameObject->GetTransform()->GetWorldToLocalMatrixIgnoreScale();
-        Matrix4x4 orthoMatrix = Matrix4x4::CreateOrthographicLH(100.0f, 100.0f, .1f, 100.0f);
-        perframeData.directionalLightVPMatrix = lightMatrix * orthoMatrix;
-        
-        LightData lightData = light->GetData();
-        perframeData.directionalLightColor = lightData.color;
-        perframeData.directionalLightIntensity = lightData.intensity;
-        break;
-    }
-
-    gore::gfx::RenderContext& renderContext = m_RenderSystem->GetRenderContext();
-    renderContext.CopyDataToBuffer(m_GlobalConstantBuffer, perframeData);
 }
 
 void SampleApp::UpdateFPSText(float deltaTime)

@@ -1,4 +1,5 @@
 #include "../ShaderLibrary/GlobalBinding.hlsl"
+#include "../ShaderLibrary/ShadowPassBinding.hlsl"
 
 struct Attributes
 {

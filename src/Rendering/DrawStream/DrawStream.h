@@ -39,5 +39,5 @@ struct DrawStream final
 };
 
 void CreateDrawStreamFromDrawData(const std::vector<Draw>& drawData, DrawStream& drawStream);
-void ScheduleDrawStream(RenderContext& renderContext, DrawStream& drawStream, vk::CommandBuffer commandBuffer);
+void ScheduleDrawStream(RenderContext& renderContext, DrawStream& drawStream, vk::CommandBuffer commandBuffer, GraphicsPipelineHandle overridePipeline = {});
 } // namespace gore::renderer   

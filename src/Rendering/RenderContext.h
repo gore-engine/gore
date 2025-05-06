@@ -27,13 +27,23 @@
 #include "DescriptorPoolHolder.h"
 #include "Pool.h"
 
-#include "RawBindGroupUpdateDesc.h"
+#include "TransientBindGroupUpdateDesc.h"
 
 #include <vector>
 
 namespace gore::gfx
 {
 using namespace gore::renderer;
+
+static constexpr uint32_t c_MaxRenderTargets = 8;
+static constexpr uint32_t c_MaxViewports = 16;
+static constexpr uint32_t c_MaxVertexAttributes = 16;
+static constexpr uint32_t c_MaxBindingLayouts = 5;
+static constexpr uint32_t c_MaxBindingsPerLayout = 128;
+static constexpr uint32_t c_MaxVolatileConstantBuffersPerLayout = 6;
+static constexpr uint32_t c_MaxVolatileConstantBuffers = 32;
+static constexpr uint32_t c_MaxPushConstantSize = 128;
+static constexpr uint32_t c_ConstantBufferOffsetSizeAlignment = 256; // Partially bound constant buffers must have offsets aligned to this and sizes multiple of this
 
 enum PSOCreateRuntimeFlagBits
 {
@@ -124,13 +134,18 @@ ENGINE_CLASS(RenderContext) final
     const Sampler& GetSampler(SamplerHandle handle);
     void DestroySampler(SamplerHandle handle);
 
+    void ResetDescriptorPool(UpdateFrequency poolType = UpdateFrequency::PerFrame);
+
     BindGroupHandle CreateBindGroup(BindGroupDesc&& desc);
     void DestroyBindGroup(BindGroupHandle handle);
     const BindGroup& GetBindGroup(BindGroupHandle handle);
     const BindGroupDesc& GetBindGroupDesc(BindGroupHandle handle);
 
+    TransientBindGroup CreateTransientBindGroup(BindGroupDesc&& desc);
+
     // BindGroup Update for RPSL
-    void UpdateBindGroup(BindGroupHandle handle, const RawBindGroupUpdateDesc& desc);
+    void UpdateBindGroup(TransientBindGroup& bindGroup, BindGroupUpdateDesc&& desc, TransientBindGroupUpdateDesc&& transientDesc);
+    void UpdateBindGroup(BindGroupHandle handle, BindGroupUpdateDesc&& desc, TransientBindGroupUpdateDesc&& transientDesc);
 
     DynamicBufferHandle CreateDynamicBuffer(DynamicBufferDesc&& desc);
     const DynamicBufferDesc& GetDynamicBufferDesc(DynamicBufferHandle handle);
@@ -206,7 +221,21 @@ private:
 
     vk::DescriptorSetLayout m_EmptySetLayout;
 
+    struct FramedDescriptorPool
+    {
+        static const uint32_t c_MaxFrames = 3;
+
+        std::vector<DescriptorPoolHolder> pools;
+        uint32_t currentPoolIndex = 0;
+    } m_FramedDescriptorPool;
+
     DescriptorPoolHolder m_DescriptorPool[(uint32_t)UpdateFrequency::Count];
+
+    DescriptorPoolHolder GetDescriptorPool(UpdateFrequency poolType = UpdateFrequency::PerFrame)
+    {
+        return poolType == UpdateFrequency::PerFrame ? 
+            m_FramedDescriptorPool.pools[m_FramedDescriptorPool.currentPoolIndex] : m_DescriptorPool[(uint32_t)poolType];
+    }
 
     ResourceCache m_ResourceCache;
 

@@ -34,56 +34,55 @@ private:
     void PreRender();
 
     // Temporary RenderPassDesc for pipeline creation
-    void InitializeRpsSystem();
-    void CreateRenderPassDesc();
-    void CreateUnifiedGlobalDynamicBuffer();
-    void CreateGlobalBindGroup();
-    void CreatePipelines();
+    // void CreateRenderPassDesc();
+    // void CreateUnifiedGlobalDynamicBuffer();
+    // void CreateGlobalBindGroup();
+    // void CreatePipelines();
 
-    void CreateDefaultResources();
+    // void CreateDefaultResources();
 
-    void CreateForwardPipeline();
-    void CreateShadowmapPipeline();
+    // void CreateForwardPipeline();
+    // void CreateShadowmapPipeline();
 
-    const int K_OBJECT_BATCH_COUNT = 128;
+    // const int K_OBJECT_BATCH_COUNT = 128;
 
-    void UpdateAllGameObjectsGPUPerObjectData();
+    // // void UpdateAllGameObjectsGPUPerObjectData();
     
-    static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
-    static void ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
-    static void ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    // static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    // static void ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
+    // static void ForwardOpaquePassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
 private:
     void UpdateFPSText(float deltaTime);
 
     gore::gfx::GraphicsCaps m_GraphicsCaps;
 
-    struct SampleRenderPass
-    {
-        RenderPassDesc forwardPassDesc;
-        RenderPassDesc shadowPassDesc;
-    } renderPasses;
+    // struct SampleRenderPass
+    // {
+    //     RenderPassDesc forwardPassDesc;
+    //     RenderPassDesc shadowPassDesc;
+    // } renderPasses;
 
-    struct SamplePipeline
-    {
-        GraphicsPipelineHandle blankPipeline;
-        GraphicsPipelineHandle forwardPipeline;
-        GraphicsPipelineHandle shadowPipeline;
-        GraphicsPipelineHandle gbuffferPipeline;
-    } pipelines;
+    // struct SamplePipeline
+    // {
+    //     GraphicsPipelineHandle blankPipeline;
+    //     GraphicsPipelineHandle forwardPipeline;
+    //     GraphicsPipelineHandle shadowPipeline;
+    //     GraphicsPipelineHandle gbuffferPipeline;
+    // } pipelines;
 
-    struct DefaultResources
-    {
-        gore::gfx::TextureHandle whiteTexture;
-        gore::gfx::TextureHandle blackTexture;
-    } defaultResources;
+    // struct DefaultResources
+    // {
+    //     gore::gfx::TextureHandle whiteTexture;
+    //     gore::gfx::TextureHandle blackTexture;
+    // } defaultResources;
 
-    gore::gfx::BufferHandle m_UnifiedDynamicBuffer;
-    gore::gfx::SamplerHandle m_ShadowmapSampler;
-    gore::gfx::DynamicBufferHandle m_UnifiedDynamicBufferHandle;
+    // gore::gfx::BufferHandle m_UnifiedDynamicBuffer;
+    // gore::gfx::SamplerHandle m_ShadowmapSampler;
+    // gore::gfx::DynamicBufferHandle m_UnifiedDynamicBufferHandle;
 
-    gore::gfx::BindLayout m_GlobalBindLayout;
-    gore::gfx::BindGroupHandle m_GlobalBindGroup;
-    gore::gfx::BufferHandle m_GlobalConstantBuffer;
+    // gore::gfx::BindLayout m_GlobalBindLayout;
+    // gore::gfx::BindGroupHandle m_GlobalBindGroup;
+    // gore::gfx::BufferHandle m_GlobalConstantBuffer;
 private:
     gore::Scene* scene;
 };
