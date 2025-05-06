@@ -563,8 +563,10 @@ void RenderSystem::RunRpsSystem()
         return;
 
     UpdateRenderGraph();
-
+        
     WaitForSwapChainBuffer();
+
+    UpdateGlobalConstantBuffer();
 
     ResetPerFrameDescriptorPool();
 
@@ -1630,6 +1632,38 @@ void RenderSystem::CreateDefaultResources()
             .data      = whiteTextureData.data(),
             .dataSize  = 4,
         });
+}
+
+void RenderSystem::UpdateGlobalConstantBuffer()
+{
+    Camera* mainCamera = Camera::Main;
+    if (mainCamera == nullptr)
+    {
+        return;
+    }
+
+    PerframeData perframeData;
+    perframeData.vpMatrix = mainCamera->GetViewProjectionMatrix();
+    
+    // Update Main Light
+    auto& gameObjects = Scene::GetActiveScene()->GetGameObjects();
+    for (auto& gameObject : gameObjects)
+    {
+        Light* light = gameObject->GetComponent<Light>();
+        if (light == nullptr)
+            continue;
+        
+        Matrix4x4 lightMatrix = gameObject->GetTransform()->GetWorldToLocalMatrixIgnoreScale();
+        Matrix4x4 orthoMatrix = Matrix4x4::CreateOrthographicLH(100.0f, 100.0f, .1f, 100.0f);
+        perframeData.directionalLightVPMatrix = lightMatrix * orthoMatrix;
+        
+        LightData lightData = light->GetData();
+        perframeData.directionalLightColor = lightData.color;
+        perframeData.directionalLightIntensity = lightData.intensity;
+        break;
+    }
+
+    m_RenderContext->CopyDataToBuffer(m_GlobalConstantBuffer, perframeData);
 }
 
 void RenderSystem::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)

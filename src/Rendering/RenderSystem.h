@@ -108,8 +108,6 @@ private:
     vk::raii::DescriptorPool m_ImguiDescriptorPool;
 
 private:
-    void PrepareGPUSceneData();
-
     static void RecordDebugMarker(void* pUserContext, const RpsRuntimeOpRecordDebugMarkerArgs* pArgs);
     static void SetDebugName(void* pUserContext, const RpsRuntimeOpSetDebugNameArgs* pArgs);
 
@@ -166,6 +164,8 @@ private:
     void ReserveSemaphores(uint32_t numSyncs);
 
     uint64_t CalcGuaranteedCompletedFrameindexForRps() const;
+    
+    void UpdateGlobalConstantBuffer();
 
     // static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
     static void ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext);
