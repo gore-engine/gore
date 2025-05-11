@@ -89,11 +89,7 @@ Instance::Instance(App* app) :
 #endif
 
     // Instance Creation
-#ifdef VK_API_VERSION_1_1
-    m_ApiVersion = m_Context.enumerateInstanceVersion(); // TODO: potential crash
-#else
-    m_ApiVersion = VK_API_VERSION_1_0;
-#endif
+    m_ApiVersion = VK_API_VERSION_1_3;
 
     std::vector<const char*> enabledInstanceExtensions = BuildEnabledExtensions<VulkanInstanceExtensionBitset, VulkanInstanceExtension>(instanceExtensionProperties,
                                                                                                                                         m_EnabledInstanceExtensions);
