@@ -108,7 +108,7 @@ void RenderSystem::Initialize()
     m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), swapchainCount, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
 
-    InitVulkanGraphicsCaps(m_GraphicsCaps, *m_Instance.Get(), *m_Device.GetPhysicalDevice().Get());
+    InitVulkanGraphicsCaps(m_GraphicsCaps, m_Instance, m_Device);
 
     RenderContextCreateInfo renderContextCreateInfo = {};
     renderContextCreateInfo.device = &m_Device;
