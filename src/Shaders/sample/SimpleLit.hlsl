@@ -1,5 +1,6 @@
 #include "../ShaderLibrary/GlobalBinding.hlsl"
 #include "../ShaderLibrary/ShadowPassBinding.hlsl"
+#include "../ShaderLibrary/BindlessMaterial.hlsl"
 
 struct Attributes
 {
@@ -48,6 +49,7 @@ float4 ps(Varyings v) : SV_Target0
     float shadowMapDepth = _DirectionalShadowmap.Sample(_DirectionalShadowmapSampler, shadowCoord.xy).r;
     float shadowFactor = shadowCoord.z < shadowMapDepth ? 1.0f : 0.0f;
 
-    // Return the shadow factor as the output color
-    return float4(shadowFactor, shadowFactor, shadowFactor, 1.0f);
+    Texture2D albedo = LOAD_ARRAY_TEXTURES(_Albedo, 0);
+
+    return albedo.Sample(_AlbedoSampler, uv);
 }

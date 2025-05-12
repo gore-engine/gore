@@ -10,4 +10,12 @@
 #define SAMPLE_TEXTURE_2D(TextureName, UV) TextureName.Sample(TextureName##Sampler, UV)
 #define SAMPLE_TEXTURE_2D_SAMPLER(TextureName, SamplerName, UV) TextureName.Sample(SamplerName, UV)
 
+#if SUPPORT_BINDLESS
+    #define HLSL_ARRAY_TEXTURES(ArrayTextureName, Format) Texture2D<Format> ArrayTextureName[] 
+    #define LOAD_ARRAY_TEXTURES(ArrayTextureName, Index) ArrayTextureName[Index]
+#else
+    #define HLSL_ARRAY_TEXTURES(ArrayTextureName, Format) Texture2D<Format> ArrayTextureName
+    #define LOAD_ARRAY_TEXTURES(ArrayTextureName, Index) ArrayTextureName
+#endif
+
 #endif
