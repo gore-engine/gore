@@ -1184,6 +1184,10 @@ void RenderSystem::CreateGlobalDescriptorSets()
     });
 }
 
+void RenderSystem::CreateMaterialDescriptorSets()
+{
+}
+
 void RenderSystem:: CreateUVQuadDescriptorSets()
 {
     std::vector<Binding> bindings {
