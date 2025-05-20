@@ -1207,7 +1207,7 @@ void RenderSystem::CreateMaterialDescriptorSets()
     m_BindlessMaterialBinding.bindGroup = m_RenderContext->CreateBindGroup({
         .debugName = "Bindless Material BindGroup",
         .updateFrequency = UpdateFrequency::Persistent,
-        .textures = {},
+        .textures = {{0, m_UVCheckTextureHandle}},
         .buffers = {},
         .samplers = {{1, m_BindlessMaterialBinding.albedoSampler}},
         .bindLayout = &m_BindlessMaterialBinding.bindLayout,
@@ -1581,7 +1581,7 @@ void RenderSystem::CreateRpsPipelines()
                          {.byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT},
                          {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
                          {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
-            .bindLayouts   = { m_GlobalBindLayout, m_ShadowPassBindLayout },
+            .bindLayouts   = { m_GlobalBindLayout, m_ShadowPassBindLayout, m_BindlessMaterialBinding.bindLayout },
             .dynamicBuffer = m_DynamicBufferHandle,
             .renderPass    = forwardPass.GetRenderPass().renderPass,
             .subpassIndex  = 0
@@ -1631,11 +1631,13 @@ void RenderSystem::CreateRpsPipelines()
         .bindGroup = {m_GlobalBindGroup},
     });
 
-    forwardMat.AddPass(Pass{
-        .name = "ForwardPass",
-        .shader = m_RpsPipelines.forwardPipeline,
-        .bindGroup = {m_GlobalBindGroup},
-    });
+    Pass forwardOpaquePass;
+    forwardOpaquePass.name = "ForwardPass";
+    forwardOpaquePass.shader = m_RpsPipelines.forwardPipeline;
+    forwardOpaquePass.bindGroup[0] = m_GlobalBindGroup;
+    forwardOpaquePass.bindGroup[2] = m_BindlessMaterialBinding.bindGroup;
+
+    forwardMat.AddPass(forwardOpaquePass);
 }
 
 void RenderSystem::CreateDefaultResources()
