@@ -33,6 +33,15 @@ struct TextureBinding final
     SamplerHandle samplerHandle = {};
 };
 
+/// @brief Texture binding for bindless textures
+struct ArrayTexturesBinding final
+{
+    uint32_t binding                   = 0;
+    uint32_t count                     = 0;
+    std::vector<TextureHandle> handles = {};
+    TextureUsageBits usage             = TextureUsageBits::Sampled;
+};
+
 /// @brief Buffer handle with byte offset
 struct BufferBinding final
 {
