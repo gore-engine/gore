@@ -148,6 +148,7 @@ void RenderSystem::Initialize()
     CreateTextureObjects();
 
     CreateGlobalDescriptorSets();
+    CreateMaterialDescriptorSets();
     CreateShadowPassObject();
     CreateUVQuadDescriptorSets();
     CreateDynamicUniformBuffer();
@@ -1186,6 +1187,31 @@ void RenderSystem::CreateGlobalDescriptorSets()
 
 void RenderSystem::CreateMaterialDescriptorSets()
 {
+    std::vector<Binding> bindings {
+        {0, BindType::SampledImage, 256, ShaderStage::Fragment},
+        {1, BindType::Sampler, 1, ShaderStage::Fragment}
+    };
+
+    BindLayoutCreateInfo bindLayoutCreateInfo = 
+    {
+        .name = "Bindless Material Descriptor Set Layout",
+        .bindings = bindings
+    };
+
+    m_BindlessMaterialBinding.bindLayout = m_RenderContext->GetOrCreateBindLayout(bindLayoutCreateInfo);
+
+    m_BindlessMaterialBinding.albedoSampler = m_RenderContext->CreateSampler({
+        .debugName = "Bindless Material Sampler"
+    });
+
+    m_BindlessMaterialBinding.bindGroup = m_RenderContext->CreateBindGroup({
+        .debugName = "Bindless Material BindGroup",
+        .updateFrequency = UpdateFrequency::Persistent,
+        .textures = {},
+        .buffers = {},
+        .samplers = {{1, m_BindlessMaterialBinding.albedoSampler}},
+        .bindLayout = &m_BindlessMaterialBinding.bindLayout,
+    });
 }
 
 void RenderSystem:: CreateUVQuadDescriptorSets()
@@ -1722,4 +1748,3 @@ void RenderSystem::ResetPerFrameDescriptorPool()
     m_RenderContext->ResetDescriptorPool(UpdateFrequency::PerFrame);
 }
 } // namespace gore
-

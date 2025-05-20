@@ -242,8 +242,13 @@ private:
     BufferHandle m_GlobalConstantBuffer;
 
     // Material Binding
-    BindLayout m_BindlessMaterialBindLayout;
-    BindGroupHandle m_BindlessMaterialBindGroup;
+    struct MaterialBinding
+    {
+        SamplerHandle albedoSampler;
+
+        BindLayout bindLayout;
+        BindGroupHandle bindGroup;
+    } m_BindlessMaterialBinding;
 
     // Pass Binding
     BindLayout m_ShadowPassBindLayout;
