@@ -1207,7 +1207,11 @@ void RenderSystem::CreateMaterialDescriptorSets()
     m_BindlessMaterialBinding.bindGroup = m_RenderContext->CreateBindGroup({
         .debugName = "Bindless Material BindGroup",
         .updateFrequency = UpdateFrequency::Persistent,
-        .textures = {{0, m_UVCheckTextureHandle}},
+        .textures = {
+            {0, m_DefaultResources.whiteTexture, TextureUsageBits::Sampled, 0},
+            {0, m_DefaultResources.blackTexture, TextureUsageBits::Sampled, 1}, 
+            {0, m_DefaultResources.gridTexture, TextureUsageBits::Sampled, 2},
+            {0, m_UVCheckTextureHandle, TextureUsageBits::Sampled, 3}},
         .buffers = {},
         .samplers = {{1, m_BindlessMaterialBinding.albedoSampler}},
         .bindLayout = &m_BindlessMaterialBinding.bindLayout,
@@ -1664,6 +1668,8 @@ void RenderSystem::CreateDefaultResources()
             .data      = whiteTextureData.data(),
             .dataSize  = 4,
         });
+
+    m_DefaultResources.gridTexture = m_RenderContext->CreateTextureHandle("grid.jpg");
 }
 
 void RenderSystem::UpdateGlobalConstantBuffer()

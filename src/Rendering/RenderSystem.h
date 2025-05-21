@@ -200,6 +200,7 @@ private:
     {
         TextureHandle whiteTexture;
         TextureHandle blackTexture;
+        TextureHandle gridTexture;
     } m_DefaultResources;
 
     void CreateDefaultResources();

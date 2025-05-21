@@ -49,7 +49,7 @@ float4 ps(Varyings v) : SV_Target0
     float shadowMapDepth = _DirectionalShadowmap.Sample(_DirectionalShadowmapSampler, shadowCoord.xy).r;
     float shadowFactor = shadowCoord.z < shadowMapDepth ? 1.0f : 0.0f;
 
-    Texture2D albedo = LOAD_ARRAY_TEXTURES(_Albedo, 0);
+    Texture2D albedo = LOAD_ARRAY_TEXTURES(_Albedo, 3);
 
     return albedo.Sample(_AlbedoSampler, uv);
 }
