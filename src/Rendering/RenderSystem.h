@@ -200,6 +200,7 @@ private:
     {
         TextureHandle whiteTexture;
         TextureHandle blackTexture;
+        TextureHandle gridTexture;
     } m_DefaultResources;
 
     void CreateDefaultResources();
@@ -241,6 +242,15 @@ private:
     BindGroupHandle m_GlobalBindGroup;
     BufferHandle m_GlobalConstantBuffer;
 
+    // Material Binding
+    struct MaterialBinding
+    {
+        SamplerHandle albedoSampler;
+
+        BindLayout bindLayout;
+        BindGroupHandle bindGroup;
+    } m_BindlessMaterialBinding;
+
     // Pass Binding
     BindLayout m_ShadowPassBindLayout;
     SamplerHandle m_ShadowmapSamplerHandler;
@@ -276,6 +286,7 @@ private:
     void CreateSwapchain(uint32_t imageCount, uint32_t width, uint32_t height);
     void CreateDepthBuffer();
     void CreateGlobalDescriptorSets();
+    void CreateMaterialDescriptorSets();
     void CreateShadowPassObject();
     void CreateUVQuadDescriptorSets();
     void CreateDynamicUniformBuffer();

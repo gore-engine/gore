@@ -25,4 +25,5 @@ COMBINED_IMAGE_SAMPLER DESCRIPTOR_SET_BINDING(Binding, Region##_BINDING_DESCRIPT
 
 #define SAMPLER(Region, Binding, SamplerName) DESCRIPTOR_SET_BINDING(Binding, Region##_BINDING_DESCRIPTOR_SET) HLSL_SAMPLER(SamplerName)
 
+#define ARRAY_TEXTURES(Region, Binding, ArrayTextureName, Format) DESCRIPTOR_SET_BINDING(Binding, Region##_BINDING_DESCRIPTOR_SET) HLSL_ARRAY_TEXTURES(ArrayTextureName, Format)
 #endif

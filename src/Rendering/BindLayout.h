@@ -25,7 +25,7 @@ struct Binding final
 {
     uint8_t binding         = 0;
     BindType type           = BindType::UniformBuffer;
-    uint8_t descriptorCount = 1;
+    uint16_t descriptorCount = 1;
     ShaderStage stage       = ShaderStage::Vertex;
 };
 

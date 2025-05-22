@@ -108,7 +108,7 @@ void RenderSystem::Initialize()
     m_Swapchain = m_Device.CreateSwapchain(window->GetNativeHandle(), swapchainCount, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     m_Device.SetName(m_Swapchain.Get(), "Main Swapchain");
 
-    InitVulkanGraphicsCaps(m_GraphicsCaps, *m_Instance.Get(), *m_Device.GetPhysicalDevice().Get());
+    InitVulkanGraphicsCaps(m_GraphicsCaps, m_Instance, m_Device);
 
     RenderContextCreateInfo renderContextCreateInfo = {};
     renderContextCreateInfo.device = &m_Device;
@@ -148,6 +148,7 @@ void RenderSystem::Initialize()
     CreateTextureObjects();
 
     CreateGlobalDescriptorSets();
+    CreateMaterialDescriptorSets();
     CreateShadowPassObject();
     CreateUVQuadDescriptorSets();
     CreateDynamicUniformBuffer();
@@ -1184,6 +1185,39 @@ void RenderSystem::CreateGlobalDescriptorSets()
     });
 }
 
+void RenderSystem::CreateMaterialDescriptorSets()
+{
+    std::vector<Binding> bindings {
+        {0, BindType::SampledImage, 256, ShaderStage::Fragment},
+        {1, BindType::Sampler, 1, ShaderStage::Fragment}
+    };
+
+    BindLayoutCreateInfo bindLayoutCreateInfo = 
+    {
+        .name = "Bindless Material Descriptor Set Layout",
+        .bindings = bindings
+    };
+
+    m_BindlessMaterialBinding.bindLayout = m_RenderContext->GetOrCreateBindLayout(bindLayoutCreateInfo);
+
+    m_BindlessMaterialBinding.albedoSampler = m_RenderContext->CreateSampler({
+        .debugName = "Bindless Material Sampler"
+    });
+
+    m_BindlessMaterialBinding.bindGroup = m_RenderContext->CreateBindGroup({
+        .debugName = "Bindless Material BindGroup",
+        .updateFrequency = UpdateFrequency::Persistent,
+        .textures = {
+            {0, m_DefaultResources.whiteTexture, TextureUsageBits::Sampled, 0},
+            {0, m_DefaultResources.blackTexture, TextureUsageBits::Sampled, 1}, 
+            {0, m_DefaultResources.gridTexture, TextureUsageBits::Sampled, 2},
+            {0, m_UVCheckTextureHandle, TextureUsageBits::Sampled, 3}},
+        .buffers = {},
+        .samplers = {{1, m_BindlessMaterialBinding.albedoSampler}},
+        .bindLayout = &m_BindlessMaterialBinding.bindLayout,
+    });
+}
+
 void RenderSystem:: CreateUVQuadDescriptorSets()
 {
     std::vector<Binding> bindings {
@@ -1551,7 +1585,7 @@ void RenderSystem::CreateRpsPipelines()
                          {.byteOffset = 0, .format = GraphicsFormat::RGB32_FLOAT},
                          {.byteOffset = 12, .format = GraphicsFormat::RG32_FLOAT},
                          {.byteOffset = 20, .format = GraphicsFormat::RGB32_FLOAT}}}},
-            .bindLayouts   = { m_GlobalBindLayout, m_ShadowPassBindLayout },
+            .bindLayouts   = { m_GlobalBindLayout, m_ShadowPassBindLayout, m_BindlessMaterialBinding.bindLayout },
             .dynamicBuffer = m_DynamicBufferHandle,
             .renderPass    = forwardPass.GetRenderPass().renderPass,
             .subpassIndex  = 0
@@ -1601,11 +1635,13 @@ void RenderSystem::CreateRpsPipelines()
         .bindGroup = {m_GlobalBindGroup},
     });
 
-    forwardMat.AddPass(Pass{
-        .name = "ForwardPass",
-        .shader = m_RpsPipelines.forwardPipeline,
-        .bindGroup = {m_GlobalBindGroup},
-    });
+    Pass forwardOpaquePass;
+    forwardOpaquePass.name = "ForwardPass";
+    forwardOpaquePass.shader = m_RpsPipelines.forwardPipeline;
+    forwardOpaquePass.bindGroup[0] = m_GlobalBindGroup;
+    forwardOpaquePass.bindGroup[2] = m_BindlessMaterialBinding.bindGroup;
+
+    forwardMat.AddPass(forwardOpaquePass);
 }
 
 void RenderSystem::CreateDefaultResources()
@@ -1632,6 +1668,8 @@ void RenderSystem::CreateDefaultResources()
             .data      = whiteTextureData.data(),
             .dataSize  = 4,
         });
+
+    m_DefaultResources.gridTexture = m_RenderContext->CreateTextureHandle("grid.jpg");
 }
 
 void RenderSystem::UpdateGlobalConstantBuffer()
@@ -1718,4 +1756,3 @@ void RenderSystem::ResetPerFrameDescriptorPool()
     m_RenderContext->ResetDescriptorPool(UpdateFrequency::PerFrame);
 }
 } // namespace gore
-

@@ -1,5 +1,6 @@
 // WORKAROUND: would add api macro to shader compiler in the future
 #define VULKAN_API (1)
+#define SUPPORT_BINDLESS (1)
 
 #ifndef GORE_COMMON
 #define GORE_COMMON

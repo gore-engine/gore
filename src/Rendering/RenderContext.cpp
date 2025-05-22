@@ -64,8 +64,10 @@ BindLayout RenderContext::GetOrCreateBindLayout(const BindLayoutCreateInfo& crea
         return it->second;
     }
 
-    BindLayout bindLayout;
+    bool isBindless = false;
+    
     std::vector<vk::DescriptorSetLayoutBinding> bindings;
+    std::vector<vk::DescriptorBindingFlags> bindingFlags;
     for (const auto& binding : createInfo.bindings)
     {
         vk::DescriptorSetLayoutBinding layoutBinding(
@@ -76,9 +78,26 @@ BindLayout RenderContext::GetOrCreateBindLayout(const BindLayoutCreateInfo& crea
             nullptr);
 
         bindings.push_back(layoutBinding);
+        
+        isBindless |= (binding.descriptorCount > 1);
+        bindingFlags.push_back(binding.descriptorCount > 1 ? vk::DescriptorBindingFlagBits::ePartiallyBound : vk::DescriptorBindingFlags());
     }
+        
+    auto layoutCreateInfo = vk::DescriptorSetLayoutCreateInfo()
+        .setBindingCount(static_cast<uint32_t>(bindings.size()))
+        .setPBindings(bindings.data());
 
-    bindLayout.layout = VULKAN_DEVICE.createDescriptorSetLayout({{}, static_cast<uint32_t>(bindings.size()), bindings.data()});
+    auto layoutBindingCreateFlagsInfo = vk::DescriptorSetLayoutBindingFlagsCreateInfo()
+        .setBindingCount(static_cast<uint32_t>(bindingFlags.size()))
+        .setPBindingFlags(bindingFlags.data());
+
+    if (isBindless)
+    {
+        layoutCreateInfo.setPNext(&layoutBindingCreateFlagsInfo);
+    }
+        
+    BindLayout bindLayout;
+    bindLayout.layout = VULKAN_DEVICE.createDescriptorSetLayout(layoutCreateInfo);
 
     SetObjectDebugName(bindLayout.layout, createInfo.name != nullptr ? createInfo.name : "NoName_BindLayout");
 
