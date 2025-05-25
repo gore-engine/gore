@@ -103,6 +103,16 @@ private:
     // Imgui
     void InitImgui();
     void ShutdownImgui();
+    
+    struct ImGuiObjects
+    {
+        vk::RenderPass renderPass                 = {};
+        std::vector<vk::Framebuffer> framebuffers = {};
+    } m_ImGuiObjects;
+
+    void StartImguiDraw();
+    void DrawImgui();
+    void EndImguiDraw(RpsRenderGraph renderGraph);
 
     ImGui_ImplVulkanH_Window m_ImguiWindowData;
     vk::raii::DescriptorPool m_ImguiDescriptorPool;
