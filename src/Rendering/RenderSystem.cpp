@@ -481,7 +481,7 @@ void RenderSystem::InitImgui()
     vk::AttachmentDescription attachmentDesc = {};
     attachmentDesc.format = m_Swapchain.GetFormat().format;
     attachmentDesc.samples = vk::SampleCountFlagBits::e1;
-    attachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
+    attachmentDesc.loadOp = vk::AttachmentLoadOp::eLoad;
     attachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
     attachmentDesc.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
     attachmentDesc.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
