@@ -621,7 +621,13 @@ void RenderSystem::RunRpsSystem()
 
     ResetCommandPools();
 
-    ExecuteRenderGraph(m_FrameCounter, *m_RpsSystem->rpsRDG);
+    ExecuteRenderGraph(m_FrameCounter, *m_RpsSystem->rpsRDG, true, false);
+
+    StartImguiDraw();
+
+    DrawImgui();
+
+    EndImguiDraw(*m_RpsSystem->rpsRDG);
 
     vk::PresentInfoKHR presentInfo = {};
     presentInfo.swapchainCount   = 1;
@@ -764,7 +770,8 @@ void RenderSystem::StartImguiDraw()
 
 void RenderSystem::DrawImgui()
 {
-
+    bool show = true;
+    ImGui::ShowDemoWindow(&show);
 }
 
 void RenderSystem::EndImguiDraw(RpsRenderGraph renderGraph)
@@ -782,7 +789,7 @@ void RenderSystem::EndImguiDraw(RpsRenderGraph renderGraph)
     graphToGuiBarrier.srcAccessMask = {};
     graphToGuiBarrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite;
     graphToGuiBarrier.oldLayout =
-        m_FrameCounter < m_Swapchain.GetImageCount() ? vk::ImageLayout::eUndefined : vk::ImageLayout::eColorAttachmentOptimal;
+        m_FrameCounter < m_Swapchain.GetImageCount() ? vk::ImageLayout::eUndefined : vk::ImageLayout::ePresentSrcKHR;
     graphToGuiBarrier.newLayout                   = vk::ImageLayout::eColorAttachmentOptimal;
     graphToGuiBarrier.image                       = m_Swapchain.GetImages()[m_backBufferIndex];
     graphToGuiBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
