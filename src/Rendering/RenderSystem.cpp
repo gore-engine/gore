@@ -502,7 +502,7 @@ void RenderSystem::InitImgui()
     renderPassInfo.pAttachments = &attachmentDesc;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDesc;
-    m_ImGuiObjects.renderPass = m_Device.Get().createRenderPass(renderPassInfo);
+    m_ImGuiObjects.renderPass = (*m_Device.Get()).createRenderPass(renderPassInfo);
 
 	//this initializes imgui for Vulkan
 	ImGui_ImplVulkan_InitInfo init_info = {};
@@ -530,7 +530,7 @@ void RenderSystem::InitImgui()
     for (uint32_t i = 0; i < m_Swapchain.GetImageCount(); i++)
     {
         framebufferInfo.pAttachments = &(*m_Swapchain.GetImageViews()[i]);
-        m_ImGuiObjects.framebuffers[i] = m_Device.Get().createFramebuffer(framebufferInfo);
+        m_ImGuiObjects.framebuffers[i] = (*m_Device.Get()).createFramebuffer(framebufferInfo);
     }
 }
 
