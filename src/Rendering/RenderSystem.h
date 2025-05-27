@@ -104,6 +104,9 @@ private:
     void InitImgui();
     void ShutdownImgui();
     
+    void CreateImGuiFramebuffer();
+    void DestroyImGuiFramebuffer();
+
     struct ImGuiObjects
     {
         vk::RenderPass renderPass                 = {};

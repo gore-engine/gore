@@ -434,6 +434,10 @@ void RenderSystem::OnResize(Window* window, int width, int height)
 
     m_Swapchain.Recreate(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     CreateDepthBuffer();
+
+    // ImGui recreate
+    DestroyImGuiFramebuffer();
+    CreateImGuiFramebuffer();
 }
 
 void RenderSystem::DrawRenderer(DrawKey key, vk::CommandBuffer cmd, GraphicsPipelineHandle overridePipeline)
@@ -442,6 +446,36 @@ void RenderSystem::DrawRenderer(DrawKey key, vk::CommandBuffer cmd, GraphicsPipe
         return;
 
     ScheduleDrawStream(*m_RenderContext, m_DrawData[key], cmd);        
+}
+
+void RenderSystem::CreateImGuiFramebuffer()
+{
+    assert(m_ImGuiObjects.renderPass != VK_NULL_HANDLE);
+
+    vk::FramebufferCreateInfo framebufferInfo = {};
+    framebufferInfo.renderPass = m_ImGuiObjects.renderPass;
+    framebufferInfo.attachmentCount = 1;
+    framebufferInfo.width = m_Swapchain.GetExtent().width;
+    framebufferInfo.height = m_Swapchain.GetExtent().height;
+    framebufferInfo.layers = 1;
+
+    assert(m_ImGuiObjects.framebuffers.empty());
+    m_ImGuiObjects.framebuffers.resize(m_Swapchain.GetImageCount());
+
+    for (uint32_t i = 0; i < m_Swapchain.GetImageCount(); i++)
+    {
+        framebufferInfo.pAttachments = &(*m_Swapchain.GetImageViews()[i]);
+        m_ImGuiObjects.framebuffers[i] = (*m_Device.Get()).createFramebuffer(framebufferInfo);
+    }
+}
+
+void RenderSystem::DestroyImGuiFramebuffer()
+{
+    for (auto& framebuffer : m_ImGuiObjects.framebuffers)
+    {
+        (*m_Device.Get()).destroyFramebuffer(framebuffer);
+    }
+    m_ImGuiObjects.framebuffers.clear();
 }
 
 void RenderSystem::InitImgui()
@@ -516,22 +550,7 @@ void RenderSystem::InitImgui()
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 	ImGui_ImplVulkan_Init(&init_info, m_ImGuiObjects.renderPass);
 
-    assert(m_ImGuiObjects.renderPass != VK_NULL_HANDLE);
-
-    vk::FramebufferCreateInfo framebufferInfo = {};
-    framebufferInfo.renderPass = m_ImGuiObjects.renderPass;
-    framebufferInfo.attachmentCount = 1;
-    framebufferInfo.width = m_Swapchain.GetExtent().width;
-    framebufferInfo.height = m_Swapchain.GetExtent().height;
-    framebufferInfo.layers = 1;
-
-    m_ImGuiObjects.framebuffers.resize(m_Swapchain.GetImageCount());
-
-    for (uint32_t i = 0; i < m_Swapchain.GetImageCount(); i++)
-    {
-        framebufferInfo.pAttachments = &(*m_Swapchain.GetImageViews()[i]);
-        m_ImGuiObjects.framebuffers[i] = (*m_Device.Get()).createFramebuffer(framebufferInfo);
-    }
+    CreateImGuiFramebuffer();
 }
 
 void RenderSystem::ShutdownImgui()
@@ -543,10 +562,8 @@ void RenderSystem::ShutdownImgui()
     m_ImguiDescriptorPool.clear();
 
     (*m_Device.Get()).destroyRenderPass(m_ImGuiObjects.renderPass);
-    for (auto& framebuffer : m_ImGuiObjects.framebuffers)
-    {
-        (*m_Device.Get()).destroyFramebuffer(framebuffer);
-    }
+    
+    DestroyImGuiFramebuffer();
 }
 
 void RenderSystem::RecordDebugMarker(void* pUserContext, const RpsRuntimeOpRecordDebugMarkerArgs* pArgs)
