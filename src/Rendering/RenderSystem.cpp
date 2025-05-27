@@ -434,6 +434,10 @@ void RenderSystem::OnResize(Window* window, int width, int height)
 
     m_Swapchain.Recreate(3, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     CreateDepthBuffer();
+
+    // ImGui recreate
+    DestroyImGuiFramebuffer();
+    CreateImGuiFramebuffer();
 }
 
 void RenderSystem::DrawRenderer(DrawKey key, vk::CommandBuffer cmd, GraphicsPipelineHandle overridePipeline)
@@ -442,6 +446,36 @@ void RenderSystem::DrawRenderer(DrawKey key, vk::CommandBuffer cmd, GraphicsPipe
         return;
 
     ScheduleDrawStream(*m_RenderContext, m_DrawData[key], cmd);        
+}
+
+void RenderSystem::CreateImGuiFramebuffer()
+{
+    assert(m_ImGuiObjects.renderPass != VK_NULL_HANDLE);
+
+    vk::FramebufferCreateInfo framebufferInfo = {};
+    framebufferInfo.renderPass = m_ImGuiObjects.renderPass;
+    framebufferInfo.attachmentCount = 1;
+    framebufferInfo.width = m_Swapchain.GetExtent().width;
+    framebufferInfo.height = m_Swapchain.GetExtent().height;
+    framebufferInfo.layers = 1;
+
+    assert(m_ImGuiObjects.framebuffers.empty());
+    m_ImGuiObjects.framebuffers.resize(m_Swapchain.GetImageCount());
+
+    for (uint32_t i = 0; i < m_Swapchain.GetImageCount(); i++)
+    {
+        framebufferInfo.pAttachments = &(*m_Swapchain.GetImageViews()[i]);
+        m_ImGuiObjects.framebuffers[i] = (*m_Device.Get()).createFramebuffer(framebufferInfo);
+    }
+}
+
+void RenderSystem::DestroyImGuiFramebuffer()
+{
+    for (auto& framebuffer : m_ImGuiObjects.framebuffers)
+    {
+        (*m_Device.Get()).destroyFramebuffer(framebuffer);
+    }
+    m_ImGuiObjects.framebuffers.clear();
 }
 
 void RenderSystem::InitImgui()
@@ -477,6 +511,33 @@ void RenderSystem::InitImgui()
 	//this initializes imgui for SDL
 	ImGui_ImplGlfw_InitForVulkan(m_App->GetWindow()->Get(), true);
 
+    //this initialize renderPass for ImGui
+    vk::AttachmentDescription attachmentDesc = {};
+    attachmentDesc.format = m_Swapchain.GetFormat().format;
+    attachmentDesc.samples = vk::SampleCountFlagBits::e1;
+    attachmentDesc.loadOp = vk::AttachmentLoadOp::eLoad;
+    attachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
+    attachmentDesc.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+    attachmentDesc.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+    attachmentDesc.initialLayout = vk::ImageLayout::eUndefined;
+    attachmentDesc.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+
+    vk::AttachmentReference colorAttachmentRef = {};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+    vk::SubpassDescription subpassDesc = {};
+    subpassDesc.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+    subpassDesc.colorAttachmentCount = 1;
+    subpassDesc.pColorAttachments = &colorAttachmentRef;
+
+    vk::RenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &attachmentDesc;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpassDesc;
+    m_ImGuiObjects.renderPass = (*m_Device.Get()).createRenderPass(renderPassInfo);
+
 	//this initializes imgui for Vulkan
 	ImGui_ImplVulkan_InitInfo init_info = {};
 	init_info.Instance = *m_Device.GetInstance()->Get();
@@ -487,9 +548,9 @@ void RenderSystem::InitImgui()
 	init_info.MinImageCount = 3;
 	init_info.ImageCount = 3;
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    init_info.UseDynamicRendering = true;
-    init_info.ColorAttachmentFormat = static_cast<VkFormat>(m_Swapchain.GetFormat().format);
-	ImGui_ImplVulkan_Init(&init_info, nullptr);
+	ImGui_ImplVulkan_Init(&init_info, m_ImGuiObjects.renderPass);
+
+    CreateImGuiFramebuffer();
 }
 
 void RenderSystem::ShutdownImgui()
@@ -499,6 +560,10 @@ void RenderSystem::ShutdownImgui()
     ImGui::DestroyContext();
 
     m_ImguiDescriptorPool.clear();
+
+    (*m_Device.Get()).destroyRenderPass(m_ImGuiObjects.renderPass);
+    
+    DestroyImGuiFramebuffer();
 }
 
 void RenderSystem::RecordDebugMarker(void* pUserContext, const RpsRuntimeOpRecordDebugMarkerArgs* pArgs)
@@ -573,7 +638,13 @@ void RenderSystem::RunRpsSystem()
 
     ResetCommandPools();
 
-    ExecuteRenderGraph(m_FrameCounter, *m_RpsSystem->rpsRDG);
+    ExecuteRenderGraph(m_FrameCounter, *m_RpsSystem->rpsRDG, true, false);
+
+    StartImguiDraw();
+
+    DrawImgui();
+
+    EndImguiDraw(*m_RpsSystem->rpsRDG);
 
     vk::PresentInfoKHR presentInfo = {};
     presentInfo.swapchainCount   = 1;
@@ -705,6 +776,72 @@ RpsResult RenderSystem::ExecuteRenderGraph(
     }
 
     return RPS_OK;
+}
+
+void RenderSystem::StartImguiDraw()
+{
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+}
+
+void RenderSystem::DrawImgui()
+{
+    bool show = true;
+    ImGui::ShowDemoWindow(&show);
+}
+
+void RenderSystem::EndImguiDraw(RpsRenderGraph renderGraph)
+{
+    ImGui::Render();
+
+    RpsRenderGraphBatchLayout batchLayout = {};
+    RpsResult result                      = rpsRenderGraphGetBatchLayout(renderGraph, &batchLayout);
+    AssertIfRpsFailed(result);
+
+    ActiveCommandList cmdList = BeginCmdList(RPS_QUEUE_GRAPHICS);
+
+    vk::ImageMemoryBarrier graphToGuiBarrier = {};
+    // TODO Better solution for srcAccessMask
+    graphToGuiBarrier.srcAccessMask = {};
+    graphToGuiBarrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite;
+    graphToGuiBarrier.oldLayout =
+        m_FrameCounter < m_Swapchain.GetImageCount() ? vk::ImageLayout::eUndefined : vk::ImageLayout::ePresentSrcKHR;
+    graphToGuiBarrier.newLayout                   = vk::ImageLayout::eColorAttachmentOptimal;
+    graphToGuiBarrier.image                       = m_Swapchain.GetImages()[m_backBufferIndex];
+    graphToGuiBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+    graphToGuiBarrier.subresourceRange.layerCount = 1;
+    graphToGuiBarrier.subresourceRange.levelCount = 1;
+
+    cmdList.cmdBuf.pipelineBarrier(
+        vk::PipelineStageFlagBits::eBottomOfPipe,
+        vk::PipelineStageFlagBits::eColorAttachmentOutput,
+        {},
+        0,
+        nullptr,
+        0,
+        nullptr,
+        1,
+        &graphToGuiBarrier);
+
+    vk::ClearValue clearColor = {};
+
+    vk::RenderPassBeginInfo beginInfo = {};
+    beginInfo.framebuffer             = m_ImGuiObjects.framebuffers[m_backBufferIndex];
+    beginInfo.clearValueCount         = 1;
+    beginInfo.pClearValues            = &clearColor;
+    beginInfo.renderPass              = m_ImGuiObjects.renderPass;
+    beginInfo.renderArea              = vk::Rect2D{{0, 0}, m_Swapchain.GetExtent()};
+
+    cmdList.cmdBuf.beginRenderPass(beginInfo, vk::SubpassContents::eInline);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdList.cmdBuf);
+    cmdList.cmdBuf.endRenderPass();
+
+    EndCmdList(cmdList);
+
+    SubmitCmdLists(&cmdList, 1, true);
+
+    RecycleCmdList(cmdList);
 }
 
 void RenderSystem::WaitForSwapChainBuffer()
