@@ -8,17 +8,17 @@
     "glfw3",
     {
       "name":"imgui",
-      "features": ["glfw-binding", "vulkan-binding", "osx-binding"],
+      "features": ["glfw-binding", "vulkan-binding", "osx-binding", "docking-experimental"],
       "platform": "osx"
     },
     {
       "name":"imgui",
-      "features": ["glfw-binding", "vulkan-binding", "win32-binding"],
+      "features": ["glfw-binding", "vulkan-binding", "win32-binding", "docking-experimental"],
       "platform": "windows"
     },
     {
       "name": "imgui",
-      "features": ["glfw-binding", "vulkan-binding"],
+      "features": ["glfw-binding", "vulkan-binding", "docking-experimental"],
       "platform": "linux"
     },
     "stb",
