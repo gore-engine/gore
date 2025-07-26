@@ -606,7 +606,12 @@ void RenderSystem::DrawDockLayout()
 
 void RenderSystem::DrawMainMenu()
 {
-    if(ImGui::BeginMenu("File"))
+    if (ImGui::BeginMenu("File"))
+    {
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Edit"))
     {
         ImGui::EndMenu();
     }
