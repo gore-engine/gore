@@ -114,6 +114,8 @@ private:
     } m_ImGuiObjects;
 
     void StartImguiDraw();
+    void DrawDockLayout();
+    void DrawMainMenu();
     void DrawImgui();
     void EndImguiDraw(RpsRenderGraph renderGraph);
 

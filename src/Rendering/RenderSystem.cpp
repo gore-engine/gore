@@ -351,6 +351,9 @@ void RenderSystem::InitImgui()
     m_ImGuiObjects.renderPass = (*m_Device.Get()).createRenderPass(renderPassInfo);
 
 	//this initializes imgui for Vulkan
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
 	ImGui_ImplVulkan_InitInfo init_info = {};
 	init_info.Instance = *m_Device.GetInstance()->Get();
 	init_info.PhysicalDevice = *m_Device.GetPhysicalDevice().Get();
@@ -597,8 +600,38 @@ void RenderSystem::StartImguiDraw()
     ImGui::NewFrame();
 }
 
+void RenderSystem::DrawDockLayout()
+{
+}
+
+void RenderSystem::DrawMainMenu()
+{
+    if(ImGui::BeginMenu("File"))
+    {
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("View"))
+    {
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Help"))
+    {
+        ImGui::EndMenu();
+    }
+}
+
 void RenderSystem::DrawImgui()
 {
+    DrawDockLayout();
+
+    if (ImGui::BeginMainMenuBar())
+    {   
+        DrawMainMenu();
+        ImGui::EndMainMenuBar();
+    }
+
     bool show = true;
     ImGui::ShowDemoWindow(&show);
 }
