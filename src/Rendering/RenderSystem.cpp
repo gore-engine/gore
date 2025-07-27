@@ -622,9 +622,61 @@ void RenderSystem::DrawDockLayout()
         // bottom panel container
         ImGuiID logID = ImGui::DockBuilderSplitNode(dockID, ImGuiDir_Down, 0.35F, nullptr, &dockID);
         ImGui::DockBuilderDockWindow("Log", logID);
-        ImGuiID profilerID = ImGui::DockBuilderSplitNode(logID, ImGuiDir_Right, 0.33F, nullptr, &logID);
-        ImGui::DockBuilderDockWindow("Profiler", profilerID);
     }
+}
+
+void RenderSystem::DrawViewport()
+{
+    ImGui::Begin("Viewport");
+
+    ImGui::Text("Viewport will be rendered here.");
+
+    ImGui::End();
+}
+
+void RenderSystem::DrawSceneGraph()
+{
+    ImGui::Begin("Scene Graph");
+
+    ImGui::Text("Scene Graph will be rendered here.");
+
+    ImGui::End();
+}
+
+void RenderSystem::DrawSettings()
+{
+    ImGui::Begin("Settings");
+
+    ImGui::Text("Settings will be rendered here.");
+
+    ImGui::End();
+}
+
+void RenderSystem::DrawCamera()
+{
+    ImGui::Begin("Camera");
+
+    ImGui::Text("Camera will be rendered here.");
+
+    ImGui::End();
+}
+
+void RenderSystem::DrawProperties()
+{
+    ImGui::Begin("Properties");
+
+    ImGui::Text("Properties will be rendered here.");
+
+    ImGui::End();
+}
+
+void RenderSystem::DrawLog()
+{
+    ImGui::Begin("Log");
+
+    ImGui::Text("Log will be rendered here.");
+
+    ImGui::End();
 }
 
 void RenderSystem::DrawMainMenu()
@@ -659,7 +711,14 @@ void RenderSystem::DrawImgui()
         DrawMainMenu();
         ImGui::EndMainMenuBar();
     }
-    
+
+    DrawViewport();
+    DrawSettings();
+    DrawSceneGraph();
+    DrawCamera();
+    DrawProperties();
+    DrawLog();
+
     // Handle Viewport Updates
     VkExtent2D         viewportSize = {m_Swapchain.GetExtent().width, m_Swapchain.GetExtent().height};
     const ImGuiWindow* viewport     = ImGui::FindWindowByName("Viewport");

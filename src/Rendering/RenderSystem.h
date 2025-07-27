@@ -116,6 +116,14 @@ private:
 
     void StartImguiDraw();
     void DrawDockLayout();
+    
+    void DrawViewport();
+    void DrawSettings();
+    void DrawSceneGraph();
+    void DrawCamera();
+    void DrawProperties();
+    void DrawLog();
+
     void DrawMainMenu();
     void DrawImgui();
     void EndImguiDraw(RpsRenderGraph renderGraph);
