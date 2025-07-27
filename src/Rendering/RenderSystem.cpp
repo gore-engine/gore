@@ -627,11 +627,11 @@ void RenderSystem::DrawDockLayout()
 
 void RenderSystem::DrawViewport()
 {
-    ImGui::Begin("Viewport");
+    // ImGui::Begin("Viewport");
 
-    ImGui::Text("Viewport will be rendered here.");
+    // ImGui::Text("Viewport will be rendered here.");
 
-    ImGui::End();
+    // ImGui::End();
 }
 
 void RenderSystem::DrawSceneGraph()
