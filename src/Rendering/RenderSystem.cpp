@@ -315,10 +315,13 @@ void RenderSystem::InitImgui()
 
 	m_ImguiDescriptorPool = m_Device.Get().createDescriptorPool(pool_info);
 
-	// 2: initialize imgui library
-
 	//this initializes the core structures of imgui
 	ImGui::CreateContext();
+
+	//this initializes imgui for Vulkan
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
 	//this initializes imgui for SDL
 	ImGui_ImplGlfw_InitForVulkan(m_App->GetWindow()->Get(), true);
@@ -349,10 +352,6 @@ void RenderSystem::InitImgui()
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDesc;
     m_ImGuiObjects.renderPass = (*m_Device.Get()).createRenderPass(renderPassInfo);
-
-	//this initializes imgui for Vulkan
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 	ImGui_ImplVulkan_InitInfo init_info = {};
 	init_info.Instance = *m_Device.GetInstance()->Get();
@@ -602,6 +601,30 @@ void RenderSystem::StartImguiDraw()
 
 void RenderSystem::DrawDockLayout()
 {
+    const ImGuiDockNodeFlags dockFlags = ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode;
+    ImGuiID dockID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), dockFlags);
+
+    // Docking layout, must be done only if it doesn't exist
+    if(!ImGui::DockBuilderGetNode(dockID)->IsSplitNode() && !ImGui::FindWindowByName("Viewport"))
+    {
+        ImGui::DockBuilderDockWindow("Viewport", dockID);  // Dock "Viewport" to  central node
+        ImGui::DockBuilderGetCentralNode(dockID)->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;  // Remove "Tab" from the central node
+
+        // right side panel container
+        ImGuiID settingID = ImGui::DockBuilderSplitNode(dockID, ImGuiDir_Right, 0.25F, nullptr, &dockID);
+        ImGui::DockBuilderDockWindow("Settings", settingID);
+        ImGui::DockBuilderDockWindow("Scene Graph", settingID);
+        ImGui::DockBuilderDockWindow("Camera", settingID);
+
+        ImGuiID propID = ImGui::DockBuilderSplitNode(settingID, ImGuiDir_Down, 0.35F, nullptr, &settingID);
+        ImGui::DockBuilderDockWindow("Properties", propID);
+
+        // bottom panel container
+        ImGuiID logID = ImGui::DockBuilderSplitNode(dockID, ImGuiDir_Down, 0.35F, nullptr, &dockID);
+        ImGui::DockBuilderDockWindow("Log", logID);
+        ImGuiID profilerID = ImGui::DockBuilderSplitNode(logID, ImGuiDir_Right, 0.33F, nullptr, &logID);
+        ImGui::DockBuilderDockWindow("Profiler", profilerID);
+    }
 }
 
 void RenderSystem::DrawMainMenu()
@@ -636,9 +659,20 @@ void RenderSystem::DrawImgui()
         DrawMainMenu();
         ImGui::EndMainMenuBar();
     }
-
-    bool show = true;
-    ImGui::ShowDemoWindow(&show);
+    
+    // Handle Viewport Updates
+    VkExtent2D         viewportSize = {m_Swapchain.GetExtent().width, m_Swapchain.GetExtent().height};
+    const ImGuiWindow* viewport     = ImGui::FindWindowByName("Viewport");
+    if(viewport)
+    {
+        viewportSize = {uint32_t(viewport->Size.x), uint32_t(viewport->Size.y)};
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::Begin("Viewport");
+        ImGui::End();
+        ImGui::PopStyleVar();
+    }
+    // bool show = true;
+    // ImGui::ShowDemoWindow(&show);
 }
 
 void RenderSystem::EndImguiDraw(RpsRenderGraph renderGraph)
@@ -692,6 +726,16 @@ void RenderSystem::EndImguiDraw(RpsRenderGraph renderGraph)
     SubmitCmdLists(&cmdList, 1, true);
 
     RecycleCmdList(cmdList);
+
+    // End ImGui frame
+    ImGui::EndFrame();
+
+    // Handle Additional ImGui Windows
+    if((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
 }
 
 void RenderSystem::WaitForSwapChainBuffer()
