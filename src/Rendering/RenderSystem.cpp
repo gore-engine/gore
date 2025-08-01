@@ -617,7 +617,7 @@ void RenderSystem::DrawDockLayout()
         ImGui::DockBuilderDockWindow("Camera", settingID);
 
         ImGuiID propID = ImGui::DockBuilderSplitNode(settingID, ImGuiDir_Down, 0.35F, nullptr, &settingID);
-        ImGui::DockBuilderDockWindow("Properties", propID);
+        ImGui::DockBuilderDockWindow("Components", propID);
 
         // bottom panel container
         ImGuiID logID = ImGui::DockBuilderSplitNode(dockID, ImGuiDir_Down, 0.35F, nullptr, &dockID);
@@ -636,9 +636,34 @@ void RenderSystem::DrawViewport()
 
 void RenderSystem::DrawSceneGraph()
 {
+    static const float textBaseWidth = ImGui::CalcTextSize("A").x;
+    static ImGuiTableFlags s_tableFlags =
+        ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersV;
+
     ImGui::Begin("Scene Graph");
 
-    ImGui::Text("Scene Graph will be rendered here.");
+    if (ImGui::BeginTable("SceneGraph", 2, s_tableFlags))
+    {
+        ImGui::TableSetupScrollFreeze(1, 1);
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
+        // ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthFixed, textBaseWidth * 8.0f);
+        ImGui::TableSetupColumn("-", ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthFixed, textBaseWidth * 1.0f);
+        ImGui::TableHeadersRow();
+        
+        std::vector<GameObject*> gameObjects = Scene::GetActiveScene()->GetGameObjects();
+        for (size_t i = 0; i < gameObjects.size(); ++i)
+        {
+            GameObject* gameObject = gameObjects[i];
+            if (gameObject == nullptr)
+                continue;
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", gameObject->GetName().c_str());
+        }
+
+        ImGui::EndTable();
+    }
 
     ImGui::End();
 }
@@ -661,11 +686,11 @@ void RenderSystem::DrawCamera()
     ImGui::End();
 }
 
-void RenderSystem::DrawProperties()
+void RenderSystem::DrawComponents()
 {
-    ImGui::Begin("Properties");
+    ImGui::Begin("Components");
 
-    ImGui::Text("Properties will be rendered here.");
+    ImGui::Text("Components will be rendered here.");
 
     ImGui::End();
 }
@@ -716,7 +741,7 @@ void RenderSystem::DrawImgui()
     DrawSettings();
     DrawSceneGraph();
     DrawCamera();
-    DrawProperties();
+    DrawComponents();
     DrawLog();
 
     // Handle Viewport Updates

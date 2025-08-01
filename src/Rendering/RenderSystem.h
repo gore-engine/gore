@@ -121,7 +121,7 @@ private:
     void DrawSettings();
     void DrawSceneGraph();
     void DrawCamera();
-    void DrawProperties();
+    void DrawComponents();
     void DrawLog();
 
     void DrawMainMenu();
