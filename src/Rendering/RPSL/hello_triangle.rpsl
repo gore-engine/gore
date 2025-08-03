@@ -1,12 +1,3 @@
-// Copyright (c) 2024 Advanced Micro Devices, Inc.
-//
-// This file is part of the AMD Render Pipeline Shaders SDK which is
-// released under the MIT LICENSE.
-//
-// See file LICENSE.txt for full license details.
-
-graphics node Triangle([readwrite(rendertarget)] texture renderTarget : SV_Target0);
-
 graphics node Shadowmap(
     dsv shadowmap : SV_DepthStencil, 
     float clearDepth : SV_ClearDepth = 0.0,
@@ -35,25 +26,4 @@ export void main([readonly(present)] texture backbuffer)
     
     Shadowmap(shadowmap.format(RPS_FORMAT_D32_FLOAT));
     ForwardOpaque(shadowmap, backbuffer, ds.format(RPS_FORMAT_D32_FLOAT));
-    // Triangle(backbuffer);
 }
-
-// ---------- Only Relevant for Tutorial Part 3 (Begin) ----------
-graphics node TriangleBreathing([readwrite(rendertarget)] texture renderTarget
-                                : SV_Target0, float oneOverAspectRatio, float timeInSeconds);
-
-export void mainBreathing([readonly(present)] texture backbuffer, float timeInSeconds)
-{
-    ResourceDesc backbufferDesc = backbuffer.desc();
-
-    uint32_t width  = (uint32_t)backbufferDesc.Width;
-    uint32_t height = backbufferDesc.Height;
-
-    float oneOverAspectRatio = height / (float)width;
-
-    // clear and then render geometry to backbuffer
-    clear(backbuffer, float4(0.0, 0.2, 0.4, 1.0));
-    TriangleBreathing(backbuffer, oneOverAspectRatio, timeInSeconds);
-}
-
-// ---------- Only Relevant for Tutorial Part 3 (End) ------------
