@@ -259,8 +259,19 @@ Device::Device(PhysicalDevice physicalDevice) :
     // Features
     vk::PhysicalDeviceFeatures2 enabledFeatures2 = pd.getFeatures2();
 
+    vk::PhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures;
+    descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+
+    descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+    descriptorIndexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+    descriptorIndexingFeatures.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
+    descriptorIndexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+
+    descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;    
+
     vk::PhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures;
     dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
+    dynamicRenderingFeatures.pNext = &descriptorIndexingFeatures;
 
     vk::PhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures;
     bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;    
