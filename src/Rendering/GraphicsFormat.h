@@ -32,8 +32,10 @@ enum class GraphicsFormat
     // AttributeColor    = RGB8_UNORM,
     // AttributeUV0      = RG16_FLOAT,
 
+    
     // Depth Stencil Format
     D32_FLOAT, // depth 24 bits, stencil 8 bits
+    D24_FLOAT_S8_UINT, // depth 24 bits, stencil 8 bits
     D32_FLOAT_S8_UINT,
     Count
 };

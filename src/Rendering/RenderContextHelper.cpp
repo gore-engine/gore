@@ -44,6 +44,8 @@ vk::Format GetVkFormat(GraphicsFormat format)
             return vk::Format::eR16G16Sfloat;
         case GraphicsFormat::D32_FLOAT:
             return vk::Format::eD32Sfloat;
+        case GraphicsFormat::D24_FLOAT_S8_UINT:
+            return vk::Format::eD24UnormS8Uint;
         case GraphicsFormat::D32_FLOAT_S8_UINT:
             return vk::Format::eD32SfloatS8Uint;
         case GraphicsFormat::Undefined:
