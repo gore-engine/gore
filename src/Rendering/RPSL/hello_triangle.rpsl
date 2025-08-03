@@ -6,11 +6,19 @@
 // See file LICENSE.txt for full license details.
 
 graphics node Triangle([readwrite(rendertarget)] texture renderTarget : SV_Target0);
-graphics node Shadowmap(dsv shadowmap : SV_DepthStencil, float clearDepth : SV_ClearDepth);
+
+graphics node Shadowmap(
+    dsv shadowmap : SV_DepthStencil, 
+    float clearDepth : SV_ClearDepth = 0.0,
+    uint clearStencil : SV_ClearStencil = 0);
+
 graphics node ForwardOpaque(
     ps_srv shadowmap,
     rtv backbuffer : SV_Target0,
-    dsv dst : SV_DepthStencil);
+    dsv dst : SV_DepthStencil, 
+    float4 clearColor : SV_ClearColor = float4(0.0, 0.2, 0.4, 1.0),
+    float clearDepth : SV_ClearDepth = 0.0,
+    uint clearStencil : SV_ClearStencil = 0);
 
 export void main([readonly(present)] texture backbuffer)
 {
@@ -19,18 +27,14 @@ export void main([readonly(present)] texture backbuffer)
     uint32_t width  = (uint32_t)backbufferDesc.Width;
     uint32_t height = backbufferDesc.Height;
 
-    texture ds = create_tex2d(RPS_FORMAT_D32_FLOAT, width, height);
-    clear(ds, float4(0.0, 0.0, 0.0, 0.0));
-
-    // clear and then render geometry to backbuffer
-    clear(backbuffer, float4(0.0, 0.2, 0.4, 1.0));
+    texture ds = create_tex2d(RPS_FORMAT_R32_TYPELESS, width, height);
     
     const uint shadowmapWidth = 1024;
     const uint shadowmapHeight = 1024;
-    texture shadowmap = create_tex2d(RPS_FORMAT_D32_FLOAT, shadowmapWidth, shadowmapHeight);
+    texture shadowmap = create_tex2d(RPS_FORMAT_R32_TYPELESS, shadowmapWidth, shadowmapHeight);
     
-    Shadowmap(shadowmap, 0.0);
-    ForwardOpaque(shadowmap, backbuffer, ds);
+    Shadowmap(shadowmap.format(RPS_FORMAT_D32_FLOAT));
+    ForwardOpaque(shadowmap, backbuffer, ds.format(RPS_FORMAT_D32_FLOAT));
     // Triangle(backbuffer);
 }
 
