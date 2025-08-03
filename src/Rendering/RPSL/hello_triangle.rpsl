@@ -7,10 +7,21 @@
 
 graphics node Triangle([readwrite(rendertarget)] texture renderTarget : SV_Target0);
 graphics node Shadowmap(dsv shadowmap : SV_DepthStencil, float clearDepth : SV_ClearDepth);
-graphics node ForwardOpaque(ps_srv shadowmap, rtv backbuffer : SV_Target0);
+graphics node ForwardOpaque(
+    ps_srv shadowmap,
+    rtv backbuffer : SV_Target0,
+    dsv dst : SV_DepthStencil);
 
 export void main([readonly(present)] texture backbuffer)
 {
+    ResourceDesc backbufferDesc = backbuffer.desc();
+
+    uint32_t width  = (uint32_t)backbufferDesc.Width;
+    uint32_t height = backbufferDesc.Height;
+
+    texture ds = create_tex2d(RPS_FORMAT_D32_FLOAT, width, height);
+    clear(ds, float4(0.0, 0.0, 0.0, 0.0));
+
     // clear and then render geometry to backbuffer
     clear(backbuffer, float4(0.0, 0.2, 0.4, 1.0));
     
@@ -19,7 +30,7 @@ export void main([readonly(present)] texture backbuffer)
     texture shadowmap = create_tex2d(RPS_FORMAT_D32_FLOAT, shadowmapWidth, shadowmapHeight);
     
     Shadowmap(shadowmap, 0.0);
-    ForwardOpaque(shadowmap, backbuffer);
+    ForwardOpaque(shadowmap, backbuffer, ds);
     // Triangle(backbuffer);
 }
 

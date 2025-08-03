@@ -1678,7 +1678,7 @@ const PhysicalDevice& RenderSystem::GetBestDevice(const std::vector<PhysicalDevi
 void RenderSystem::CreateRpsPipelines()
 {
     // Forward Pipeline
-    RenderPassDesc forwardPassDesc = {{GraphicsFormat::BGRA8_SRGB}};
+    RenderPassDesc forwardPassDesc = {{GraphicsFormat::BGRA8_SRGB}, GraphicsFormat::D32_FLOAT};
     AutoRenderPass forwardPass(m_RenderContext.get(), forwardPassDesc);
 
     std::vector<char> vertexShaderByteCode = LoadShaderBytecode("sample/SimpleLit", ShaderStage::Vertex, "main");
