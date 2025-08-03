@@ -29,6 +29,8 @@
 
 #include "Profiler/microprofile.h"
 
+#include "Rendering/UIRenderUtils.h"
+
 #include <vector>
 #include <string>
 #include <sstream>
@@ -39,6 +41,11 @@ MICROPROFILE_DEFINE(g_RenderSystemInit, "System", "RenderSystemInit", MP_AUTO);
 MICROPROFILE_DEFINE(g_PrepareDrawData, "RenderSystemLoop", "PrepareDrawData", MP_BLUE);
 MICROPROFILE_DEFINE(g_RenderGraphUpdate, "RenderSystemLoop", "RenderGraphUpdate", MP_BLUE);
 MICROPROFILE_DEFINE(g_ExecuteRenderGraph, "RenderSystemLoop", "ExecuteRenderGraph", MP_BLUE);
+
+static ImGuiTreeNodeFlags s_treeNodeFlags = ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_SpanFullWidth
+                                            | ImGuiTreeNodeFlags_OpenOnArrow
+                                            | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+ 
 
 namespace gore
 {
@@ -656,10 +663,8 @@ void RenderSystem::DrawSceneGraph()
             GameObject* gameObject = gameObjects[i];
             if (gameObject == nullptr)
                 continue;
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("%s", gameObject->GetName().c_str());
+                
+            RenderRootGameObject(gameObject);
         }
 
         ImGui::EndTable();
