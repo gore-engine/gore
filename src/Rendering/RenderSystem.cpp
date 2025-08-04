@@ -657,7 +657,16 @@ void RenderSystem::DrawSceneGraph()
         ImGui::TableSetupColumn("-", ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthFixed, textBaseWidth * 1.0f);
         ImGui::TableHeadersRow();
         
-        std::vector<GameObject*> gameObjects = Scene::GetActiveScene()->GetGameObjects();
+        auto* scene = Scene::GetActiveScene();
+
+        ImGui::SetNextItemOpen(true);
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::Text(scene->GetName().c_str());
+        ImGui::TableNextColumn();
+        ImGui::Text("-");
+
+        std::vector<GameObject*> gameObjects = scene->GetGameObjects();
         for (size_t i = 0; i < gameObjects.size(); ++i)
         {
             GameObject* gameObject = gameObjects[i];
