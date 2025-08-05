@@ -16,6 +16,7 @@
 #include "Scene/Scene.h"
 #include "Object/Camera.h"
 #include "Object/GameObject.h"
+#include "Object/Transform.h"
 
 #include "Rendering/Components/MeshRenderer.h"
 #include "Utilities/GLTFLoader.h"
@@ -43,8 +44,7 @@ MICROPROFILE_DEFINE(g_RenderGraphUpdate, "RenderSystemLoop", "RenderGraphUpdate"
 MICROPROFILE_DEFINE(g_ExecuteRenderGraph, "RenderSystemLoop", "ExecuteRenderGraph", MP_BLUE);
 
 static ImGuiTreeNodeFlags s_treeNodeFlags = ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_SpanFullWidth
-                                            | ImGuiTreeNodeFlags_OpenOnArrow
-                                            | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+                                            | ImGuiTreeNodeFlags_DefaultOpen;
  
 
 namespace gore
@@ -672,8 +672,25 @@ void RenderSystem::DrawSceneGraph()
             GameObject* gameObject = gameObjects[i];
             if (gameObject == nullptr)
                 continue;
-                
-            RenderRootGameObject(gameObject);
+                                
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            
+            ImGuiTreeNodeFlags flags = s_treeNodeFlags;
+            if (m_SelectedGO == gameObject)
+            {
+                flags |= ImGuiTreeNodeFlags_Selected;
+            }
+
+            if (ImGui::TreeNodeEx(gameObject->GetName().c_str(), flags))
+            {
+                if (ImGui::IsItemClicked())
+                {
+                    m_SelectedGO = m_SelectedGO == gameObject ? nullptr : gameObject;
+                }
+
+                ImGui::TreePop();
+            }        
         }
 
         ImGui::EndTable();
@@ -704,7 +721,36 @@ void RenderSystem::DrawComponents()
 {
     ImGui::Begin("Components");
 
-    ImGui::Text("Components will be rendered here.");
+    if (m_SelectedGO == nullptr)
+    {
+        ImGui::TextDisabled("No GameObject Selected");
+        ImGui::End();
+        return;
+    }
+    
+    ImGui::Text("%s", m_SelectedGO->GetName().c_str());
+
+    ImGui::Separator();
+
+    Transform* transform = m_SelectedGO->GetComponent<Transform>();
+    assert(transform != nullptr);
+
+    const ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll;
+    
+    if (ImGui::CollapsingHeader("Transform"))
+    {
+        Vector3 position = transform->GetWorldPosition();
+        Vector3 rotation = transform->GetWorldRotation().ToEuler();
+        Vector3 scale = transform->GetWorldScale();
+
+        ImGui::InputFloat3("Position", &position.x);
+        ImGui::InputFloat3("Rotation", &rotation.x);
+        ImGui::InputFloat3("Scale", &scale.x);
+
+        transform->SetWorldPosition(position);
+        transform->SetWorldEulerAngles(rotation);
+        transform->SetWorldScale(scale);
+    }
 
     ImGui::End();
 }

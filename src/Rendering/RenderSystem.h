@@ -42,6 +42,7 @@ namespace gore
 using namespace gfx;
 
 class Window;
+class GameObject;
 
 struct DeletionQueue
 {
@@ -130,6 +131,8 @@ private:
 
     ImGui_ImplVulkanH_Window m_ImguiWindowData;
     vk::raii::DescriptorPool m_ImguiDescriptorPool;
+
+    GameObject* m_SelectedGO = nullptr;
 
 private:
     static void RecordDebugMarker(void* pUserContext, const RpsRuntimeOpRecordDebugMarkerArgs* pArgs);
