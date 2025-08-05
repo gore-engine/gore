@@ -146,9 +146,14 @@ inline float Quaternion::Dot(const Quaternion& q) const noexcept
     return static_cast<float>(rtm::quat_dot(m_Q, q.m_Q));
 }
 
-// inline Vector3 Quaternion::ToEuler() const noexcept
-//{
-// }
+inline Vector3 Quaternion::ToEuler() const noexcept
+{
+   Vector4 vec(rtm::quat_to_vector(m_Q));
+
+   glm::vec3 eulerAngles = glm::eulerAngles(glm::quat(vec.x, vec.y, vec.z, vec.w));
+
+   return Vector3(eulerAngles.x, eulerAngles.y, eulerAngles.z);
+}
 
 //------------------------------------------------------------------------------
 // Static functions

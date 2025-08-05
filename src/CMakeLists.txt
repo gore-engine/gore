@@ -164,6 +164,10 @@ list(APPEND COMMON_LIBRARIES RealtimeMath)
 add_subdirectory(External/AMDRenderPipelineShaders)
 list(APPEND COMMON_LIBRARIES AMDRps)
 
+# glm
+find_package(glm CONFIG REQUIRED)
+list(APPEND COMMON_LIBRARIES glm::glm)
+
 # catch2
 if (${ENABLE_TEST})
     find_package(Catch2 3 REQUIRED)

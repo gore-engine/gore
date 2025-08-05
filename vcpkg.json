@@ -26,6 +26,7 @@
     "vulkan-memory-allocator",
     "spirv-cross",
     "catch2",
-    "tinygltf"
+    "tinygltf",
+    "glm"
   ]
 }

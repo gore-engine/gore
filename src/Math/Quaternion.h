@@ -6,15 +6,18 @@
 
 #include "Math/Defines.h"
 #include "Math/Vector3.h"
+#include "Math/Vector4.h"
 
 #include "rtm/vector4f.h"
 #include "rtm/quatf.h"
 #include "rtm/impl/quat_common.h"
 
+#include <glm/gtc/quaternion.hpp>
+
 namespace gore
 {
 
-struct Vector3;
+struct Vector4;
 struct Matrix4x4;
 
 ENGINE_STRUCT(Quaternion)
