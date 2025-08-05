@@ -160,6 +160,13 @@ void Transform::SetWorldRotation(const Quaternion& rotation)
     m_LocalTQS.q        = rotation * parentRotation.Inverse();
 }
 
+void Transform::SetWorldEulerAngles(const Vector3& eulerAngles)
+{
+    auto radians = glm::radians(glm::vec3(eulerAngles.x, eulerAngles.y, eulerAngles.z));
+
+    SetWorldRotation(Quaternion::FromYawPitchRoll(radians.y, radians.x, radians.z));
+}
+
 void Transform::RotateAroundAxis(const Vector3& axis, float angle)
 {
     m_LocalTQS.q = Quaternion::FromAxisAngle(axis, angle) * m_LocalTQS.q;

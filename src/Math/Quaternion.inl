@@ -148,11 +148,11 @@ inline float Quaternion::Dot(const Quaternion& q) const noexcept
 
 inline Vector3 Quaternion::ToEuler() const noexcept
 {
-   Vector4 vec(rtm::quat_to_vector(m_Q));
+    Vector4 vec(rtm::quat_to_vector(m_Q));
+    
+    glm::vec3 eulerAngles = glm::degrees(glm::eulerAngles(glm::quat(vec.x, vec.y, vec.z, vec.w)));
 
-   glm::vec3 eulerAngles = glm::eulerAngles(glm::quat(vec.x, vec.y, vec.z, vec.w));
-
-   return Vector3(eulerAngles.x, eulerAngles.y, eulerAngles.z);
+    return Vector3(eulerAngles.x, eulerAngles.y, eulerAngles.z);
 }
 
 //------------------------------------------------------------------------------
