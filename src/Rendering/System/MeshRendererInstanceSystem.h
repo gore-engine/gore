@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Prefix.h"
-#include "Export.h"
 
 #include <memory>
 
@@ -10,10 +9,10 @@
 
 namespace gore::renderer
 {
-ENGINE_STRUCT(RendererHandle)
+struct InstanceHandle
 {
 public:
-    explicit RendererHandle(uint32_t index) :
+    explicit InstanceHandle(uint32_t index) :
         index(index)
     {
     }
@@ -23,19 +22,19 @@ public:
         return index;
     }
 
-    bool operator==(const RendererHandle& other) const
+    bool operator==(const InstanceHandle& other) const
     {
         return index == other.index;
     }
 
-    bool operator!=(const RendererHandle& other) const
+    bool operator!=(const InstanceHandle& other) const
     {
         return index != other.index;
     }
 
-    static RendererHandle Invalid()
+    static InstanceHandle Invalid()
     {
-        return RendererHandle(UINT32_MAX);
+        return InstanceHandle(UINT32_MAX);
     }
 
     [[nodiscard]] bool IsValid() const
@@ -47,13 +46,13 @@ private:
     uint32_t index;
 };
 
-ENGINE_CLASS(MeshRendererSystem)
+class MeshRendererInstanceSystem
 {
 public:
-    MeshRendererSystem();
+    MeshRendererInstanceSystem();
 
-    RendererHandle GetRendererHandle();
-    void FreeRendererHandle(RendererHandle handle);
+    InstanceHandle GetRendererHandle();
+    void FreeRendererHandle(InstanceHandle handle);
 
 private:
     std::unique_ptr<utils::ArrayAllocator> m_MeshRendererAllocator;
