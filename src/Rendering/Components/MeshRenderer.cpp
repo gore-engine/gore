@@ -14,14 +14,15 @@ MeshRenderer::MeshRenderer(GameObject* GameObject) noexcept :
     m_IndexCount(0),
     m_IndexOffset(0),
     m_DynamicBuffer(),
-    m_DynamicBufferOffset(0)
+    m_DynamicBufferOffset(0),
+    m_RendererHandle()
 {
-    // m_RendererHandle = MeshRendererSystem::GetInstance()->GetRendererHandle();
+    m_RendererHandle = MeshRendererInstanceSystem::GetInstance()->GetRendererHandle();
 }
 
 MeshRenderer::~MeshRenderer()
 {
-    // MeshRendererSystem::GetInstance()->FreeRendererHandle(m_RendererHandle);
+    MeshRendererInstanceSystem::GetInstance()->FreeRendererHandle(m_RendererHandle);
 }
 
 bool MeshRenderer::IsValid() const

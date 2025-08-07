@@ -12,6 +12,11 @@ namespace gore::renderer
 struct InstanceHandle
 {
 public:
+    InstanceHandle() :
+        index(UINT32_MAX)
+    {
+    }
+
     explicit InstanceHandle(uint32_t index) :
         index(index)
     {
@@ -48,6 +53,8 @@ private:
 
 class MeshRendererInstanceSystem
 {
+    SINGLETON(MeshRendererInstanceSystem)
+
 public:
     MeshRendererInstanceSystem();
 

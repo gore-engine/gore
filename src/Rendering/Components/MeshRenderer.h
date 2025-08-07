@@ -11,6 +11,8 @@
 #include "Rendering/Components/Material.h"
 #include "Rendering/Utils/GeometryUtils.h"
 
+#include "Rendering/System/MeshRendererInstanceSystem.h"
+
 namespace gore::renderer
 {
 using namespace gfx;
@@ -84,5 +86,7 @@ private:
 
     // Material data
     BindGroupHandle m_BindGroup;
+
+    InstanceHandle m_RendererHandle;
 };
 } // namespace gore::renderer

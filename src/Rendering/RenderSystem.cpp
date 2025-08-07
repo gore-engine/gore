@@ -1879,6 +1879,16 @@ void RenderSystem::UpdateGlobalConstantBuffer()
     m_RenderContext->CopyDataToBuffer(m_GlobalConstantBuffer, perframeData);
 }
 
+void RenderSystem::UpdateInstanceInfoData()
+{
+    
+}
+
+void RenderSystem::UpdateSceneData()
+{
+
+}
+
 void RenderSystem::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
 {
     RenderSystem& renderSystem = *reinterpret_cast<RenderSystem*>(pContext->pUserRecordContext);

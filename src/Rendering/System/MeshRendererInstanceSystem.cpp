@@ -2,9 +2,12 @@
 
 namespace gore::renderer
 {
+SINGLETON_IMPL(MeshRendererInstanceSystem)
+
 MeshRendererInstanceSystem::MeshRendererInstanceSystem() :
     m_MeshRendererAllocator(std::make_unique<utils::ArrayAllocator>())
 {
+    g_Instance = this;
 }
 
 InstanceHandle MeshRendererInstanceSystem::GetRendererHandle()

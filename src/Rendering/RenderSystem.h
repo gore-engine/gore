@@ -10,6 +10,8 @@
 #include "GraphicsCaps.h"
 #include "RenderContext.h"
 #include "CommandRing.h"
+#include "GPUData/GPUScene.h"
+#include "Rendering/System/MeshRendererInstanceSystem.h"
 
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -32,7 +34,7 @@ namespace gore
 {
 namespace renderer
 {
-class MeshRendererSystem;
+class MeshRendererInstanceSystem;
 } // namespace renderer
 } // namespace gore
 
@@ -192,6 +194,14 @@ private:
 
     uint64_t CalcGuaranteedCompletedFrameindexForRps() const;
     
+    //TODO:
+    void UpdateMaterialData();
+    void UpdateGeometryData();
+
+    void UpdateInstanceInfoData();
+
+    void UpdateSceneData();
+
     void UpdateGlobalConstantBuffer();
 
     // static void DrawTriangleWithRPSWrapper(const RpsCmdCallbackContext* pContext);
@@ -268,6 +278,18 @@ private:
     BindLayout m_GlobalBindLayout;
     BindGroupHandle m_GlobalBindGroup;
     BufferHandle m_GlobalConstantBuffer;
+
+    // Scene Data
+    struct GraphicsSceneData
+    {
+        BufferHandle instanceInfoBuffer;
+        BufferHandle geometryInfoBuffer;
+        BufferHandle materialInfoBuffer;
+    } m_GraphicsSceneData;
+
+    GPUScene m_GPUScene;
+
+    MeshRendererInstanceSystem m_MeshRendererInstanceSystem;
 
     // Material Binding
     struct MaterialBinding
