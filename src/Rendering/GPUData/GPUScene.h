@@ -6,6 +6,11 @@
 
 #include <vector>
 
+namespace gore
+{
+    class GameObject;
+}
+
 namespace gore::gfx
 {
 struct MaterialData
@@ -59,5 +64,9 @@ struct GPUScene
     std::vector<InstanceData> instances;
     std::vector<GeometryData> geometries;
 };
+
+void ConstructGPUSceneData(
+    const std::vector<gore::GameObject*>& gameObjects,
+    GPUScene& outScene);
 
 } // namespace gore::gfx
