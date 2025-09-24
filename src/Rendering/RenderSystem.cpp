@@ -1886,7 +1886,15 @@ void RenderSystem::UpdateInstanceInfoData()
 
 void RenderSystem::UpdateSceneData()
 {
+    auto& gameObjects = Scene::GetActiveScene()->GetGameObjects();
+    for (auto& gameObject : gameObjects)
+    {
+        MeshRenderer* renderer = gameObject->GetComponent<MeshRenderer>();
+        if (renderer == nullptr)
+            continue;
 
+        
+    }
 }
 
 void RenderSystem::ShadowmapPassWithRPSWrapper(const RpsCmdCallbackContext* pContext)
