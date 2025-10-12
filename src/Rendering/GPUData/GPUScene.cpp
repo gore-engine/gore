@@ -1,6 +1,9 @@
 #include "GPUScene.h"
 
 #include "Object/GameObject.h"
+#include "Object/Transform.h"
+
+#include "Rendering/Components/MeshRenderer.h"
 
 namespace gore::gfx
 {
@@ -16,6 +19,14 @@ void ConstructGPUSceneData(
         // - Get geometry data
         // - Get instance data
 
+        Transform* transform = gameObject->GetComponent<Transform>();
+        renderer::MeshRenderer* meshRenderer = gameObject->GetComponent<renderer::MeshRenderer>();
+        if (transform == nullptr || meshRenderer == nullptr)
+            continue;
+
+        
+
+        
         // Add the extracted data to the outScene
     }
 }

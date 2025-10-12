@@ -1,15 +1,12 @@
 #pragma once
 
+#include "Rendering/GPUData/GPUScene.h"
 #include "Utilities/Allocator/HashAllocatePool.h"
 
 using namespace gore::utils;
 
 namespace gore::gfx
 {
-struct GeometryData
-{
-};
-
 class GeometryPool
 {
 public:
