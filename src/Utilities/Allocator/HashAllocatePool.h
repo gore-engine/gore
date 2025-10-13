@@ -69,6 +69,12 @@ public:
         return m_Allocator.IsFull();
     }
 
+    void Reset()
+    {
+        m_Allocator = ArrayAllocator(m_Allocator.GetSize());
+        m_HashToIndexMap.clear();
+    }
+
 private:
     ArrayAllocator m_Allocator;
     std::unordered_map<T, uint32_t> m_HashToIndexMap;

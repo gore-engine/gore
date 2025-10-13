@@ -1,33 +1,26 @@
 #pragma once
 
-#include "Rendering/GPUData/GPUScene.h"
 #include "Utilities/Allocator/HashAllocatePool.h"
 
 using namespace gore::utils;
 
 namespace gore::gfx
 {
-class GeometryPool
+struct GeometryData
 {
-public:
-    GeometryPool() noexcept :
-        m_GeometryAllocator(1024)
-    {
-    }
+    uint32_t vertexCount  = 0;
+    uint32_t indexCount   = 0;
+    uint32_t vertexOffset = 0;
+    uint32_t indexOffset  = 0;
 
-    ~GeometryPool() = default;
+    uint32_t texcoord0Offset = 0;
+    uint32_t texcoord1Offset = 0;
+    uint32_t texcoord2Offset = 0;
+    uint32_t texcoord3Offset = 0;
 
-    [[nodiscard]] bool AddGeometry(GeometryData&& geometry, uint32_t& outIndex)
-    {
-        return m_GeometryAllocator.AddInstance(std::move(geometry), outIndex);
-    }
-
-    void RemoveGeometry(const GeometryData& geometry)
-    {
-        m_GeometryAllocator.RemoveInstance(geometry);
-    }
-
-private:
-    HashAllocatePool<GeometryData> m_GeometryAllocator;
+    uint32_t normalOffset  = 0;
+    uint32_t tangentOffset = 0;
+    uint32_t pad0          = 0;
+    uint32_t pad1          = 0;
 };
 } // namespace gore::gfx

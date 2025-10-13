@@ -24,7 +24,10 @@ void ConstructGPUSceneData(
         if (transform == nullptr || meshRenderer == nullptr)
             continue;
 
-        
+        MaterialData matData = 
+        {
+            .albedoTextureIndex = 0
+        };
 
         
         // Add the extracted data to the outScene
